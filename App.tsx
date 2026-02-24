@@ -1,14 +1,14 @@
-import { ScreenContent } from 'components/ScreenContent';
+import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-
-import './global.css';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { LoginScreen } from './screens/LoginScreen';
+import './global.css';
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <ScreenContent title="Home" path="App.tsx"></ScreenContent>
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
+      <LoginScreen />
     </SafeAreaProvider>
   );
 }
