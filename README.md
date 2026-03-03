@@ -1,17 +1,129 @@
-💼 Aptly: Professional Matchmaking KitBashpnpm install && npx expo start -c
-🧑‍🚀 ¿Listo para conectar talento? Este es el inicio de tu plataforma de reclutamiento moderna. ¡Configura tu entorno y empieza a buildear!🚀 Estructura del ProyectoDentro de tu proyecto de Aptly, encontrarás la siguiente organización de archivos basada en componentes atómicos y pantallas:Plaintext/
-├── assets/
-│   ├── favicon.png          # Logo de la aplicación utilizado en el branding
-│   └── morocho.jpg          # Recursos visuales del equipo
+# Aptly – Professional Matchmaking Platform 🚀
+
+Aptly es una plataforma moderna de **matchmaking profesional** que conecta talento con empresas mediante un sistema de coincidencias inteligentes, inspirado en experiencias de usuario modernas.
+
+Este proyecto está construido con **React Native + Expo**, utilizando una arquitectura basada en **componentes reutilizables y diseño moderno**.
+
+---
+
+# 📦 Instalación
+
+Clona el repositorio e instala las dependencias:
+
+```bash
+npm install
+```
+
+Luego inicia el proyecto:
+
+```bash
+npx expo start
+```
+
+---
+
+# 🛠 Tecnologías utilizadas
+
+* React Native
+* Expo
+* TypeScript
+* Tailwind CSS (NativeWind)
+* Arquitectura basada en componentes
+
+---
+
+# 📁 Estructura del proyecto
+
+```
+Aptly
+│
+├── assets
+│   ├── favicon.png        # Logo de la aplicación
+│   └── moroco.jpg         # Recursos visuales
+│
 ├── src
 │   ├── components
-│   │   ├── EditScreenInfo.tsx   # Gestión de bio y detalles del perfil
-│   │   ├── CustomButton.tsx     # Botones reutilizables con Tailwind
-│   │   └── ScreenContent.tsx    # Layout base para títulos y secciones
-│   ├── screens
-│   │   ├── LoginScreen.tsx      # Interfaz de acceso con UI de Glassmorphism
-│   │   └── WelcomeScreen.tsx    # Animación de entrada inicial
-├── App.tsx                  # Orquestador principal y punto de entrada
-├── global.css               # Estilos globales de NativeWind
-└── package.json             # Manifiesto de dependencias y scripts
-Para aprender más sobre cómo escalar esta estructura, consulta la sección de Buenas Prácticas en la documentación de tu equipo.🧞 Comandos PrincipalesTodos los comandos se ejecutan desde la raíz del proyecto a través de la terminal:ComandoAcciónpnpm installInstala todas las dependencias necesariasnpx expo startInicia el servidor de desarrollo de Metronpx expo start -cInicia el servidor limpiando la caché (Recomendado)npx expo run:androidEjecuta el build nativo en emulador Androidnpx expo run:iosEjecuta el build nativo en simulador iOSpnpm add <libreria>Instala nuevos paquetes al proyecto👀 ¿Qué sigue para Aptly?Actualmente, el proyecto cuenta con una base sólida de NativeWind para el diseño responsivo. El siguiente paso en el flujo de navegación incluye:Matching System: Implementación de gestos de deslizamiento (swiping).Chat Real-time: Conexión entre empresas y candidatos tras el match.User Roles: Lógica para diferenciar entre perfiles de reclutador y talento.
+│   │   ├── CustomButton.tsx    # Botones reutilizables con Tailwind
+│   │   └── ScreenContent.tsx   # Layout base para títulos y secciones
+│   │
+│   └── screens
+│       ├── LoginScreen.tsx     # Pantalla de inicio de sesión
+│       ├── WelcomeScreen.tsx   # Animación de entrada inicial
+│       └── EditScreenInfo.tsx  # Gestión de bio y detalles del perfil
+│
+├── App.tsx               # Punto de entrada de la aplicación
+├── global.css            # Estilos globales de NativeWind
+└── package.json          # Dependencias y scripts
+```
+
+---
+
+# ▶️ Comandos principales
+
+Todos los comandos se ejecutan desde la raíz del proyecto.
+
+| Comando                | Descripción                             |
+| ---------------------- | --------------------------------------- |
+| `npm install`          | Instala todas las dependencias          |
+| `npx expo start`       | Inicia el servidor de desarrollo        |
+| `npx expo start -c`    | Inicia el servidor limpiando la caché   |
+| `npx expo run:android` | Ejecuta el proyecto en emulador Android |
+| `npx expo run:ios`     | Ejecuta el proyecto en simulador iOS    |
+| `npm add <package>`    | Instala nuevos paquetes                 |
+
+---
+
+# 🎨 Diseño UI
+
+La interfaz utiliza **Glassmorphism + NativeWind** para lograr una apariencia moderna, minimalista y responsive.
+
+Características del diseño:
+
+* Componentes reutilizables
+* Estilos consistentes
+* Layout adaptable
+* Experiencia tipo aplicación social moderna
+
+---
+
+# 🚀 Próximas funcionalidades
+
+### Matching System
+
+Sistema de coincidencias mediante **gestos de deslizamiento (swiping)** entre perfiles.
+
+### Chat en tiempo real
+
+Conexión directa entre empresas y candidatos una vez se produce el match.
+
+### Roles de usuario
+
+Sistema para diferenciar:
+
+* Reclutadores
+* Talento / Candidatos
+
+### Perfil profesional
+
+Edición de información profesional, habilidades y experiencia.
+
+---
+
+# 📚 Buenas prácticas
+
+El proyecto sigue una arquitectura basada en:
+
+* Componentes reutilizables
+* Separación de lógica y UI
+* Organización modular de carpetas
+* Escalabilidad para nuevas funcionalidades
+
+---
+
+# 👨‍💻 Autor
+
+Proyecto desarrollado como parte de un proceso de aprendizaje en desarrollo de aplicaciones móviles y arquitectura moderna con React Native.
+
+---
+
+⭐ Si te gusta el proyecto, ¡no olvides darle una estrella al repositorio!
