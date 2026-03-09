@@ -9,16 +9,24 @@ import {
   Image,
   Animated,
   StatusBar,
-  useColorScheme 
+  useColorScheme,
+  Alert
 } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { CustomInput } from '../components/CustomInput';
 import { CustomButton } from '../components/CustomButton';
+import { supabase } from '../lib/supabase';
 
-export const LoginScreen = () => {
+WebBrowser.maybeCompleteAuthSession();
+
+export const LoginScreen = ({ onNavigate }: { onNavigate: (screen: 'welcome' | 'login' | 'register' | 'home') => void }) => {
   const colorScheme = useColorScheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const isDarkMode = colorScheme === 'dark';
   
   // Animation state
@@ -41,24 +49,98 @@ export const LoginScreen = () => {
     ]).start();
   }, [fadeAnim, slideAnim]);
 
-  const handleLogin = () => {
-    console.log('Login attempt with:', email, password);
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Faltan datos', 'Por favor ingresa tu correo y contraseña');
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+
+    if (error) {
+      Alert.alert('Error al iniciar sesión', error.message);
+    } else {
+      onNavigate('home');
+    }
   };
 
-  const handleSocialLogin = (platform: string) => {
-    console.log(`Social login with ${platform}`);
+  const handleSocialLogin = async (platform: string) => {
+    // Generate an app-specific URL to return to after authentication
+    const redirectUrl = Linking.createURL('auth/callback', { scheme: 'aptly' });
+    
+
+
+    // Get the login URL from Supabase WITHOUT opening the external browser automatically
+    const { data, error } = await supabase.auth.signInWithOAuth({ 
+      provider: platform.toLowerCase() as any,
+      options: {
+        redirectTo: redirectUrl,
+        skipBrowserRedirect: true,
+      }
+    });
+
+    if (error) {
+      Alert.alert('Error', error.message);
+      return;
+    }
+
+    if (data?.url) {
+      // Open the URL inside an in-app overlay window
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+      
+      // When the user comes back securely, process the deep link connection
+      if (result.type === 'success' && result.url) {
+        try {
+          // Supabase returns credentials in the URL fragment (#) or sometimes query (?)
+          // e.g., app://auth/callback#access_token=TOKEN&refresh_token=TOKEN
+          const paramsString = result.url.split('#')[1] || result.url.split('?')[1] || '';
+          const paramsList = paramsString.split('&');
+          let access_token: string | null = null;
+          let refresh_token: string | null = null;
+          let provider_error: string | null = null;
+
+          for (const param of paramsList) {
+            const [key, value] = param.split('=');
+            if (key === 'access_token') access_token = value;
+            if (key === 'refresh_token') refresh_token = value;
+            if (key === 'error_description') {
+              provider_error = decodeURIComponent(value.replace(/\+/g, ' '));
+            }
+          }
+
+          if (access_token && refresh_token) {
+            await supabase.auth.setSession({ access_token, refresh_token });
+          } else if (provider_error) {
+            if (provider_error.includes('Multiple accounts')) {
+              Alert.alert(
+                'Cuenta Vinculada', 
+                'Ya existe una cuenta con este correo (seguro ya iniciaste con Google). Para poder iniciar con ambos, debes habilitar "Link identities to a single user" en los ajustes de Supabase (Authentication > Providers).'
+              );
+            } else {
+              Alert.alert('Error del Proveedor', provider_error);
+            }
+          } else {
+            Alert.alert("Error de Inicio", "No se detectó la sesión iniciada correctamente. Intenta de nuevo.");
+            console.error("No tokens found in URL:", result.url);
+          }
+        } catch (e) {
+          console.error("Error parsing URL:", e);
+        }
+      }
+    }
   };
 
   return (
-    <View className="flex-1">
+    <View className="flex-1 bg-white dark:bg-slate-950">
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
       
+      {/* Background with Glassmorphism */}
       <ImageBackground
         source={require('../assets/morocho.jpg')}
         className="flex-1"
         resizeMode="cover"
       >
-        {/* Capa de oscurecimiento dinámica */}
         <View className="absolute inset-0 bg-black/30 dark:bg-black/60" />
         
         <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
@@ -117,7 +199,7 @@ export const LoginScreen = () => {
                 </TouchableOpacity>
 
                 <CustomButton 
-                  title="Iniciar Sesión" 
+                  title={loading ? "Iniciando..." : "Iniciar Sesión"} 
                   onPress={handleLogin} 
                   variant="primary" 
                   className="mb-8 py-4 px-10" 
@@ -154,7 +236,7 @@ export const LoginScreen = () => {
               {/* Navigation Link */}
               <View className="flex-row justify-center mt-4">
                 <Text className="text-slate-600 dark:text-slate-400 text-sm">¿Nuevo por aquí? </Text>
-                <TouchableOpacity>
+                <TouchableOpacity onPress={() => onNavigate('register')}>
                   <Text className="text-primary-light font-black text-sm">Registrate gratis</Text>
                 </TouchableOpacity>
               </View>

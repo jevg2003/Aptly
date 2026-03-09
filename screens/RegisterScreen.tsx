@@ -1,0 +1,141 @@
+import React, { useState } from 'react';
+import { 
+  View, 
+  Text, 
+  ImageBackground, 
+  TouchableOpacity, 
+  KeyboardAvoidingView, 
+  Platform, 
+  Image,
+  StatusBar,
+  useColorScheme,
+  Alert
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { CustomInput } from '../components/CustomInput';
+import { CustomButton } from '../components/CustomButton';
+import { supabase } from '../lib/supabase';
+
+export const RegisterScreen = ({ onNavigate }: { onNavigate: (screen: 'welcome' | 'login' | 'register' | 'home') => void }) => {
+  const colorScheme = useColorScheme();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const isDarkMode = colorScheme === 'dark';
+
+  const handleRegister = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Por favor llena todos los campos');
+      return;
+    }
+    
+    setLoading(true);
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+    setLoading(false);
+
+    if (error) {
+      if (error.message.includes('already registered')) {
+        Alert.alert(
+          'Cuenta Existente', 
+          'Este correo ya está registrado (quizás iniciaste sesión antes con Google o GitHub). ¿Deseas recibir un enlace para asignarle una contraseña y poder iniciar sesión con correo y contraseña?',
+          [
+            { text: 'Cancelar', style: 'cancel' },
+            { 
+              text: 'Sí, enviar enlace', 
+              onPress: async () => {
+                const { error: resetError } = await supabase.auth.resetPasswordForEmail(email);
+                if (resetError) {
+                  Alert.alert('Error', resetError.message);
+                } else {
+                  Alert.alert('¡Enviado!', 'Revisa tu bandeja de entrada o spam para establecer tu contraseña.');
+                  onNavigate('login');
+                }
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Error al registrarse', error.message);
+      }
+    } else {
+      Alert.alert('Registro exitoso', 'Revisa tu correo para verificar tu cuenta (si tienes habilitada la confirmación) o inicia sesión.');
+      onNavigate('login');
+    }
+  };
+
+  return (
+    <View className="flex-1">
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
+      
+      <ImageBackground
+        source={require('../assets/morocho.jpg')}
+        className="flex-1"
+        resizeMode="cover"
+      >
+        <View className="absolute inset-0 bg-black/30 dark:bg-black/60" />
+        
+        <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
+            className="flex-1 justify-center px-6"
+          >
+            <View className="bg-white/80 dark:bg-slate-900/80 rounded-[45px] p-7 shadow-2xl border border-white/30 dark:border-slate-800/30 max-h-[94%]">
+              
+              <View className="items-center mb-4">
+                <View className="bg-blue-50/20 dark:bg-blue-900/10 p-4 rounded-[28px] items-center justify-center">
+                  <Image 
+                    source={require('../assets/favicon.png')} 
+                    className="w-24 h-24" 
+                    resizeMode="contain"
+                  />
+                </View>
+              </View>
+
+              <View className="items-center mb-6">
+                <Text className="text-slate-900 dark:text-slate-50 text-3xl font-bold mb-1 tracking-tight">Crear Cuenta</Text>
+                <Text className="text-slate-600 dark:text-slate-400 text-center text-[15px] px-6 leading-5 font-medium">
+                   Únete a Aptly y encuentra tu empleo ideal.
+                </Text>
+              </View>
+
+              <View>
+                <CustomInput
+                  placeholder="Correo electrónico"
+                  value={email}
+                  onChangeText={setEmail}
+                  iconName="email-outline"
+                  keyboardType="email-address"
+                />
+                <CustomInput
+                  placeholder="Contraseña"
+                  value={password}
+                  onChangeText={setPassword}
+                  iconName="lock-outline"
+                  isPassword
+                />
+                
+                <CustomButton 
+                  title={loading ? "Registrando..." : "Registrarse"} 
+                  onPress={handleRegister} 
+                  variant="primary" 
+                  className="mt-4 mb-8 py-4 px-10" 
+                />
+              </View>
+
+              <View className="flex-row justify-center mt-4 mb-4">
+                <Text className="text-slate-600 dark:text-slate-400 text-sm">¿Ya tienes una cuenta? </Text>
+                <TouchableOpacity onPress={() => onNavigate('login')}>
+                  <Text className="text-primary-light font-black text-sm">Inicia Sesión</Text>
+                </TouchableOpacity>
+              </View>
+
+            </View>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </ImageBackground>
+    </View>
+  );
+};
