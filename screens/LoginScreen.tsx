@@ -6,33 +6,35 @@ import {
   TouchableOpacity, 
   KeyboardAvoidingView, 
   Platform, 
-  ScrollView,
   Image,
   Animated,
-  StatusBar
+  StatusBar,
+  useColorScheme 
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CustomInput } from '../components/CustomInput';
 import { CustomButton } from '../components/CustomButton';
 
 export const LoginScreen = () => {
+  const colorScheme = useColorScheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const isDarkMode = colorScheme === 'dark';
   
-  // Animación de entrada
+  // Animation state
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
+  const slideAnim = useRef(new Animated.Value(25)).current;
 
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 800,
+        duration: 900,
         useNativeDriver: true,
       }),
       Animated.spring(slideAnim, {
         toValue: 0,
-        friction: 8,
+        friction: 9,
         tension: 40,
         useNativeDriver: true,
       })
@@ -48,132 +50,124 @@ export const LoginScreen = () => {
   };
 
   return (
-    <View className="flex-1 bg-white">
-      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
+    <View className="flex-1">
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
+      
       <ImageBackground
-        source={{ uri: 'https://images.unsplash.com/photo-1557683316-973673baf926' }}
+        source={require('../assets/morocho.jpg')}
         className="flex-1"
         resizeMode="cover"
       >
-        <View className="absolute inset-0 bg-white/50" />
+        {/* Capa de oscurecimiento dinámica */}
+        <View className="absolute inset-0 bg-black/30 dark:bg-black/60" />
         
         <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
           <KeyboardAvoidingView 
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
-            className="flex-1"
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
+            className="flex-1 justify-center px-6"
           >
-            <ScrollView 
-              contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}
-              showsVerticalScrollIndicator={false}
+            <Animated.View 
+              style={{ 
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }]
+              }}
+              className="bg-white/80 dark:bg-slate-900/80 rounded-[45px] p-7 shadow-2xl border border-white/30 dark:border-slate-800/30 max-h-[94%]"
             >
               
-              <Animated.View 
-                style={{ 
-                  opacity: fadeAnim,
-                  transform: [{ translateY: slideAnim }]
-                }}
-                className="bg-white/95 rounded-[40px] p-8 shadow-2xl border border-white/50"
-              >
-                
-                {/* Logo de Favicon */}
-                <View className="items-center mb-6">
-                  <View className="bg-blue-50/50 p-4 rounded-3xl items-center justify-center shadow-inner">
-                    <Image 
-                      source={require('../assets/favicon.png')} 
-                      className="w-12 h-12"
-                      resizeMode="contain"
-                    />
-                  </View>
-                </View>
-
-                {/* Título y Subtítulo */}
-                <View className="items-center mb-8">
-                  <Text className="text-slate-800 text-3xl font-bold mb-2">Bienvenido a Aptly</Text>
-                  <Text className="text-slate-500 text-center text-base px-2 leading-6">
-                    Accede a tu cuenta para encontrar tu próximo empleo ideal.
-                  </Text>
-                </View>
-
-                {/* Formulario */}
-                <View>
-                  <CustomInput
-                    placeholder="Correo electrónico"
-                    value={email}
-                    onChangeText={setEmail}
-                    iconName="email-outline"
-                    keyboardType="email-address"
-                  />
-                  <CustomInput
-                    placeholder="Contraseña"
-                    value={password}
-                    onChangeText={setPassword}
-                    iconName="lock-outline"
-                    isPassword
-                  />
-                  
-                  <TouchableOpacity className="items-end mb-6 -mt-1">
-                    <Text className="text-[#2B468B] font-semibold text-sm">
-                      ¿Olvidaste tu contraseña?
-                    </Text>
-                  </TouchableOpacity>
-
-                  <CustomButton 
-                    title="Iniciar Sesión" 
-                    onPress={handleLogin} 
-                    variant="primary" 
-                    className="mb-8"
+              {/* Branding Header */}
+              <View className="items-center mb-4">
+                <View className="bg-blue-50/20 dark:bg-blue-900/10 p-4 rounded-[28px] items-center justify-center">
+                  <Image 
+                    source={require('../assets/favicon.png')} 
+                    className="w-32 h-32" 
+                    resizeMode="contain"
                   />
                 </View>
+              </View>
 
-                {/* Divisor */}
-                <View className="flex-row items-center mb-8">
-                  <View className="flex-1 h-[1px] bg-slate-100" />
-                  <Text className="mx-4 text-slate-400 text-[10px] font-bold tracking-widest uppercase">
-                    O continúa con
-                  </Text>
-                  <View className="flex-1 h-[1px] bg-slate-100" />
-                </View>
-
-                {/* Logins Sociales */}
-                <View>
-                  <CustomButton 
-                    title="Google" 
-                    onPress={() => handleSocialLogin('Google')} 
-                    variant="social" 
-                    icon="google"
-                  />
-                  <CustomButton 
-                    title="GitHub" 
-                    onPress={() => handleSocialLogin('GitHub')} 
-                    variant="social" 
-                    icon="github"
-                  />
-                  <CustomButton 
-                    title="Cuenta de empresa" 
-                    onPress={() => handleSocialLogin('Company')} 
-                    variant="primary" 
-                    icon="briefcase-variant-outline"
-                  />
-                </View>
-
-                {/* Enlace de Registro */}
-                <View className="flex-row justify-center mt-6">
-                  <Text className="text-slate-500">¿No tienes una cuenta? </Text>
-                  <TouchableOpacity>
-                    <Text className="text-[#2B468B] font-bold">Registrate</Text>
-                  </TouchableOpacity>
-                </View>
-
-              </Animated.View>
-
-              {/* Footer */}
-              <View className="mt-8 items-center">
-                <Text className="text-slate-400 text-[10px] font-medium tracking-widest">
-                  Aptly v1.0.4 © 2024
+              {/* Messaging Area */}
+              <View className="items-center mb-6">
+                <Text className="text-slate-900 dark:text-slate-50 text-3xl font-bold mb-1 tracking-tight">Bienvenido a Aptly</Text>
+                <Text className="text-slate-600 dark:text-slate-400 text-center text-[15px] px-6 leading-5 font-medium">
+                   Encuentra tu próximo empleo de forma simple y rápida.
                 </Text>
               </View>
 
-            </ScrollView>
+              {/* Auth Form */}
+              <View>
+                <CustomInput
+                  placeholder="Correo electrónico"
+                  value={email}
+                  onChangeText={setEmail}
+                  iconName="email-outline"
+                  keyboardType="email-address"
+                />
+                <CustomInput
+                  placeholder="Contraseña"
+                  value={password}
+                  onChangeText={setPassword}
+                  iconName="lock-outline"
+                  isPassword
+                />
+                
+                <TouchableOpacity className="items-end mb-6 -mt-3">
+                  <Text className="text-primary-light font-bold text-[13px] tracking-tight">
+                    ¿Olvidaste tu contraseña?
+                  </Text>
+                </TouchableOpacity>
+
+                <CustomButton 
+                  title="Iniciar Sesión" 
+                  onPress={handleLogin} 
+                  variant="primary" 
+                  className="mb-8 py-4 px-10" 
+                />
+              </View>
+
+              {/* Semantic Divider */}
+              <View className="flex-row items-center mb-8">
+                <View className="flex-1 h-[0.5px] bg-slate-300 dark:bg-slate-700" />
+                <Text className="mx-4 text-slate-500 dark:text-slate-400 text-[10px] font-black tracking-widest uppercase">
+                   Acceso rápido
+                </Text>
+                <View className="flex-1 h-[0.5px] bg-slate-300 dark:bg-slate-700" />
+              </View>
+
+              {/* Social Login Grid */}
+              <View className="flex-row gap-4 mb-4">
+                <CustomButton 
+                  title="Google" 
+                  onPress={() => handleSocialLogin('Google')} 
+                  variant="social" 
+                  icon="google"
+                  className="flex-1 py-[12px] bg-white/50 dark:bg-slate-800/50"
+                />
+                <CustomButton 
+                  title="GitHub" 
+                  onPress={() => handleSocialLogin('GitHub')} 
+                  variant="social" 
+                  icon="github"
+                  className="flex-1 py-[12px] bg-white/50 dark:bg-slate-800/50"
+                />
+              </View>
+
+              {/* Navigation Link */}
+              <View className="flex-row justify-center mt-4">
+                <Text className="text-slate-600 dark:text-slate-400 text-sm">¿Nuevo por aquí? </Text>
+                <TouchableOpacity>
+                  <Text className="text-primary-light font-black text-sm">Registrate gratis</Text>
+                </TouchableOpacity>
+              </View>
+
+            </Animated.View>
+
+            {/* Application Identifier */}
+            <View className="mt-8 items-center">
+              <Text className="text-white/70 dark:text-slate-500 text-[10px] font-bold tracking-widest uppercase py-2">
+                 versión 1.0.4 - Aptly Inc.
+              </Text>
+            </View>
+
           </KeyboardAvoidingView>
         </SafeAreaView>
       </ImageBackground>

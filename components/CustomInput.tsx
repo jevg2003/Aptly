@@ -25,7 +25,11 @@ export const CustomInput = ({
 
   return (
     <View 
-      className={`flex-row items-center border ${isFocused ? 'border-[#2B468B]' : 'border-slate-100'} rounded-[20px] px-5 py-[10px] mb-4 bg-white shadow-sm shadow-slate-100`}
+      className={`
+        flex-row items-center border rounded-[22px] px-5 py-[12px] mb-4 
+        ${isFocused ? 'border-primary' : 'border-slate-100 dark:border-slate-800'} 
+        bg-white dark:bg-slate-900 shadow-sm shadow-slate-200 dark:shadow-none
+      `}
     >
       <MaterialCommunityIcons 
         name={iconName} 
@@ -35,7 +39,7 @@ export const CustomInput = ({
       <TextInput
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        className="flex-1 ml-3 text-slate-700 text-base py-1"
+        className="flex-1 ml-3 text-slate-800 dark:text-slate-100 text-base py-1"
         placeholder={placeholder}
         placeholderTextColor="#94a3b8"
         value={value}
@@ -45,7 +49,10 @@ export const CustomInput = ({
         autoCapitalize="none"
       />
       {isPassword && (
-        <TouchableOpacity onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity 
+          onPress={() => setShowPassword(!showPassword)} 
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
           <MaterialCommunityIcons 
             name={showPassword ? "eye-off-outline" : "eye-outline"} 
             size={20} 

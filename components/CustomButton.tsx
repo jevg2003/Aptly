@@ -19,16 +19,18 @@ export const CustomButton = ({
   className = '',
 }: CustomButtonProps) => {
   const isPrimary = variant === 'primary';
-  const isOutline = variant === 'outline';
-  const isSocial = variant === 'social';
 
-  const buttonStyle = isPrimary
-    ? 'bg-[#2b468b] shadow-lg shadow-[#2b468b]/30 active:bg-blue-900'
-    : isOutline || isSocial
-    ? 'bg-white border border-gray-100 shadow-sm active:bg-gray-50'
-    : 'bg-white border border-gray-200 shadow-sm active:bg-gray-50';
+  const themes = {
+    primary: "bg-[#2B468B] dark:bg-[#3458B0] shadow-xl shadow-blue-900/40 active:bg-blue-900",
+    outline: "bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm active:bg-gray-50",
+    social: "bg-white dark:bg-slate-800 border border-slate-50 dark:border-slate-700 shadow-sm active:bg-gray-50"
+  };
 
-  const textStyle = isPrimary ? 'text-white font-bold' : 'text-slate-600 font-semibold';
+  const textColors = {
+    primary: "text-white font-bold",
+    outline: "text-slate-600 dark:text-slate-100 font-semibold",
+    social: "text-slate-600 dark:text-slate-100 font-semibold"
+  };
 
   const renderIcon = () => {
     if (!icon) return null;
@@ -45,7 +47,13 @@ export const CustomButton = ({
     
     if (icon === 'github') {
       return (
-        <MaterialCommunityIcons name="github" size={20} color="#000" style={{ marginRight: 10 }} />
+        <MaterialCommunityIcons 
+          name="github" 
+          size={20} 
+          color={isPrimary ? "white" : "#000"} 
+          className="dark:text-white"
+          style={{ marginRight: 10 }} 
+        />
       );
     }
 
@@ -53,7 +61,7 @@ export const CustomButton = ({
       <MaterialCommunityIcons 
         name={icon as any} 
         size={20} 
-        color={isPrimary ? "white" : "#2b468b"} 
+        color={isPrimary ? "white" : "#2B468B"} 
         style={{ marginRight: 10 }} 
       />
     );
@@ -63,11 +71,11 @@ export const CustomButton = ({
     <TouchableOpacity
       activeOpacity={0.8}
       onPress={onPress}
-      className={`${buttonStyle} flex-row items-center justify-center py-[15px] rounded-[30px] mb-3 ${className}`}
+      className={`${themes[variant]} flex-row items-center justify-center rounded-[30px] ${className}`}
     >
-      <View className="flex-row items-center">
+      <View className="flex-row items-center justify-center w-full">
         {renderIcon()}
-        <Text className={`${textStyle} text-base text-center`}>{title}</Text>
+        <Text className={`${textColors[variant]} text-base text-center`}>{title}</Text>
       </View>
     </TouchableOpacity>
   );
