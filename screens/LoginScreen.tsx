@@ -1,56 +1,180 @@
-import React from 'react';
-import { View, Text, ImageBackground, Image, TouchableOpacity, SafeAreaView } from 'react-native';
-import { SocialButton } from '../components/SocialButton';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  View, 
+  Text, 
+  ImageBackground, 
+  TouchableOpacity, 
+  KeyboardAvoidingView, 
+  Platform, 
+  ScrollView,
+  Image,
+  Animated,
+  StatusBar
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { CustomInput } from '../components/CustomInput';
+import { CustomButton } from '../components/CustomButton';
 
 export const LoginScreen = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  
+  // Animación de entrada
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [fadeAnim, slideAnim]);
+
+  const handleLogin = () => {
+    console.log('Login attempt with:', email, password);
+  };
+
+  const handleSocialLogin = (platform: string) => {
+    console.log(`Social login with ${platform}`);
+  };
+
   return (
-    <View className="flex-1">
-      {/* Imagen de fondo de oficina */}
+    <View className="flex-1 bg-white">
+      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
       <ImageBackground
-        source={{ uri: 'https://images.unsplash.com/photo-1497366216548-37526070297c' }}
+        source={{ uri: 'https://images.unsplash.com/photo-1557683316-973673baf926' }}
         className="flex-1"
         resizeMode="cover"
       >
-        {/* Capa blanca semi-transparente para aclarar el fondo como en tu foto */}
-        <View className="absolute inset-0 bg-white/60" />
+        <View className="absolute inset-0 bg-white/50" />
+        
+        <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+            className="flex-1"
+          >
+            <ScrollView 
+              contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}
+              showsVerticalScrollIndicator={false}
+            >
+              
+              <Animated.View 
+                style={{ 
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }]
+                }}
+                className="bg-white/95 rounded-[40px] p-8 shadow-2xl border border-white/50"
+              >
+                
+                {/* Logo de Favicon */}
+                <View className="items-center mb-6">
+                  <View className="bg-blue-50/50 p-4 rounded-3xl items-center justify-center shadow-inner">
+                    <Image 
+                      source={require('../assets/favicon.png')} 
+                      className="w-12 h-12"
+                      resizeMode="contain"
+                    />
+                  </View>
+                </View>
 
-        <SafeAreaView className="flex-1 items-center justify-between py-10">
-          
-          {/* SECCIÓN LOGO */}
-          <View className="items-center mt-10">
-            <View className="bg-[#2b468b] p-4 rounded-2xl shadow-xl">
-               <Image 
-                source={require('../assets/favicon.png')} 
-                className="w-16 h-16" 
-                tintColor="white"
-              />
-            </View>
-            <Text className="text-[#2b468b] text-2xl font-bold mt-4">Aptly</Text>
-            <Text className="text-gray-600 text-center px-10 mt-2 font-medium">
-              Encuentra tu futuro profesional con un solo toque.
-            </Text>
-          </View>
+                {/* Título y Subtítulo */}
+                <View className="items-center mb-8">
+                  <Text className="text-slate-800 text-3xl font-bold mb-2">Bienvenido a Aptly</Text>
+                  <Text className="text-slate-500 text-center text-base px-2 leading-6">
+                    Accede a tu cuenta para encontrar tu próximo empleo ideal.
+                  </Text>
+                </View>
 
-          {/* CONTENEDOR BLANCO (La Tarjeta de tu imagen) */}
-          <View className="w-[90%] bg-white/95 rounded-[30px] p-6 shadow-2xl border border-white">
-            
-            <SocialButton title="Continue with Google" icon="google" variant="google" />
-            <SocialButton title="Continue with GitHub" icon="github" variant="github" />
+                {/* Formulario */}
+                <View>
+                  <CustomInput
+                    placeholder="Correo electrónico"
+                    value={email}
+                    onChangeText={setEmail}
+                    iconName="email-outline"
+                    keyboardType="email-address"
+                  />
+                  <CustomInput
+                    placeholder="Contraseña"
+                    value={password}
+                    onChangeText={setPassword}
+                    iconName="lock-outline"
+                    isPassword
+                  />
+                  
+                  <TouchableOpacity className="items-end mb-6 -mt-1">
+                    <Text className="text-[#2B468B] font-semibold text-sm">
+                      ¿Olvidaste tu contraseña?
+                    </Text>
+                  </TouchableOpacity>
 
-            <View className="items-center my-4">
-              <Text className="text-gray-400 font-bold text-[10px] tracking-widest">
-                O USA TU CUENTA
-              </Text>
-            </View>
+                  <CustomButton 
+                    title="Iniciar Sesión" 
+                    onPress={handleLogin} 
+                    variant="primary" 
+                    className="mb-8"
+                  />
+                </View>
 
-            <SocialButton title="Iniciar Sesión" icon="briefcase" variant="primary" />
+                {/* Divisor */}
+                <View className="flex-row items-center mb-8">
+                  <View className="flex-1 h-[1px] bg-slate-100" />
+                  <Text className="mx-4 text-slate-400 text-[10px] font-bold tracking-widest uppercase">
+                    O continúa con
+                  </Text>
+                  <View className="flex-1 h-[1px] bg-slate-100" />
+                </View>
 
-            <TouchableOpacity className="mt-4 flex-row justify-center">
-              <Text className="text-gray-500 text-sm">Don't have an account? </Text>
-              <Text className="text-black font-bold text-sm">Register here</Text>
-            </TouchableOpacity>
+                {/* Logins Sociales */}
+                <View>
+                  <CustomButton 
+                    title="Google" 
+                    onPress={() => handleSocialLogin('Google')} 
+                    variant="social" 
+                    icon="google"
+                  />
+                  <CustomButton 
+                    title="GitHub" 
+                    onPress={() => handleSocialLogin('GitHub')} 
+                    variant="social" 
+                    icon="github"
+                  />
+                  <CustomButton 
+                    title="Cuenta de empresa" 
+                    onPress={() => handleSocialLogin('Company')} 
+                    variant="primary" 
+                    icon="briefcase-variant-outline"
+                  />
+                </View>
 
-          </View>
+                {/* Enlace de Registro */}
+                <View className="flex-row justify-center mt-6">
+                  <Text className="text-slate-500">¿No tienes una cuenta? </Text>
+                  <TouchableOpacity>
+                    <Text className="text-[#2B468B] font-bold">Registrate</Text>
+                  </TouchableOpacity>
+                </View>
+
+              </Animated.View>
+
+              {/* Footer */}
+              <View className="mt-8 items-center">
+                <Text className="text-slate-400 text-[10px] font-medium tracking-widest">
+                  Aptly v1.0.4 © 2024
+                </Text>
+              </View>
+
+            </ScrollView>
+          </KeyboardAvoidingView>
         </SafeAreaView>
       </ImageBackground>
     </View>

@@ -1,23 +1,65 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Animated } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Image, Animated, StatusBar } from 'react-native';
 
 export const WelcomeScreen = ({ onFinish }: { onFinish: () => void }) => {
-  const fadeAnim = useState(new Animated.Value(0))[0];
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
+  const translateY = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Animación de entrada y salida
-    Animated.sequence([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 1500, useNativeDriver: true }),
-      Animated.delay(1000),
-      Animated.timing(fadeAnim, { toValue: 0, duration: 1000, useNativeDriver: true }),
-    ]).start(() => onFinish()); // Al terminar, avisa para cambiar de pantalla
-  }, []);
+    // 1. Entrada: El logo aparece y se escala
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 5,
+        tension: 20,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // 2. Salida: El logo se mueve un poco hacia arriba y se desvanece
+    // Esto simula que el logo se "coloca" en su lugar del Login
+    const timer = setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateY, {
+          toValue: -100,
+          duration: 700,
+          useNativeDriver: true,
+        })
+      ]).start(() => onFinish());
+    }, 2800);
+
+    return () => clearTimeout(timer);
+  }, [fadeAnim, onFinish, scaleAnim, translateY]);
 
   return (
-    <View className="flex-1 bg-[#1E3A8A] items-center justify-center">
-      <Animated.View style={{ opacity: fadeAnim }}>
-        <Text className="text-white text-5xl font-bold tracking-tighter">Aptly</Text>
-        <Text className="text-blue-200 text-center mt-2 italic">Tu futuro, hoy.</Text>
+    <View className="flex-1 bg-white items-center justify-center">
+      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
+      <Animated.View 
+        style={{ 
+          opacity: fadeAnim,
+          transform: [
+            { scale: scaleAnim },
+            { translateY: translateY }
+          ]
+        }}
+        className="items-center"
+      >
+        <Image 
+          source={require('../assets/favicon.png')} 
+          className="w-28 h-28"
+          resizeMode="contain"
+        />
       </Animated.View>
     </View>
   );

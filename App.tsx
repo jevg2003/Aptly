@@ -1,14 +1,19 @@
-import React from 'react';
-import { StatusBar } from 'expo-status-bar';
+import React, { useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { WelcomeScreen } from './screens/WelcomeScreen';
 import { LoginScreen } from './screens/LoginScreen';
 import './global.css';
 
 export default function App() {
+  const [isLoading, setIsLoading] = useState(true);
+
   return (
     <SafeAreaProvider>
-      <StatusBar style="light" />
-      <LoginScreen />
+      {isLoading ? (
+        <WelcomeScreen onFinish={() => setIsLoading(false)} />
+      ) : (
+        <LoginScreen />
+      )}
     </SafeAreaProvider>
   );
 }
