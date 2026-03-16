@@ -12,6 +12,7 @@ import {
   useColorScheme,
   Alert
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -144,9 +145,12 @@ export const LoginScreen = ({ onNavigate }: { onNavigate: (screen: 'welcome' | '
         <View className="absolute inset-0 bg-black/30 dark:bg-black/60" />
         
         <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
-          <KeyboardAvoidingView 
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
-            className="flex-1 justify-center px-6"
+          <KeyboardAwareScrollView 
+            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+            className="flex-1 px-6"
+            enableOnAndroid={true}
+            extraScrollHeight={80}
+            keyboardShouldPersistTaps="handled"
           >
             <Animated.View 
               style={{ 
@@ -244,13 +248,13 @@ export const LoginScreen = ({ onNavigate }: { onNavigate: (screen: 'welcome' | '
             </Animated.View>
 
             {/* Application Identifier */}
-            <View className="mt-8 items-center">
+            <View className="mt-8 items-center pb-8">
               <Text className="text-white/70 dark:text-slate-500 text-[10px] font-bold tracking-widest uppercase py-2">
                  versión 1.0.4 - Aptly Inc.
               </Text>
             </View>
 
-          </KeyboardAvoidingView>
+          </KeyboardAwareScrollView>
         </SafeAreaView>
       </ImageBackground>
     </View>

@@ -4,7 +4,6 @@ import {
   Text, 
   ImageBackground, 
   TouchableOpacity, 
-  KeyboardAvoidingView, 
   Platform, 
   Image,
   StatusBar,
@@ -12,6 +11,7 @@ import {
   Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { CustomInput } from '../components/CustomInput';
 import { CustomButton } from '../components/CustomButton';
 import { supabase } from '../lib/supabase';
@@ -78,11 +78,14 @@ export const RegisterScreen = ({ onNavigate }: { onNavigate: (screen: 'welcome' 
         <View className="absolute inset-0 bg-black/30 dark:bg-black/60" />
         
         <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
-          <KeyboardAvoidingView 
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
-            className="flex-1 justify-center px-6"
+          <KeyboardAwareScrollView 
+            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+            className="flex-1 px-6"
+            enableOnAndroid={true}
+            extraScrollHeight={80}
+            keyboardShouldPersistTaps="handled"
           >
-            <View className="bg-white/80 dark:bg-slate-900/80 rounded-[45px] p-7 shadow-2xl border border-white/30 dark:border-slate-800/30 max-h-[94%]">
+            <View className="bg-white/80 dark:bg-slate-900/80 rounded-[45px] p-7 shadow-2xl border border-white/30 dark:border-slate-800/30">
               
               <View className="items-center mb-4">
                 <View className="bg-blue-50/20 dark:bg-blue-900/10 p-4 rounded-[28px] items-center justify-center">
@@ -133,7 +136,7 @@ export const RegisterScreen = ({ onNavigate }: { onNavigate: (screen: 'welcome' 
               </View>
 
             </View>
-          </KeyboardAvoidingView>
+          </KeyboardAwareScrollView>
         </SafeAreaView>
       </ImageBackground>
     </View>
