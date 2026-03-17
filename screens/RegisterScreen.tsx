@@ -20,12 +20,18 @@ export const RegisterScreen = ({ onNavigate }: { onNavigate: (screen: 'welcome' 
   const colorScheme = useColorScheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const isDarkMode = colorScheme === 'dark';
 
   const handleRegister = async () => {
-    if (!email || !password) {
+    if (!email || !password || !confirmPassword) {
       Alert.alert('Error', 'Por favor llena todos los campos');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Las contraseñas no coinciden');
       return;
     }
     
@@ -114,6 +120,13 @@ export const RegisterScreen = ({ onNavigate }: { onNavigate: (screen: 'welcome' 
                   value={password}
                   onChangeText={setPassword}
                   iconName="lock-outline"
+                  isPassword
+                />
+                <CustomInput
+                  placeholder="Confirmar contraseña"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  iconName="lock-check-outline"
                   isPassword
                 />
                 
