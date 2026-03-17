@@ -23,7 +23,15 @@ import { supabase } from '../lib/supabase';
 
 WebBrowser.maybeCompleteAuthSession();
 
-export const LoginScreen = ({ onNavigate }: { onNavigate: (screen: 'welcome' | 'login' | 'register' | 'home') => void }) => {
+export const LoginScreen = ({ 
+  onNavigate, 
+  isBusiness, 
+  setIsBusiness 
+}: { 
+  onNavigate: (screen: 'welcome' | 'login' | 'register' | 'home') => void;
+  isBusiness: boolean;
+  setIsBusiness: (value: boolean) => void;
+}) => {
   const colorScheme = useColorScheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -173,9 +181,13 @@ export const LoginScreen = ({ onNavigate }: { onNavigate: (screen: 'welcome' | '
 
               {/* Messaging Area */}
               <View className="items-center mb-6">
-                <Text className="text-slate-900 dark:text-slate-50 text-3xl font-bold mb-1 tracking-tight">Bienvenido a Aptly</Text>
+                <Text className="text-slate-900 dark:text-slate-50 text-3xl font-bold mb-1 tracking-tight">
+                  {isBusiness ? "Aptly Business" : "Bienvenido a Aptly"}
+                </Text>
                 <Text className="text-slate-600 dark:text-slate-400 text-center text-[15px] px-6 leading-5 font-medium">
-                   Encuentra tu próximo empleo de forma simple y rápida.
+                   {isBusiness 
+                     ? "Inicia sesión para gestionar tus ofertas y encontrar talento." 
+                     : "Encuentra tu próximo empleo de forma simple y rápida."}
                 </Text>
               </View>
 
@@ -203,10 +215,10 @@ export const LoginScreen = ({ onNavigate }: { onNavigate: (screen: 'welcome' | '
                 </TouchableOpacity>
 
                 <CustomButton 
-                  title={loading ? "Iniciando..." : "Iniciar Sesión"} 
+                  title={loading ? "Iniciando..." : (isBusiness ? "Acceso Empresa" : "Iniciar Sesión")} 
                   onPress={handleLogin} 
                   variant="primary" 
-                  className="mb-8 py-4 px-10" 
+                  className={`mb-8 py-4 px-10 ${isBusiness ? 'bg-slate-900 dark:bg-slate-800' : ''}`} 
                 />
               </View>
 
@@ -242,6 +254,18 @@ export const LoginScreen = ({ onNavigate }: { onNavigate: (screen: 'welcome' | '
                 <Text className="text-slate-600 dark:text-slate-400 text-sm">¿Nuevo por aquí? </Text>
                 <TouchableOpacity onPress={() => onNavigate('register')}>
                   <Text className="text-primary-light font-black text-sm">Registrate gratis</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Company Login Toggle */}
+              <View className="flex-row justify-center mt-2 mb-2">
+                <Text className="text-slate-600 dark:text-slate-400 text-sm">
+                  {isBusiness ? "¿Eres candidato? " : "¿Eres una empresa? "}
+                </Text>
+                <TouchableOpacity onPress={() => setIsBusiness(!isBusiness)}>
+                  <Text className="text-primary-light font-black text-sm">
+                    {isBusiness ? "Inicia sesión aquí" : "Cuenta de empresa"}
+                  </Text>
                 </TouchableOpacity>
               </View>
 

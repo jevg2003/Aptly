@@ -12,6 +12,7 @@ import './global.css';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<'welcome' | 'login' | 'register' | 'home'>('welcome');
+  const [isBusinessMode, setIsBusinessMode] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const { setColorScheme } = useColorScheme();
   const systemColorScheme = useRNColorScheme();
@@ -58,9 +59,9 @@ export default function App() {
       return <HomeScreen session={session} onLogout={() => setCurrentScreen('login')} />;
     }
     if (currentScreen === 'register') {
-      return <RegisterScreen onNavigate={setCurrentScreen} />;
+      return <RegisterScreen onNavigate={setCurrentScreen} isBusiness={isBusinessMode} setIsBusiness={setIsBusinessMode} />;
     }
-    return <LoginScreen onNavigate={setCurrentScreen} />;
+    return <LoginScreen onNavigate={setCurrentScreen} isBusiness={isBusinessMode} setIsBusiness={setIsBusinessMode} />;
   };
 
   return (

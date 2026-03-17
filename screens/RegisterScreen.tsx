@@ -16,18 +16,34 @@ import { CustomInput } from '../components/CustomInput';
 import { CustomButton } from '../components/CustomButton';
 import { supabase } from '../lib/supabase';
 
-export const RegisterScreen = ({ onNavigate }: { onNavigate: (screen: 'welcome' | 'login' | 'register' | 'home') => void }) => {
+export const RegisterScreen = ({ 
+  onNavigate,
+  isBusiness,
+  setIsBusiness
+}: { 
+  onNavigate: (screen: 'welcome' | 'login' | 'register' | 'home') => void;
+  isBusiness: boolean;
+  setIsBusiness: (value: boolean) => void;
+}) => {
   const colorScheme = useColorScheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [loading, setLoading] = useState(false);
   const isDarkMode = colorScheme === 'dark';
 
   const handleRegister = async () => {
-    if (!email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Por favor llena todos los campos');
-      return;
+    if (isBusiness) {
+      if (!email || !password || !confirmPassword || !companyName) {
+        Alert.alert('Error', 'Por favor llena todos los campos de la empresa');
+        return;
+      }
+    } else {
+      if (!email || !password || !confirmPassword) {
+        Alert.alert('Error', 'Por favor llena todos los campos');
+        return;
+      }
     }
 
     if (password !== confirmPassword) {
@@ -39,6 +55,14 @@ export const RegisterScreen = ({ onNavigate }: { onNavigate: (screen: 'welcome' 
     const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: isBusiness ? { 
+          full_name: companyName,
+          role: 'company'
+        } : { 
+          role: 'candidate' 
+        }
+      }
     });
     setLoading(false);
 
@@ -104,9 +128,13 @@ export const RegisterScreen = ({ onNavigate }: { onNavigate: (screen: 'welcome' 
               </View>
 
               <View className="items-center mb-6">
-                <Text className="text-slate-900 dark:text-slate-50 text-3xl font-bold mb-1 tracking-tight">Crear Cuenta</Text>
+                <Text className="text-slate-900 dark:text-slate-50 text-3xl font-bold mb-1 tracking-tight">
+                  {isBusiness ? "Registro Empresa" : "Crear Cuenta"}
+                </Text>
                 <Text className="text-slate-600 dark:text-slate-400 text-center text-[15px] px-6 leading-5 font-medium">
-                   Únete a Aptly y encuentra tu empleo ideal.
+                   {isBusiness 
+                     ? "Registra tu empresa para empezar a publicar vacantes." 
+                     : "Únete a Aptly y encuentra tu empleo ideal."}
                 </Text>
               </View>
 
@@ -118,6 +146,16 @@ export const RegisterScreen = ({ onNavigate }: { onNavigate: (screen: 'welcome' 
                   iconName="email-outline"
                   keyboardType="email-address"
                 />
+
+                {isBusiness && (
+                  <CustomInput
+                    placeholder="Nombre de la empresa"
+                    value={companyName}
+                    onChangeText={setCompanyName}
+                    iconName="office-building"
+                  />
+                )}
+
                 <CustomInput
                   placeholder="Contraseña"
                   value={password}
@@ -125,6 +163,7 @@ export const RegisterScreen = ({ onNavigate }: { onNavigate: (screen: 'welcome' 
                   iconName="lock-outline"
                   isPassword
                 />
+
                 <CustomInput
                   placeholder="Confirmar contraseña"
                   value={confirmPassword}
@@ -137,14 +176,25 @@ export const RegisterScreen = ({ onNavigate }: { onNavigate: (screen: 'welcome' 
                   title={loading ? "Registrando..." : "Registrarse"} 
                   onPress={handleRegister} 
                   variant="primary" 
-                  className="mt-4 mb-8 py-4 px-10" 
+                  className={`mt-4 mb-4 py-4 px-10 ${isBusiness ? 'bg-slate-900 dark:bg-slate-800' : ''}`} 
                 />
               </View>
 
-              <View className="flex-row justify-center mt-4 mb-4">
+              <View className="flex-row justify-center mt-4">
                 <Text className="text-slate-600 dark:text-slate-400 text-sm">¿Ya tienes una cuenta? </Text>
                 <TouchableOpacity onPress={() => onNavigate('login')}>
                   <Text className="text-primary-light font-black text-sm">Inicia Sesión</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View className="flex-row justify-center mt-2 mb-4">
+                <Text className="text-slate-600 dark:text-slate-400 text-sm">
+                  {isBusiness ? "¿Eres candidato? " : "¿Eres una empresa? "}
+                </Text>
+                <TouchableOpacity onPress={() => setIsBusiness(!isBusiness)}>
+                  <Text className="text-primary-light font-black text-sm">
+                    {isBusiness ? "Regístrate aquí" : "Cuenta de empresa"}
+                  </Text>
                 </TouchableOpacity>
               </View>
 
