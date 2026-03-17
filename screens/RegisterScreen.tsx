@@ -107,7 +107,9 @@ export const RegisterScreen = ({
       >
         <View className="absolute inset-0 bg-black/30 dark:bg-black/60" />
         
+        {/* @ts-ignore */}
         <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+          {/* @ts-ignore */}
           <KeyboardAwareScrollView 
             contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
             className="flex-1 px-6"
@@ -119,6 +121,7 @@ export const RegisterScreen = ({
               
               <View className="items-center mb-4">
                 <View className="bg-blue-50/20 dark:bg-blue-900/10 p-4 rounded-[28px] items-center justify-center">
+                  {/* @ts-ignore */}
                   <Image 
                     source={require('../assets/favicon.png')} 
                     className="w-24 h-24" 
