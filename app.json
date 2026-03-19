@@ -28,6 +28,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.jevgdg.aptly",
       "adaptiveIcon": {
         "foregroundImage": "./assets/favicon.png",
         "backgroundColor": "#ffffff"
