@@ -1,11 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StatusBar, useColorScheme, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StatusBar, useColorScheme, TouchableOpacity, Alert, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { Session } from '@supabase/supabase-js';
 import { OnboardingCandidate } from './profiles/OnboardingCandidate';
 import { JobCard, JobData } from '../components/JobCard';
+import { 
+  GestureHandlerRootView, 
+  Gesture,
+  GestureDetector
+} from 'react-native-gesture-handler';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withSpring, 
+  runOnJS,
+  interpolate,
+  Extrapolate
+} from 'react-native-reanimated';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
 
 const MOCK_JOBS: JobData[] = [
   {
@@ -60,6 +76,10 @@ export const HomeScreen = () => {
   
   // Swipe State
   const [currentIndex, setCurrentIndex] = useState(0);
+  
+  // Animation Shared Values
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
 
   const checkProfile = React.useCallback(async () => {
     if (!session?.user?.id) return;
@@ -92,23 +112,86 @@ export const HomeScreen = () => {
     checkProfile();
   }, [checkProfile]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-  };
-
   const handleAction = (type: 'reject' | 'match' | 'superlike') => {
     const currentJob = MOCK_JOBS[currentIndex];
-    
+    if (!currentJob) return;
+
     if (type === 'match') {
       Alert.alert('¡Es un Match! 🎉', `Has mostrado gran interés en ${currentJob.company}`);
     } else if (type === 'superlike') {
       Alert.alert('¡Super Like! ⭐', `Tu perfil destacará en ${currentJob.company}`);
     } else {
-      console.log(`Rechazando a ${currentJob.company}`);
+      Alert.alert('Empleo rechazado 👎', `Has rechazado la vacante en ${currentJob.company}`);
     }
 
+    // Reset position and advance index
+    translateX.value = 0;
+    translateY.value = 0;
     setCurrentIndex(prev => prev + 1);
   };
+
+  const onSwipeComplete = (direction: 'right' | 'left' | 'up') => {
+    if (direction === 'right') handleAction('match');
+    else if (direction === 'left') handleAction('reject');
+    else if (direction === 'up') handleAction('superlike');
+  };
+
+  // 1. New Gesture API (Reanimated 3 style)
+  const gesture = Gesture.Pan()
+    .onUpdate((event) => {
+      translateX.value = event.translationX;
+      translateY.value = event.translationY;
+    })
+    .onEnd((event) => {
+      if (translateX.value > SWIPE_THRESHOLD) {
+        translateX.value = withSpring(SCREEN_WIDTH * 1.5, {}, () => {
+          runOnJS(onSwipeComplete)('right');
+        });
+      } else if (translateX.value < -SWIPE_THRESHOLD) {
+        translateX.value = withSpring(-SCREEN_WIDTH * 1.5, {}, () => {
+          runOnJS(onSwipeComplete)('left');
+        });
+      } else if (translateY.value < -SWIPE_THRESHOLD) {
+        translateY.value = withSpring(-SCREEN_WIDTH * 1.5, {}, () => {
+          runOnJS(onSwipeComplete)('up');
+        });
+      } else {
+        translateX.value = withSpring(0);
+        translateY.value = withSpring(0);
+      }
+    });
+
+  // 2. Animated Style for the Front Card
+  const cardStyle = useAnimatedStyle(() => {
+    const rotate = interpolate(
+      translateX.value, 
+      [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2], 
+      [-10, 0, 10], 
+      Extrapolate.CLAMP
+    );
+
+    return {
+      transform: [
+        { translateX: translateX.value },
+        { translateY: translateY.value },
+        { rotate: `${rotate}deg` }
+      ]
+    };
+  });
+
+  // 3. Next Card Style (Scale up as the top card moves)
+  const nextCardStyle = useAnimatedStyle(() => {
+    const scale = interpolate(
+      Math.abs(translateX.value),
+      [0, SWIPE_THRESHOLD],
+      [0.9, 1],
+      Extrapolate.CLAMP
+    );
+    
+    return {
+      transform: [{ scale }]
+    };
+  });
 
   if (checkingProfile) {
     return (
@@ -129,9 +212,10 @@ export const HomeScreen = () => {
   }
 
   const currentJob = MOCK_JOBS[currentIndex];
+  const nextJob = MOCK_JOBS[currentIndex + 1];
 
   return (
-    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
+    <GestureHandlerRootView className="flex-1 bg-slate-50 dark:bg-slate-950">
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
       
       <SafeAreaView className="flex-1" edges={['top']}>
@@ -152,8 +236,21 @@ export const HomeScreen = () => {
         {/* AREA DE TARJETAS */}
         <View className="flex-1 px-4 justify-center">
           {currentJob ? (
-            <View className="w-full flex-1 mb-8 z-10 relative">
-              <JobCard job={currentJob} />
+            <View className="w-full flex-1 mb-16 z-10 relative">
+              
+              {/* Next Card (Background) */}
+              {nextJob && (
+                <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%', zIndex: -1 }, nextCardStyle]}>
+                  <JobCard job={nextJob} />
+                </Animated.View>
+              )}
+
+              {/* Current Card (Draggable) */}
+              <GestureDetector gesture={gesture}>
+                <Animated.View style={[{ flex: 1 }, cardStyle]}>
+                  <JobCard job={currentJob} />
+                </Animated.View>
+              </GestureDetector>
 
               {/* Botones Flotantes Sobre la Tarjeta */}
               <View 
@@ -199,6 +296,6 @@ export const HomeScreen = () => {
           )}
         </View>
       </SafeAreaView>
-    </View>
+    </GestureHandlerRootView>
   );
 };
