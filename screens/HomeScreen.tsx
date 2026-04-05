@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StatusBar, useColorScheme, ImageBackground } from 'react-native';
+import { View, Text, StatusBar, useColorScheme, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CustomButton } from '../components/CustomButton';
+import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { Session } from '@supabase/supabase-js';
 import { OnboardingCandidate } from './profiles/OnboardingCandidate';
@@ -73,40 +73,50 @@ export const HomeScreen = ({
   }
 
   return (
-    <View className="flex-1 bg-white dark:bg-slate-950">
+    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
       
-      <ImageBackground
-        source={{ uri: 'https://images.unsplash.com/photo-1557683316-973673baf926' }}
-        className="flex-1"
-        resizeMode="cover"
-        imageStyle={{ opacity: isDarkMode ? 0.2 : 0.4 }}
-      >
-        <SafeAreaView className="flex-1 px-8 items-center justify-center">
-          
-          <View className="bg-white/80 dark:bg-slate-900/80 p-8 rounded-[40px] shadow-xl w-full max-w-sm items-center border border-white/40 dark:border-slate-800/40">
-            <View className="w-20 h-20 bg-primary/20 rounded-full items-center justify-center mb-6">
-              <Text className="text-3xl">🎉</Text>
-            </View>
+      {/* Contenedor Principal para las Tarjetas de Empleo */}
+      <SafeAreaView className="flex-1 px-4 items-center justify-center" edges={['top']}>
+        {/* Placeholder provisorio simulando una tarjeta principal */}
+        <View className="w-full h-[65%] bg-white dark:bg-slate-900 rounded-[40px] shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-800 p-6 items-center justify-center z-10">
+          <Text className="text-3xl font-black text-slate-800 dark:text-slate-100 mb-2">
+            Desliza un Empleo
+          </Text>
+          <Text className="text-sm font-medium text-slate-500 dark:text-slate-400 text-center">
+            Próximamente conectaremos las tarjetas reales.
+          </Text>
+        </View>
+      </SafeAreaView>
 
-            <Text className="text-slate-900 dark:text-slate-50 text-2xl font-bold text-center mb-2">
-              ¡Has iniciado sesión!
-            </Text>
-            
-            <Text className="text-slate-500 dark:text-slate-400 text-center mb-8">
-              Autenticado como: {session?.user?.email}
-            </Text>
+      {/* Botones Flotantes de Swipe estilo Tinder */}
+      <View className="absolute bottom-6 left-0 right-0 flex-row justify-center items-center gap-6 px-4 z-20" style={{ elevation: 15 }}>
+        
+        {/* Rechazar (X) */}
+        <TouchableOpacity 
+          className="w-[65px] h-[65px] rounded-full bg-white dark:bg-slate-800 items-center justify-center shadow-xl shadow-slate-300 dark:shadow-black border border-slate-100 dark:border-slate-700"
+          style={{ elevation: 8 }}
+        >
+          <Ionicons name="close" size={36} color="#ef4444" />
+        </TouchableOpacity>
 
-            <CustomButton 
-              title="Cerrar Sesión" 
-              onPress={handleLogout} 
-              variant="outline" 
-              className="w-full"
-            />
-          </View>
+        {/* Match / Like (Corazón) */}
+        <TouchableOpacity 
+          className="w-[85px] h-[85px] rounded-full bg-blue-500 items-center justify-center shadow-xl shadow-blue-400 dark:shadow-black"
+          style={{ elevation: 10 }}
+        >
+          <Ionicons name="heart" size={44} color="#ffffff" />
+        </TouchableOpacity>
 
-        </SafeAreaView>
-      </ImageBackground>
+        {/* Super Like (Estrella) */}
+        <TouchableOpacity 
+          className="w-[65px] h-[65px] rounded-full bg-white dark:bg-slate-800 items-center justify-center shadow-xl shadow-slate-300 dark:shadow-black border border-slate-100 dark:border-slate-700"
+          style={{ elevation: 8 }}
+        >
+          <Ionicons name="star" size={32} color="#3b82f6" />
+        </TouchableOpacity>
+
+      </View>
     </View>
   );
 };
