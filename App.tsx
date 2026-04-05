@@ -7,7 +7,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { WelcomeScreen } from './screens/WelcomeScreen';
 import { LoginScreen } from './screens/LoginScreen';
 import { RegisterScreen } from './screens/RegisterScreen';
-import { MainTabNavigator } from './navigation/AppNavigator';
+import { RootNavigator } from './navigation/AppNavigator';
 
 import { supabase } from './lib/supabase';
 import { Session } from '@supabase/supabase-js';
@@ -54,33 +54,19 @@ export default function App() {
     setCurrentScreen(session ? 'home' : 'login');
   };
 
-  const renderScreen = () => {
-    if (session && currentScreen === 'home') {
-      return (
-        <NavigationContainer>
-          <MainTabNavigator 
-            session={session} 
-            onLogout={() => {
-              setCurrentScreen('login');
-              supabase.auth.signOut();
-            }} 
-          />
-        </NavigationContainer>
-      );
-    }
-
-    if (currentScreen === 'welcome') {
-      return <WelcomeScreen onFinish={handleWelcomeFinish} />;
-    }
-    if (currentScreen === 'register') {
-      return <RegisterScreen onNavigate={setCurrentScreen} isBusiness={isBusinessMode} setIsBusiness={setIsBusinessMode} />;
-    }
-    return <LoginScreen onNavigate={setCurrentScreen} isBusiness={isBusinessMode} setIsBusiness={setIsBusinessMode} />;
-  };
-
   return (
     <SafeAreaProvider>
-      {renderScreen()}
+      <NavigationContainer>
+        {session && currentScreen === 'home' ? (
+          <RootNavigator session={session} />
+        ) : (
+          <>
+            {currentScreen === 'welcome' && <WelcomeScreen onFinish={handleWelcomeFinish} />}
+            {currentScreen === 'register' && <RegisterScreen onNavigate={setCurrentScreen} isBusiness={isBusinessMode} setIsBusiness={setIsBusinessMode} />}
+            {currentScreen === 'login' && <LoginScreen onNavigate={setCurrentScreen} isBusiness={isBusinessMode} setIsBusiness={setIsBusinessMode} />}
+          </>
+        )}
+      </NavigationContainer>
     </SafeAreaProvider>
   );
 }
