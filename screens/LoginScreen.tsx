@@ -36,6 +36,7 @@ export const LoginScreen = ({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [role, setRole] = useState<'candidate' | 'company'>('candidate');
   const isDarkMode = colorScheme === 'dark';
   
   // Animation state
@@ -59,6 +60,7 @@ export const LoginScreen = ({
   }, [fadeAnim, slideAnim]);
 
   const handleLogin = async () => {
+    console.log('Login attempt with:', email, password, 'Role:', role);
     if (!email || !password) {
       Alert.alert('Faltan datos', 'Por favor ingresa tu correo y contraseña');
       return;
@@ -194,6 +196,26 @@ export const LoginScreen = ({
 
               {/* Auth Form */}
               <View>
+                {/* Role Switcher */}
+                <View className="flex-row items-center p-1.5 bg-slate-200/80 dark:bg-slate-800/80 rounded-2xl mb-6">
+                  <TouchableOpacity 
+                    className={'flex-1 py-2.5 rounded-xl items-center ' + (role === 'candidate' ? 'bg-white dark:bg-slate-700 shadow-sm' : '')}
+                    onPress={() => {
+                      setRole('candidate');
+                    }}
+                  >
+                    <Text className={'text-[13px] font-bold ' + (role === 'candidate' ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400')}>Candidato</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    className={'flex-1 py-2.5 rounded-xl items-center ' + (role === 'company' ? 'bg-white dark:bg-slate-700 shadow-sm' : '')}
+                    onPress={() => {
+                      setRole('company');
+                    }}
+                  >
+                    <Text className={'text-[13px] font-bold ' + (role === 'company' ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400')}>Empresa</Text>
+                  </TouchableOpacity>
+                </View>
+
                 <CustomInput
                   placeholder="Correo electrónico"
                   value={email}
