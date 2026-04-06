@@ -79,6 +79,7 @@ export const LoginScreen = ({
   const handleSocialLogin = async (platform: string) => {
     // Generate an app-specific URL to return to after authentication
     const redirectUrl = Linking.createURL('auth/callback', { scheme: 'aptly' });
+    console.log({redirectUrl})
     
 
 
@@ -88,6 +89,9 @@ export const LoginScreen = ({
       options: {
         redirectTo: redirectUrl,
         skipBrowserRedirect: true,
+        queryParams: {
+          prompt: 'select_account' // Fija la pantalla en blanco en Android previendo redirecciones fantasma
+        }
       }
     });
 
