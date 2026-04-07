@@ -3,7 +3,6 @@ import { View, Text, StatusBar, useColorScheme, TouchableOpacity, Alert, Dimensi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
-import { Session } from '@supabase/supabase-js';
 import { OnboardingCandidate } from './profiles/OnboardingCandidate';
 import { JobCard, JobData } from '../components/JobCard';
 import { 
@@ -19,6 +18,8 @@ import Animated, {
   interpolate,
   Extrapolate
 } from 'react-native-reanimated';
+import { COMPANIES } from '../lib/data';
+import { SessionContext } from '../navigation/AppNavigator';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
@@ -26,46 +27,44 @@ const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
 const MOCK_JOBS: JobData[] = [
   {
     id: '1',
-    title: 'Senior UX Designer',
-    company: 'TechCorp Inc.',
-    companyDescription: 'Fintech Solutions',
-    salary: '$120k - $150k',
-    location: 'San Francisco, CA',
+    title: 'Gerente de Tienda',
+    company: COMPANIES[0].name,
+    companyDescription: 'Líder en retail de descuento',
+    salary: '$3.5M - $4.5M COP',
+    location: 'Bogotá, Colombia',
     type: 'Full-time',
-    modality: 'Hybrid',
+    modality: 'Presencial',
     postedAt: '2 horas',
-    tags: ['Figma', 'Prototyping', 'User Research'],
-    imageUrl: 'https://images.unsplash.com/photo-1593642532744-d377ab507dc8?w=800&q=80',
+    tags: ['Liderazgo', 'Ventas', 'Inventarios'],
+    imageUrl: 'https://images.unsplash.com/photo-1534723452862-4c874018d66d?w=800&q=80',
   },
   {
     id: '2',
-    title: 'React Native Developer',
-    company: 'Spotify',
-    companyDescription: 'Music Streaming',
-    salary: '$100k - $130k',
-    location: 'Estocolmo',
+    title: 'Supervisor de Zona',
+    company: COMPANIES[1].name,
+    companyDescription: 'Expansión nacional',
+    salary: '$3.0M - $3.8M COP',
+    location: 'Medellín, Colombia',
     type: 'Full-time',
-    modality: 'Remoto',
+    modality: 'Híbrido',
     postedAt: '1 día',
-    tags: ['React Native', 'TypeScript', 'Mobile'],
-    imageUrl: 'https://images.unsplash.com/photo-1550439062-609e1531270e?w=800&q=80',
+    tags: ['Operaciones', 'Logística'],
+    imageUrl: 'https://images.unsplash.com/photo-1604719312566-f4129e93f429?w=800&q=80',
   },
   {
     id: '3',
-    title: 'Backend Node.js',
-    company: 'Netflix',
-    companyDescription: 'Entertainment',
-    salary: '$140k - $180k',
-    location: 'Los Gatos, CA',
+    title: 'Asesor Comercial',
+    company: COMPANIES[2].name,
+    companyDescription: 'Mejoramiento del hogar',
+    salary: '$1.8M - $2.2M COP',
+    location: 'Cali, Colombia',
     type: 'Contract',
-    modality: 'Remoto',
+    modality: 'Presencial',
     postedAt: '3 días',
-    tags: ['Node.js', 'AWS', 'Microservices'],
-    imageUrl: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80',
+    tags: ['Servicio al cliente', 'Ventas'],
+    imageUrl: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=800&q=80',
   }
 ];
-
-import { SessionContext } from '../navigation/AppNavigator';
 
 export const HomeScreen = () => {
   const session = React.useContext(SessionContext);

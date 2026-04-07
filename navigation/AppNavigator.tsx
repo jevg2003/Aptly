@@ -6,6 +6,7 @@ import { Session } from '@supabase/supabase-js';
 
 import { HomeScreen } from '../screens/HomeScreen';
 import { ChatNavigator } from './ChatNavigator';
+import { ApplicationsNavigator } from './ApplicationsNavigator';
 
 // 1. Crear Contexto Global Seguro
 export const SessionContext = createContext<Session | null>(null);
@@ -19,7 +20,6 @@ const PlaceholderScreen = ({ title }: { title: string }) => (
 );
 
 const MatchesScreen = () => <PlaceholderScreen title="Tus Matches" />;
-const JobApplicationsScreen = () => <PlaceholderScreen title="Tus Postulaciones" />;
 const ProfileScreen = () => <PlaceholderScreen title="Tu Perfil" />;
 
 // 2. Tab Navigator sin props o callbacks (100% estático)
@@ -57,7 +57,7 @@ export const MainTabNavigator = () => {
       <Tab.Screen name="Inicio" component={HomeScreen} />
       <Tab.Screen name="Matches" component={MatchesScreen} />
       <Tab.Screen name="Chat" component={ChatNavigator} />
-      <Tab.Screen name="Postulaciones" component={JobApplicationsScreen} />
+      <Tab.Screen name="Postulaciones" component={ApplicationsNavigator} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
