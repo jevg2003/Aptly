@@ -5,6 +5,7 @@ import { Feather } from '@expo/vector-icons';
 import { Session } from '@supabase/supabase-js';
 
 import { HomeScreen } from '../screens/HomeScreen';
+import { ChatNavigator } from './ChatNavigator';
 
 // 1. Crear Contexto Global Seguro
 export const SessionContext = createContext<Session | null>(null);
@@ -17,7 +18,6 @@ const PlaceholderScreen = ({ title }: { title: string }) => (
   </View>
 );
 
-const ChatScreen = () => <PlaceholderScreen title="Mensajes" />;
 const MatchesScreen = () => <PlaceholderScreen title="Tus Matches" />;
 const JobApplicationsScreen = () => <PlaceholderScreen title="Tus Postulaciones" />;
 const ProfileScreen = () => <PlaceholderScreen title="Tu Perfil" />;
@@ -56,7 +56,7 @@ export const MainTabNavigator = () => {
     >
       <Tab.Screen name="Inicio" component={HomeScreen} />
       <Tab.Screen name="Matches" component={MatchesScreen} />
-      <Tab.Screen name="Chat" component={ChatScreen} />
+      <Tab.Screen name="Chat" component={ChatNavigator} />
       <Tab.Screen name="Postulaciones" component={JobApplicationsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
