@@ -249,7 +249,7 @@ export const BusinessHomeScreen = () => {
         {/* CARD AREA */}
         <View className="flex-1 px-4 justify-center">
           {currentCandidate ? (
-            <View className="w-full h-[550px] mb-20 z-10 relative">10 relative">
+            <View className="w-full h-[550px] mb-20 z-10 relative">
               {/* Next Card */}
               {nextCandidate && (
                 <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%', zIndex: -1 }, nextCardStyle]}>
