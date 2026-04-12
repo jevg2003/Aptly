@@ -14,10 +14,11 @@ import { MaterialCommunityIcons, Ionicons, Feather } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
 import { SessionContext } from '../../lib/SessionContext';
 import { useFocusEffect } from '@react-navigation/native';
+import { useBusinessProfile } from '../../lib/BusinessProfileContext';
 
 export const BusinessProfileScreen = ({ navigation }: any) => {
   const session = React.useContext(SessionContext);
-  const [profile, setProfile] = useState<any>(null);
+  const { profile, updateProfile } = useBusinessProfile();
   const [jobsCount, setJobsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -28,30 +29,17 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
     try {
       setLoading(true);
       
-      // Fetch Profile
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-      
+      // Sync initial name from session if profile name is default
+      if (profile.full_name === 'TechFlow Solutions' && session.user.user_metadata?.full_name) {
+          updateProfile({ full_name: session.user.user_metadata.full_name });
+      }
+
+      // Fetch Jobs Count
       // Fetch Jobs Count
       const { count, error: jobsError } = await supabase
         .from('jobs')
         .select('*', { count: 'exact', head: true })
         .eq('company_id', session.user.id);
-
-      if (error && error.code !== 'PGRST116') throw error;
-      
-      // If no profile in table, use session metadata
-      if (data) {
-        setProfile(data);
-      } else {
-        setProfile({
-          full_name: session.user.user_metadata?.full_name || 'Mi Empresa',
-          role: 'company'
-        });
-      }
 
       // Handle jobs count (fallback to mock if error/table missing)
       if (jobsError) {
@@ -63,12 +51,12 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
       }
 
     } catch (error: any) {
-      console.error('Error fetching company profile:', error.message);
+      console.error('Error fetching company jobs count:', error.message);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [session]);
+  }, [session, profile.full_name, updateProfile]);
 
   useFocusEffect(
     useCallback(() => {
@@ -144,15 +132,18 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
             </Text>
             
             <View className="bg-blue-50 dark:bg-blue-900/20 px-4 py-1.5 rounded-full mb-3">
-                 <Text className="text-blue-600 dark:text-blue-400 font-bold text-xs uppercase">Software & Tecnología</Text>
+                 <Text className="text-blue-600 dark:text-blue-400 font-bold text-xs uppercase">{profile.category || 'Software & Tecnología'}</Text>
             </View>
             
             <View className="flex-row items-center">
               <Ionicons name="location" size={14} color="#3b82f6" />
-              <Text className="text-slate-400 dark:text-slate-500 text-sm ml-1 font-medium">San Francisco, CA</Text>
+              <Text className="text-slate-400 dark:text-slate-500 text-sm ml-1 font-medium">{profile.location}</Text>
             </View>
 
-            <TouchableOpacity className="mt-8 bg-white dark:bg-slate-900 px-8 py-3.5 rounded-full border border-slate-200 dark:border-slate-800 flex-row items-center shadow-sm">
+            <TouchableOpacity 
+              onPress={() => navigation.navigate('EditBusinessProfile', { profile })}
+              className="mt-8 bg-white dark:bg-slate-900 px-8 py-3.5 rounded-full border border-slate-200 dark:border-slate-800 flex-row items-center shadow-sm"
+            >
               <Feather name="edit-3" size={18} color="#1e293b" className="dark:text-white" />
               <Text className="text-slate-800 dark:text-white font-bold ml-2">Editar Información</Text>
             </TouchableOpacity>
@@ -170,7 +161,7 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
             <Text className="text-xl font-bold text-slate-900 dark:text-white mb-4">Sobre la Empresa</Text>
             <View className="bg-white dark:bg-slate-900 p-6 rounded-[35px] shadow-sm border border-slate-50 dark:border-slate-800">
                <Text className="text-slate-500 dark:text-slate-400 leading-6 text-[15px]">
-                 Somos líderes en innovación tecnológica, dedicados a construir el futuro del software. En TechFlow, valoramos la creatividad y el impacto global. Experimentamos constantemente con nuevas tecnologías para ofrecer soluciones excepcionales a nuestros clientes.
+                 {profile.culture}
                </Text>
             </View>
           </View>

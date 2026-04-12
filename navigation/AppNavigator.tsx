@@ -11,6 +11,7 @@ import { JobDetailScreen } from '../screens/business/JobDetailScreen';
 import { BusinessInboxScreen } from '../screens/business/BusinessInboxScreen';
 import { BusinessChatDetailScreen } from '../screens/business/BusinessChatDetailScreen';
 import { BusinessProfileScreen } from '../screens/business/BusinessProfileScreen';
+import { EditBusinessProfileScreen } from '../screens/business/EditBusinessProfileScreen';
 
 import { MatchesScreen } from '../screens/MatchesScreen';
 import { ChatNavigator } from './ChatNavigator';
@@ -39,7 +40,7 @@ const BusinessChatNavigator = () => (
 const BusinessProfileNavigator = () => (
   <BusinessStack.Navigator screenOptions={{ headerShown: false }}>
     <BusinessStack.Screen name="BusinessProfileView" component={BusinessProfileScreen} />
-    {/* Could add EditBusinessProfile here later */}
+    <BusinessStack.Screen name="EditBusinessProfile" component={EditBusinessProfileScreen} />
   </BusinessStack.Navigator>
 );
 
