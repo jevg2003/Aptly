@@ -15,16 +15,10 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import { CustomInput } from '../components/CustomInput';
 import { CustomButton } from '../components/CustomButton';
 import { supabase } from '../lib/supabase';
+import { useApp } from '../lib/AppContext';
 
-export const RegisterScreen = ({ 
-  onNavigate,
-  isBusiness,
-  setIsBusiness
-}: { 
-  onNavigate: (screen: 'welcome' | 'login' | 'register' | 'home') => void;
-  isBusiness: boolean;
-  setIsBusiness: (value: boolean) => void;
-}) => {
+export const RegisterScreen = ({ navigation }: any) => {
+  const { isBusiness, setIsBusiness, setCurrentScreen: onNavigate } = useApp();
   const colorScheme = useColorScheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -81,7 +75,7 @@ export const RegisterScreen = ({
                   Alert.alert('Error', resetError.message);
                 } else {
                   Alert.alert('¡Enviado!', 'Revisa tu bandeja de entrada o spam para establecer tu contraseña.');
-                  onNavigate('login');
+                  navigation.navigate('Login');
                 }
               }
             }
@@ -92,7 +86,7 @@ export const RegisterScreen = ({
       }
     } else {
       Alert.alert('Registro exitoso', 'Revisa tu correo para verificar tu cuenta (si tienes habilitada la confirmación) o inicia sesión.');
-      onNavigate('login');
+      navigation.navigate('Login');
     }
   };
 
@@ -141,6 +135,22 @@ export const RegisterScreen = ({
                 </Text>
               </View>
 
+              {/* Role Switcher */}
+              <View className="flex-row items-center p-1.5 bg-slate-200/80 dark:bg-slate-800/80 rounded-2xl mb-6">
+                <TouchableOpacity 
+                  className={'flex-1 py-2.5 rounded-xl items-center ' + (!isBusiness ? 'bg-white dark:bg-slate-700 shadow-sm' : '')}
+                  onPress={() => setIsBusiness(false)}
+                >
+                  <Text className={'text-[13px] font-bold ' + (!isBusiness ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400')}>Candidato</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  className={'flex-1 py-2.5 rounded-xl items-center ' + (isBusiness ? 'bg-white dark:bg-slate-700 shadow-sm' : '')}
+                  onPress={() => setIsBusiness(true)}
+                >
+                  <Text className={'text-[13px] font-bold ' + (isBusiness ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400')}>Empresa</Text>
+                </TouchableOpacity>
+              </View>
+
               <View>
                 <CustomInput
                   placeholder="Correo electrónico"
@@ -185,7 +195,7 @@ export const RegisterScreen = ({
 
               <View className="flex-row justify-center mt-4">
                 <Text className="text-slate-600 dark:text-slate-400 text-sm">¿Ya tienes una cuenta? </Text>
-                <TouchableOpacity onPress={() => onNavigate('login')}>
+                <TouchableOpacity onPress={() => navigation.navigate('Login')}>
                   <Text className="text-primary-light font-black text-sm">Inicia Sesión</Text>
                 </TouchableOpacity>
               </View>

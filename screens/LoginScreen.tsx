@@ -17,27 +17,28 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { supabase } from '../lib/supabase';
+import { useApp } from '../lib/AppContext';
 import { CustomInput } from '../components/CustomInput';
 import { CustomButton } from '../components/CustomButton';
-import { supabase } from '../lib/supabase';
 
 WebBrowser.maybeCompleteAuthSession();
 
-export const LoginScreen = ({ 
-  onNavigate, 
-  isBusiness, 
-  setIsBusiness 
-}: { 
-  onNavigate: (screen: 'welcome' | 'login' | 'register' | 'home') => void;
-  isBusiness: boolean;
-  setIsBusiness: (value: boolean) => void;
-}) => {
+export const LoginScreen = ({ navigation }: any) => {
+  const { isBusiness, setIsBusiness, setCurrentScreen: onNavigate } = useApp();
   const colorScheme = useColorScheme();
+  const isDarkMode = colorScheme === 'dark';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [role, setRole] = useState<'candidate' | 'company'>('candidate');
-  const isDarkMode = colorScheme === 'dark';
+  // Local UI role state
+  const [role, setRole] = useState<'candidate' | 'company'>(isBusiness ? 'company' : 'candidate');
+
+  // Sync isBusiness with parent state when local role changes
+  const handleRoleChange = (newRole: 'candidate' | 'company') => {
+    setRole(newRole);
+    setIsBusiness(newRole === 'company');
+  };
   
   // Animation state
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -203,20 +204,16 @@ export const LoginScreen = ({
                 {/* Role Switcher */}
                 <View className="flex-row items-center p-1.5 bg-slate-200/80 dark:bg-slate-800/80 rounded-2xl mb-6">
                   <TouchableOpacity 
-                    className={'flex-1 py-2.5 rounded-xl items-center ' + (role === 'candidate' ? 'bg-white dark:bg-slate-700 shadow-sm' : '')}
-                    onPress={() => {
-                      setRole('candidate');
-                    }}
+                    className={`flex-1 py-2.5 rounded-xl items-center ${role === 'candidate' ? 'bg-white dark:bg-slate-700 shadow-sm' : ''}`}
+                    onPress={() => handleRoleChange('candidate')}
                   >
-                    <Text className={'text-[13px] font-bold ' + (role === 'candidate' ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400')}>Candidato</Text>
+                    <Text className={`text-[13px] font-bold ${role === 'candidate' ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>Candidato</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
-                    className={'flex-1 py-2.5 rounded-xl items-center ' + (role === 'company' ? 'bg-white dark:bg-slate-700 shadow-sm' : '')}
-                    onPress={() => {
-                      setRole('company');
-                    }}
+                    className={`flex-1 py-2.5 rounded-xl items-center ${role === 'company' ? 'bg-white dark:bg-slate-700 shadow-sm' : ''}`}
+                    onPress={() => handleRoleChange('company')}
                   >
-                    <Text className={'text-[13px] font-bold ' + (role === 'company' ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400')}>Empresa</Text>
+                    <Text className={`text-[13px] font-bold ${role === 'company' ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>Empresa</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -279,20 +276,8 @@ export const LoginScreen = ({
               {/* Navigation Link */}
               <View className="flex-row justify-center mt-4">
                 <Text className="text-slate-600 dark:text-slate-400 text-sm">¿Nuevo por aquí? </Text>
-                <TouchableOpacity onPress={() => onNavigate('register')}>
+                <TouchableOpacity onPress={() => navigation.navigate('Register')}>
                   <Text className="text-primary-light font-black text-sm">Registrate gratis</Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Company Login Toggle */}
-              <View className="flex-row justify-center mt-2 mb-2">
-                <Text className="text-slate-600 dark:text-slate-400 text-sm">
-                  {isBusiness ? "¿Eres candidato? " : "¿Eres una empresa? "}
-                </Text>
-                <TouchableOpacity onPress={() => setIsBusiness(!isBusiness)}>
-                  <Text className="text-primary-light font-black text-sm">
-                    {isBusiness ? "Inicia sesión aquí" : "Cuenta de empresa"}
-                  </Text>
                 </TouchableOpacity>
               </View>
 
