@@ -1,26 +1,19 @@
 import React, { createContext } from 'react';
-import { View, Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Feather } from '@expo/vector-icons';
 import { Session } from '@supabase/supabase-js';
 
 import { HomeScreen } from '../screens/HomeScreen';
+import { MatchesScreen } from '../screens/MatchesScreen';
 import { ChatNavigator } from './ChatNavigator';
 import { ApplicationsNavigator } from './ApplicationsNavigator';
+import { MatchProvider } from '../lib/MatchContext';
 import { ProfileNavigator } from './ProfileNavigator';
 
 // 1. Crear Contexto Global Seguro
 export const SessionContext = createContext<Session | null>(null);
 
 const Tab = createBottomTabNavigator();
-
-const PlaceholderScreen = ({ title }: { title: string }) => (
-  <View className="flex-1 items-center justify-center bg-slate-50 dark:bg-slate-950">
-    <Text className="text-2xl font-bold text-slate-800 dark:text-slate-200">{title}</Text>
-  </View>
-);
-
-const MatchesScreen = () => <PlaceholderScreen title="Tus Matches" />;
 
 // 2. Tab Navigator sin props o callbacks (100% estático)
 export const MainTabNavigator = () => {
@@ -67,7 +60,9 @@ export const MainTabNavigator = () => {
 export const RootNavigator = ({ session }: { session: Session | null }) => {
   return (
     <SessionContext.Provider value={session}>
-      <MainTabNavigator />
+      <MatchProvider>
+        <MainTabNavigator />
+      </MatchProvider>
     </SessionContext.Provider>
   );
 };

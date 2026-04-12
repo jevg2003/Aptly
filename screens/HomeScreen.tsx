@@ -20,6 +20,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { COMPANIES } from '../lib/data';
 import { SessionContext } from '../navigation/AppNavigator';
+import { useMatches } from '../lib/MatchContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
@@ -68,6 +69,7 @@ const MOCK_JOBS: JobData[] = [
 
 export const HomeScreen = () => {
   const session = React.useContext(SessionContext);
+  const { addMatch } = useMatches();
   const colorScheme = useColorScheme();
   const isDarkMode = colorScheme === 'dark';
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -116,6 +118,7 @@ export const HomeScreen = () => {
     if (!currentJob) return;
 
     if (type === 'match') {
+      addMatch(currentJob);
       Alert.alert('¡Es un Match! 🎉', `Has mostrado gran interés en ${currentJob.company}`);
     } else if (type === 'superlike') {
       Alert.alert('¡Super Like! ⭐', `Tu perfil destacará en ${currentJob.company}`);
