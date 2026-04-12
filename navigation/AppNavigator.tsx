@@ -10,6 +10,7 @@ import { CreateVacanteScreen } from '../screens/business/CreateVacanteScreen';
 import { JobDetailScreen } from '../screens/business/JobDetailScreen';
 import { BusinessInboxScreen } from '../screens/business/BusinessInboxScreen';
 import { BusinessChatDetailScreen } from '../screens/business/BusinessChatDetailScreen';
+import { BusinessProfileScreen } from '../screens/business/BusinessProfileScreen';
 
 import { MatchesScreen } from '../screens/MatchesScreen';
 import { ChatNavigator } from './ChatNavigator';
@@ -32,6 +33,13 @@ const BusinessChatNavigator = () => (
   <BusinessStack.Navigator screenOptions={{ headerShown: false }}>
     <BusinessStack.Screen name="BusinessInbox" component={BusinessInboxScreen} />
     <BusinessStack.Screen name="BusinessChatDetail" component={BusinessChatDetailScreen} />
+  </BusinessStack.Navigator>
+);
+
+const BusinessProfileNavigator = () => (
+  <BusinessStack.Navigator screenOptions={{ headerShown: false }}>
+    <BusinessStack.Screen name="BusinessProfileView" component={BusinessProfileScreen} />
+    {/* Could add EditBusinessProfile here later */}
   </BusinessStack.Navigator>
 );
 
@@ -103,7 +111,7 @@ export const BusinessTabNavigator = () => {
       <Tab.Screen name="Panel" component={BusinessHomeScreen} />
       <Tab.Screen name="Vacantes" component={BusinessVacantesNavigator} /> 
       <Tab.Screen name="Chat" component={BusinessChatNavigator} />
-      <Tab.Screen name="Profile" component={ProfileNavigator} />
+      <Tab.Screen name="Profile" component={BusinessProfileNavigator} />
     </Tab.Navigator>
   );
 };
