@@ -65,21 +65,31 @@ const MOCK_CANDIDATES: CandidateData[] = [
   }
 ];
 
-const CATEGORIES = ['Programador', 'Aux. Tienda', 'Vendedor'];
+const CATEGORIES = ['Todos', ...new Set(MOCK_CANDIDATES.map(c => c.role))];
 
 export const BusinessHomeScreen = () => {
   const session = React.useContext(SessionContext);
   const colorScheme = useColorScheme();
   const isDarkMode = colorScheme === 'dark';
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedCategory, setSelectedCategory] = useState('Programador');
+  const [selectedCategory, setSelectedCategory] = useState('Todos');
+
+  // Filter candidates based on selected role
+  const filteredCandidates = selectedCategory === 'Todos' 
+    ? MOCK_CANDIDATES 
+    : MOCK_CANDIDATES.filter(candidate => candidate.role === selectedCategory);
+
+  // Reset index when category changes
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [selectedCategory]);
 
   // Swipe State
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
 
   const handleAction = (type: 'reject' | 'match' | 'superlike') => {
-    const currentCandidate = MOCK_CANDIDATES[currentIndex];
+    const currentCandidate = filteredCandidates[currentIndex];
     if (!currentCandidate) return;
 
     if (type === 'match') {
@@ -155,8 +165,8 @@ export const BusinessHomeScreen = () => {
     };
   });
 
-  const currentCandidate = MOCK_CANDIDATES[currentIndex];
-  const nextCandidate = MOCK_CANDIDATES[currentIndex + 1];
+  const currentCandidate = filteredCandidates[currentIndex];
+  const nextCandidate = filteredCandidates[currentIndex + 1];
 
   const CandidateCard = ({ candidate }: { candidate: CandidateData }) => (
     <View className="flex-1 bg-white dark:bg-slate-900 rounded-[45px] overflow-hidden shadow-2xl relative">
@@ -239,7 +249,7 @@ export const BusinessHomeScreen = () => {
         {/* CARD AREA */}
         <View className="flex-1 px-4 justify-center">
           {currentCandidate ? (
-            <View className="w-full flex-1 mb-20 z-10 relative">
+            <View className="w-full h-[550px] mb-20 z-10 relative">10 relative">
               {/* Next Card */}
               {nextCandidate && (
                 <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%', zIndex: -1 }, nextCardStyle]}>
