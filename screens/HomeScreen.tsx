@@ -5,21 +5,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { OnboardingCandidate } from './profiles/OnboardingCandidate';
 import { JobCard, JobData } from '../components/JobCard';
-import { 
-  GestureHandlerRootView, 
+import {
+  GestureHandlerRootView,
   Gesture,
   GestureDetector
 } from 'react-native-gesture-handler';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring, 
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
   runOnJS,
   interpolate,
   Extrapolate
 } from 'react-native-reanimated';
 import { COMPANIES } from '../lib/data';
-import { SessionContext } from '../navigation/AppNavigator';
+import { SessionContext } from '../lib/SessionContext';
 import { useMatches } from '../lib/MatchContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -74,17 +74,17 @@ export const HomeScreen = () => {
   const isDarkMode = colorScheme === 'dark';
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [checkingProfile, setCheckingProfile] = useState(true);
-  
+
   // Swipe State
   const [currentIndex, setCurrentIndex] = useState(0);
-  
+
   // Animation Shared Values
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
 
   const checkProfile = React.useCallback(async () => {
     if (!session?.user?.id) return;
-    
+
     setCheckingProfile(true);
     try {
       const { data, error } = await supabase
@@ -92,11 +92,11 @@ export const HomeScreen = () => {
         .select('id')
         .eq('id', session.user.id)
         .single();
-      
+
       if (error && error.code !== 'PGRST116') {
-         console.error('Error checking profile:', error);
+        console.error('Error checking profile:', error);
       }
-      
+
       if (!data) {
         setShowOnboarding(true);
       } else {
@@ -166,9 +166,9 @@ export const HomeScreen = () => {
   // 2. Animated Style for the Front Card
   const cardStyle = useAnimatedStyle(() => {
     const rotate = interpolate(
-      translateX.value, 
-      [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2], 
-      [-10, 0, 10], 
+      translateX.value,
+      [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
+      [-10, 0, 10],
       Extrapolate.CLAMP
     );
 
@@ -189,7 +189,7 @@ export const HomeScreen = () => {
       [0.9, 1],
       Extrapolate.CLAMP
     );
-    
+
     return {
       transform: [{ scale }]
     };
@@ -205,10 +205,10 @@ export const HomeScreen = () => {
 
   if (showOnboarding && session?.user?.id) {
     return (
-      <OnboardingCandidate 
-        userId={session.user.id} 
+      <OnboardingCandidate
+        userId={session.user.id}
         session={session}
-        onComplete={() => setShowOnboarding(false)} 
+        onComplete={() => setShowOnboarding(false)}
       />
     );
   }
@@ -219,27 +219,27 @@ export const HomeScreen = () => {
   return (
     <GestureHandlerRootView className="flex-1 bg-slate-50 dark:bg-slate-950">
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
-      
+
       <SafeAreaView className="flex-1" edges={['top']}>
-        
+
         {/* HEADER TOP BAR */}
         <View className="flex-row items-center justify-between px-6 pt-2 pb-4">
-            <TouchableOpacity className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-slate-800 items-center justify-center">
-               <Ionicons name="menu" size={24} color="#3b82f6" />
-            </TouchableOpacity>
-            
-            <Text className="text-xl font-bold text-slate-800 dark:text-white">Exploration</Text>
-            
-            <TouchableOpacity className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-slate-800 items-center justify-center">
-               <Ionicons name="options" size={24} color="#3b82f6" />
-            </TouchableOpacity>
+          <TouchableOpacity className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-slate-800 items-center justify-center">
+            <Ionicons name="menu" size={24} color="#3b82f6" />
+          </TouchableOpacity>
+
+          <Text className="text-xl font-bold text-slate-800 dark:text-white">Exploration</Text>
+
+          <TouchableOpacity className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-slate-800 items-center justify-center">
+            <Ionicons name="options" size={24} color="#3b82f6" />
+          </TouchableOpacity>
         </View>
 
         {/* AREA DE TARJETAS */}
         <View className="flex-1 px-4 justify-center">
           {currentJob ? (
             <View className="w-full flex-1 mb-16 z-10 relative">
-              
+
               {/* Next Card (Background) */}
               {nextJob && (
                 <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%', zIndex: -1 }, nextCardStyle]}>
@@ -255,11 +255,11 @@ export const HomeScreen = () => {
               </GestureDetector>
 
               {/* Botones Flotantes Sobre la Tarjeta */}
-              <View 
+              <View
                 className="absolute -bottom-8 left-0 right-0 flex-row justify-center items-center gap-6 px-4 z-20"
               >
                 {/* Rechazar (X) */}
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={() => currentJob && handleAction('reject')}
                   className="w-[70px] h-[70px] rounded-full bg-white dark:bg-slate-800 items-center justify-center shadow-xl shadow-red-200/50 dark:shadow-black border border-slate-100 dark:border-slate-700"
                   style={{ elevation: 8 }}
@@ -268,7 +268,7 @@ export const HomeScreen = () => {
                 </TouchableOpacity>
 
                 {/* Super Like (Estrella) - Más pequeño */}
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={() => currentJob && handleAction('superlike')}
                   className="w-[55px] h-[55px] rounded-full bg-white dark:bg-slate-800 items-center justify-center shadow-lg shadow-orange-200/50 dark:shadow-black border border-slate-100 dark:border-slate-700"
                   style={{ elevation: 6 }}
@@ -277,7 +277,7 @@ export const HomeScreen = () => {
                 </TouchableOpacity>
 
                 {/* Match / Like (Corazón) - Principal azul */}
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={() => currentJob && handleAction('match')}
                   className="w-[85px] h-[85px] rounded-full bg-[#2563eb] items-center justify-center shadow-xl shadow-[#2563eb]/40 dark:shadow-black"
                   style={{ elevation: 10 }}

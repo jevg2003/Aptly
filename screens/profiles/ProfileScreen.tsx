@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
-import { SessionContext } from '../../navigation/AppNavigator';
+import { SessionContext } from '../../lib/SessionContext';
 import { StatCard } from '../../components/profiles/StatCard';
 import { ExperienceItem, Experience } from '../../components/profiles/ExperienceItem';
 import { ResumeSection } from '../../components/profiles/ResumeSection';

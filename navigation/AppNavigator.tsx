@@ -1,21 +1,32 @@
-import React, { createContext } from 'react';
+import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Feather } from '@expo/vector-icons';
-import { Session } from '@supabase/supabase-js';
 
 import { HomeScreen } from '../screens/HomeScreen';
+import { BusinessHomeScreen } from '../screens/business/BusinessHomeScreen';
+import { BusinessVacantesScreen } from '../screens/business/BusinessVacantesScreen';
+import { CreateVacanteScreen } from '../screens/business/CreateVacanteScreen';
+import { JobDetailScreen } from '../screens/business/JobDetailScreen';
+
 import { MatchesScreen } from '../screens/MatchesScreen';
 import { ChatNavigator } from './ChatNavigator';
 import { ApplicationsNavigator } from './ApplicationsNavigator';
-import { MatchProvider } from '../lib/MatchContext';
 import { ProfileNavigator } from './ProfileNavigator';
 
-// 1. Crear Contexto Global Seguro
-export const SessionContext = createContext<Session | null>(null);
-
 const Tab = createBottomTabNavigator();
+const BusinessStack = createNativeStackNavigator();
 
-// 2. Tab Navigator sin props o callbacks (100% estático)
+// Stack para la gestión de vacantes de empresa
+const BusinessVacantesNavigator = () => (
+  <BusinessStack.Navigator screenOptions={{ headerShown: false }}>
+    <BusinessStack.Screen name="VacantesList" component={BusinessVacantesScreen} />
+    <BusinessStack.Screen name="CreateVacante" component={CreateVacanteScreen} />
+    <BusinessStack.Screen name="JobDetail" component={JobDetailScreen} />
+  </BusinessStack.Navigator>
+);
+
+// 2. Tab Navigator para Candidatos
 export const MainTabNavigator = () => {
   return (
     <Tab.Navigator
@@ -39,16 +50,14 @@ export const MainTabNavigator = () => {
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
         tabBarIcon: ({ color, size }) => {
           let iconName: any = 'home';
-          if (route.name === 'Matches') iconName = 'users';
           if (route.name === 'Chat') iconName = 'message-square';
           if (route.name === 'Postulaciones') iconName = 'briefcase';
-          if (route.name === 'Profile') iconName = 'user';
+          if (route.name === 'Perfil') iconName = 'user';
           return <Feather name={iconName} size={24} color={color} />;
         },
       })}
     >
       <Tab.Screen name="Inicio" component={HomeScreen} />
-      <Tab.Screen name="Matches" component={MatchesScreen} />
       <Tab.Screen name="Chat" component={ChatNavigator} />
       <Tab.Screen name="Postulaciones" component={ApplicationsNavigator} />
       <Tab.Screen name="Profile" component={ProfileNavigator} />
@@ -56,13 +65,36 @@ export const MainTabNavigator = () => {
   );
 };
 
-// 3. Wrapper final para pasar contexto
-export const RootNavigator = ({ session }: { session: Session | null }) => {
+// 3. Business Tab Navigator para Empresas
+export const BusinessTabNavigator = () => {
   return (
-    <SessionContext.Provider value={session}>
-      <MatchProvider>
-        <MainTabNavigator />
-      </MatchProvider>
-    </SessionContext.Provider>
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: '#ffffff',
+          borderTopColor: '#f1f5f9',
+          borderTopWidth: 1,
+          height: 65,
+          paddingBottom: 10,
+          paddingTop: 10,
+        },
+        tabBarActiveTintColor: '#506FC0',
+        tabBarInactiveTintColor: '#94a3b8',
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '700' },
+        tabBarIcon: ({ color, size }) => {
+          let iconName: any = 'home';
+          if (route.name === 'Vacantes') iconName = 'briefcase';
+          if (route.name === 'Chat') iconName = 'message-square';
+          if (route.name === 'Profile') iconName = 'user';
+          return <Feather name={iconName} size={22} color={color} />;
+        },
+      })}
+    >
+      <Tab.Screen name="Panel" component={BusinessHomeScreen} />
+      <Tab.Screen name="Vacantes" component={BusinessVacantesNavigator} /> 
+      <Tab.Screen name="Chat" component={ChatNavigator} />
+      <Tab.Screen name="Profile" component={ProfileNavigator} />
+    </Tab.Navigator>
   );
 };

@@ -13,7 +13,7 @@ import {
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
-import { SessionContext } from '../../navigation/AppNavigator';
+import { SessionContext } from '../../lib/SessionContext';
 
 export const EditProfileScreen = ({ navigation, route }: any) => {
   const session = React.useContext(SessionContext);
