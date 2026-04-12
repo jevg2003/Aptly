@@ -7,6 +7,7 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { BusinessHomeScreen } from '../screens/business/BusinessHomeScreen';
 import { BusinessVacantesScreen } from '../screens/business/BusinessVacantesScreen';
 import { CreateVacanteScreen } from '../screens/business/CreateVacanteScreen';
+import { JobDetailScreen } from '../screens/business/JobDetailScreen';
 
 import { MatchesScreen } from '../screens/MatchesScreen';
 import { ChatNavigator } from './ChatNavigator';
@@ -21,6 +22,7 @@ const BusinessVacantesNavigator = () => (
   <BusinessStack.Navigator screenOptions={{ headerShown: false }}>
     <BusinessStack.Screen name="VacantesList" component={BusinessVacantesScreen} />
     <BusinessStack.Screen name="CreateVacante" component={CreateVacanteScreen} />
+    <BusinessStack.Screen name="JobDetail" component={JobDetailScreen} />
   </BusinessStack.Navigator>
 );
 

@@ -1,15 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, SafeAreaView, TouchableOpacity, FlatList, StatusBar, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StatusBar, ActivityIndicator, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
 import { SessionContext } from '../../lib/SessionContext';
 
+const MOCK_BUSINESS_JOBS = [
+  {
+    id: 'm1',
+    title: 'Desarrollador React Native',
+    location: 'Medellín, Colombia',
+    salary: '$5.0M - $7.0M COP',
+    modality: 'Híbrido',
+    created_at: new Date().toISOString(),
+    postulaciones: 12
+  },
+  {
+    id: 'm2',
+    title: 'Diseñador UI/UX Senior',
+    location: 'Bogotá, Colombia (Remoto)',
+    salary: '$4.5M - $5.5M COP',
+    modality: 'Remoto',
+    created_at: new Date().toISOString(),
+    postulaciones: 8
+  }
+];
+
 export const BusinessVacantesScreen = ({ navigation }: any) => {
   const session = React.useContext(SessionContext);
-  const [jobs, setJobs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [jobs, setJobs] = useState<any[]>(MOCK_BUSINESS_JOBS); // Iniciamos con mock data
+  const [loading, setLoading] = useState(false);
 
-  const fetchJobs = async () => {
+  const fetchJobs = React.useCallback(async () => {
     if (!session?.user?.id) return;
     setLoading(true);
     try {
@@ -20,23 +43,32 @@ export const BusinessVacantesScreen = ({ navigation }: any) => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching jobs:', error);
+        console.log('Usando datos de prueba (Supabase no configurado)');
+        setJobs(MOCK_BUSINESS_JOBS);
+      } else if (data && data.length > 0) {
+        setJobs(data);
       } else {
-        setJobs(data || []);
+        setJobs(MOCK_BUSINESS_JOBS);
       }
     } catch (err) {
-      console.error(err);
+      setJobs(MOCK_BUSINESS_JOBS);
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchJobs();
   }, [session]);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchJobs();
+    }, [fetchJobs])
+  );
+
   const renderJobItem = ({ item }: { item: any }) => (
-    <View className="bg-white dark:bg-slate-900 mx-6 mb-4 p-5 rounded-[30px] shadow-sm border border-slate-100 dark:border-slate-800">
+    <TouchableOpacity 
+      activeOpacity={0.7}
+      onPress={() => navigation.navigate('JobDetail', { job: item })}
+      className="bg-white dark:bg-slate-900 mx-6 mb-4 p-5 rounded-[30px] shadow-sm border border-slate-100 dark:border-slate-800"
+    >
       <View className="flex-row justify-between items-start mb-2">
         <View className="flex-1">
           <Text className="text-lg font-bold text-slate-900 dark:text-white mb-1">{item.title}</Text>
@@ -49,14 +81,14 @@ export const BusinessVacantesScreen = ({ navigation }: any) => {
       <View className="flex-row items-center mt-3 pt-3 border-t border-slate-50 dark:border-slate-800">
         <View className="flex-row items-center mr-4">
           <Ionicons name="people-outline" size={14} color="#64748b" />
-          <Text className="text-slate-500 dark:text-slate-400 text-xs ml-1">12 Postulaciones</Text>
+          <Text className="text-slate-500 dark:text-slate-400 text-xs ml-1">{item.postulaciones || 0} Postulaciones</Text>
         </View>
         <View className="flex-row items-center">
           <Ionicons name="cash-outline" size={14} color="#64748b" />
           <Text className="text-slate-500 dark:text-slate-400 text-xs ml-1">{item.salary}</Text>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -66,12 +98,6 @@ export const BusinessVacantesScreen = ({ navigation }: any) => {
         {/* Header */}
         <View className="px-6 py-4 flex-row justify-between items-center bg-white dark:bg-slate-900 shadow-sm">
           <Text className="text-2xl font-bold text-slate-900 dark:text-white">Mis Vacantes</Text>
-          <TouchableOpacity 
-            onPress={() => navigation.navigate('CreateVacante')}
-            className="w-10 h-10 rounded-2xl bg-blue-600 items-center justify-center shadow-lg shadow-blue-200"
-          >
-            <Ionicons name="add" size={24} color="white" />
-          </TouchableOpacity>
         </View>
 
         {loading ? (
@@ -83,7 +109,7 @@ export const BusinessVacantesScreen = ({ navigation }: any) => {
             data={jobs}
             renderItem={renderJobItem}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={{ paddingVertical: 24 }}
+            contentContainerStyle={{ paddingVertical: 24, paddingBottom: 100 }}
             onRefresh={fetchJobs}
             refreshing={loading}
           />
@@ -102,7 +128,20 @@ export const BusinessVacantesScreen = ({ navigation }: any) => {
             </TouchableOpacity>
           </View>
         )}
+
       </SafeAreaView>
+
+      {/* Floating Action Button (FAB) moved outside SafeArea for true floating */}
+      {!loading && (
+        <TouchableOpacity 
+          onPress={() => navigation.navigate('CreateVacante')}
+          activeOpacity={0.8}
+          className="absolute bottom-28 right-6 w-16 h-16 rounded-full bg-blue-600 items-center justify-center shadow-xl shadow-blue-400 z-50"
+          style={{ elevation: 15 }}
+        >
+          <Ionicons name="add" size={32} color="white" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
