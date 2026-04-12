@@ -8,6 +8,8 @@ import { BusinessHomeScreen } from '../screens/business/BusinessHomeScreen';
 import { BusinessVacantesScreen } from '../screens/business/BusinessVacantesScreen';
 import { CreateVacanteScreen } from '../screens/business/CreateVacanteScreen';
 import { JobDetailScreen } from '../screens/business/JobDetailScreen';
+import { BusinessInboxScreen } from '../screens/business/BusinessInboxScreen';
+import { BusinessChatDetailScreen } from '../screens/business/BusinessChatDetailScreen';
 
 import { MatchesScreen } from '../screens/MatchesScreen';
 import { ChatNavigator } from './ChatNavigator';
@@ -23,6 +25,13 @@ const BusinessVacantesNavigator = () => (
     <BusinessStack.Screen name="VacantesList" component={BusinessVacantesScreen} />
     <BusinessStack.Screen name="CreateVacante" component={CreateVacanteScreen} />
     <BusinessStack.Screen name="JobDetail" component={JobDetailScreen} />
+  </BusinessStack.Navigator>
+);
+
+const BusinessChatNavigator = () => (
+  <BusinessStack.Navigator screenOptions={{ headerShown: false }}>
+    <BusinessStack.Screen name="BusinessInbox" component={BusinessInboxScreen} />
+    <BusinessStack.Screen name="BusinessChatDetail" component={BusinessChatDetailScreen} />
   </BusinessStack.Navigator>
 );
 
@@ -93,7 +102,7 @@ export const BusinessTabNavigator = () => {
     >
       <Tab.Screen name="Panel" component={BusinessHomeScreen} />
       <Tab.Screen name="Vacantes" component={BusinessVacantesNavigator} /> 
-      <Tab.Screen name="Chat" component={ChatNavigator} />
+      <Tab.Screen name="Chat" component={BusinessChatNavigator} />
       <Tab.Screen name="Profile" component={ProfileNavigator} />
     </Tab.Navigator>
   );
