@@ -19,6 +19,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useBusinessProfile } from '../../lib/BusinessProfileContext';
 import { useApp } from '../../lib/AppContext';
 import { ObsidianHeader } from '../../components/ObsidianHeader';
+import { ObsidianModal } from '../../components/ObsidianModal';
 
 export const BusinessProfileScreen = ({ navigation }: any) => {
   const session = React.useContext(SessionContext);
@@ -27,6 +28,7 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
   const [jobsCount, setJobsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const fetchCompanyProfile = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -51,23 +53,15 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
     }, [fetchCompanyProfile])
   );
 
-  const handleLogout = async () => {
-    Alert.alert(
-      "Confirmar",
-      "¿Estás seguro de que quieres cerrar sesión?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        { 
-          text: "Cerrar Sesión", 
-          style: "destructive", 
-          onPress: async () => {
-             setCurrentScreen('login');
-             setIsBusiness(false);
-             await supabase.auth.signOut();
-          } 
-        }
-      ]
-    );
+  const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = async () => {
+    setShowLogoutModal(false);
+    setCurrentScreen('login');
+    setIsBusiness(false);
+    await supabase.auth.signOut();
   };
 
   const LocalStatCard = ({ label, value, icon, color }: any) => (
@@ -198,6 +192,19 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
           </View>
 
         </ScrollView>
+
+        {/* Logout Confirmation Modal */}
+        <ObsidianModal
+          isVisible={showLogoutModal}
+          onClose={() => setShowLogoutModal(false)}
+          title="Confirmar"
+          message="¿Estás seguro de que quieres cerrar sesión?"
+          iconName="log-out"
+          type="destructive"
+          confirmText="Cerrar Sesión"
+          cancelText="Cancelar"
+          onConfirm={confirmLogout}
+        />
       </SafeAreaView>
     </View>
   );

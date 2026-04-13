@@ -24,6 +24,8 @@ import { SessionContext } from '../../lib/SessionContext';
 
 import { ObsidianHeader } from '../../components/ObsidianHeader';
 import { ObsidianSwitcher } from '../../components/ObsidianSwitcher';
+import { ObsidianModal } from '../../components/ObsidianModal';
+import { ObsidianDetailModal } from '../../components/ObsidianDetailModal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
@@ -79,6 +81,17 @@ export const BusinessHomeScreen = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState('Todos');
 
+  // Modal State
+  const [modalConfig, setModalConfig] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    icon: 'star',
+    type: 'info' as 'info' | 'success'
+  });
+ 
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+
   const filteredCandidates = selectedCategory === 'Todos' 
     ? MOCK_CANDIDATES 
     : MOCK_CANDIDATES.filter(candidate => candidate.role.includes(selectedCategory) || selectedCategory === 'Tienda' && candidate.role.includes('Aux'));
@@ -95,9 +108,29 @@ export const BusinessHomeScreen = () => {
     if (!currentCandidate) return;
 
     if (type === 'match') {
-      Alert.alert('¡Match Sugerido! 🤝', `Has mostrado interés en ${currentCandidate.name}`);
+      setModalConfig({
+        visible: true,
+        title: '¡Candidato Preseleccionado!',
+        message: `Excelente, hemos guardado el perfil de ${currentCandidate.name}. En breve notificaremos al candidato para iniciar el proceso de selección y los contactaremos con ustedes.`,
+        icon: 'heart',
+        type: 'success'
+      });
     } else if (type === 'superlike') {
-      Alert.alert('¡Super Contacto! ⭐', `Notificaremos prioritariamente a ${currentCandidate.name}`);
+      setModalConfig({
+        visible: true,
+        title: '¡Evaluación Prioritaria!',
+        message: `Hemos notificado a ${currentCandidate.name} sobre tu alto interés en su perfil para acelerar la comunicación.`,
+        icon: 'zap',
+        type: 'success'
+      });
+    } else if (type === 'reject') {
+      setModalConfig({
+        visible: true,
+        title: 'Perfil Descartado',
+        message: 'Hemos registrado tu decisión. Buscaremos candidatos que se alineen mejor con los requerimientos de la empresa.',
+        icon: 'x-circle',
+        type: 'info'
+      });
     }
 
     translateX.value = 0;
@@ -158,8 +191,11 @@ export const BusinessHomeScreen = () => {
 
         <View style={styles.nameRow}>
             <Text style={styles.candidateName}>{candidate.name}, {candidate.age}</Text>
-            <TouchableOpacity style={styles.infoBtn}>
-                <Ionicons name="information" size={20} color="white" />
+            <TouchableOpacity 
+              onPress={() => setDetailModalVisible(true)}
+              style={styles.infoBtn}
+            >
+                <Ionicons name="information-circle-outline" size={24} color="#FF005C" />
             </TouchableOpacity>
         </View>
 
@@ -237,6 +273,29 @@ export const BusinessHomeScreen = () => {
             </View>
           )}
         </View>
+
+        <ObsidianModal
+          isVisible={modalConfig.visible}
+          onClose={() => setModalConfig({ ...modalConfig, visible: false })}
+          title={modalConfig.title}
+          message={modalConfig.message}
+          iconName={modalConfig.icon as any}
+          type={modalConfig.type}
+          confirmText="Continuar"
+        />
+
+        {currentCandidate && (
+          <ObsidianDetailModal
+            isVisible={detailModalVisible}
+            onClose={() => setDetailModalVisible(false)}
+            title={currentCandidate.name}
+            subtitle={currentCandidate.role}
+            imageUrl={currentCandidate.imageUrl}
+            location={currentCandidate.location}
+            tags={currentCandidate.tags}
+            content={`Experto en el sector de ${currentCandidate.role}. Con amplia disponibilidad (${currentCandidate.availability}) para incorporarse a equipos dinámicos.`}
+          />
+        )}
       </SafeAreaView>
     </View>
   );
@@ -282,6 +341,7 @@ const styles = StyleSheet.create({
     height: '50%',
     backgroundColor: 'rgba(0, 0, 0, 0.65)',
     padding: 24,
+    paddingBottom: 70, // Safe zone for buttons
     justifyContent: 'flex-end',
   },
   availabilityRow: {

@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { SessionContext } from '../lib/SessionContext';
 import { useMatches } from '../lib/MatchContext';
-import { JobCard } from '../components/JobCard';
+import { JobCard, JobData } from '../components/JobCard';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { 
   useSharedValue, 
@@ -27,6 +27,9 @@ import Animated, {
 
 import { ObsidianHeader } from '../components/ObsidianHeader';
 import { ObsidianSwitcher } from '../components/ObsidianSwitcher';
+import { ObsidianModal } from '../components/ObsidianModal';
+import { ObsidianDetailModal } from '../components/ObsidianDetailModal';
+import { OnboardingCandidate } from './profiles/OnboardingCandidate';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
@@ -86,6 +89,16 @@ export const HomeScreen = () => {
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
 
+  const [modalConfig, setModalConfig] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    icon: 'star',
+    type: 'info' as 'success' | 'info'
+  });
+
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+
   const checkProfile = React.useCallback(async () => {
     if (!session?.user?.id) return;
     setCheckingProfile(true);
@@ -113,10 +126,29 @@ export const HomeScreen = () => {
 
     if (type === 'match') {
       addMatch(currentJob);
-      Alert.alert('¡Es un Match! 🎉', `Has mostrado gran interés en ${currentJob.company}`);
+      setModalConfig({
+        visible: true,
+        title: '¡Es un Match!',
+        message: '¡Excelente elección! La empresa evaluará tu perfil para determinar si eres el candidato apto. Se comunicarán contigo en un plazo estimado de 3 a 5 días hábiles. ¡Mantente atento!',
+        icon: 'heart',
+        type: 'success'
+      });
     } else if (type === 'superlike') {
-      Alert.alert('¡Super Like! ⭐', `Tu perfil destacará en ${currentJob.company}`);
-    } else {
+      setModalConfig({
+        visible: true,
+        title: '¡Super Like!',
+        message: '¡Tu perfil acaba de ser priorizado! Gracias por tu interés. La empresa revisará tus habilidades destacadas y se pondrá en contacto pronto.',
+        icon: 'zap',
+        type: 'success'
+      });
+    } else if (type === 'reject') {
+      setModalConfig({
+        visible: true,
+        title: 'Preferencia Guardada',
+        message: 'Entendido. Hemos filtrado esta vacante; tu tiempo es valioso y buscaremos algo que se ajuste mejor a lo que deseas.',
+        icon: 'x-circle',
+        type: 'info'
+      });
       translateX.value = withSpring(-SCREEN_WIDTH * 1.5);
     }
 
@@ -194,13 +226,19 @@ export const HomeScreen = () => {
             <View style={styles.cardWrapper}>
               {nextJob && (
                 <Animated.View style={[styles.nextCard, nextCardStyle]}>
-                  <JobCard job={nextJob} />
+                  <JobCard 
+                    job={nextJob} 
+                    onInfoPress={() => setDetailModalVisible(true)} 
+                  />
                 </Animated.View>
               )}
 
               <GestureDetector gesture={gesture}>
                 <Animated.View style={[{ flex: 1 }, cardStyle]}>
-                  <JobCard job={currentJob} />
+                  <JobCard 
+                    job={currentJob} 
+                    onInfoPress={() => setDetailModalVisible(true)} 
+                  />
                 </Animated.View>
               </GestureDetector>
 
@@ -226,6 +264,30 @@ export const HomeScreen = () => {
             </View>
           )}
         </View>
+
+        <ObsidianModal
+          isVisible={modalConfig.visible}
+          onClose={() => setModalConfig({ ...modalConfig, visible: false })}
+          title={modalConfig.title}
+          message={modalConfig.message}
+          iconName={modalConfig.icon as any}
+          type={modalConfig.type === 'success' ? 'success' : 'info'}
+          confirmText="Continuar"
+        />
+
+        {currentJob && (
+          <ObsidianDetailModal
+            isVisible={detailModalVisible}
+            onClose={() => setDetailModalVisible(false)}
+            title={currentJob.title}
+            subtitle={currentJob.company}
+            imageUrl={currentJob.imageUrl}
+            location={currentJob.location}
+            salary={currentJob.salary}
+            tags={currentJob.tags}
+            content={currentJob.companyDescription || 'Forma parte de una de las empresas más innovadoras del sector.'}
+          />
+        )}
       </SafeAreaView>
     </View>
   );

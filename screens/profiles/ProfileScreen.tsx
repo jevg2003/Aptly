@@ -20,6 +20,7 @@ import { ResumeSection } from '../../components/profiles/ResumeSection';
 import { useFocusEffect } from '@react-navigation/native';
 import { useApp } from '../../lib/AppContext';
 import { ObsidianHeader } from '../../components/ObsidianHeader';
+import { ObsidianModal } from '../../components/ObsidianModal';
 
 export const ProfileScreen = ({ navigation }: any) => {
   const session = React.useContext(SessionContext);
@@ -28,6 +29,8 @@ export const ProfileScreen = ({ navigation }: any) => {
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [errorConfig, setErrorConfig] = useState({ visible: false, message: '' });
 
   const fetchProfileData = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -59,24 +62,16 @@ export const ProfileScreen = ({ navigation }: any) => {
     fetchProfileData();
   };
 
-  const handleLogout = async () => {
-    Alert.alert(
-      "Confirmar",
-      "¿Estás seguro de que quieres cerrar sesión?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        { 
-          text: "Cerrar Sesión", 
-          style: "destructive", 
-          onPress: async () => {
-             setCurrentScreen('login');
-             setIsBusiness(false);
-             const { error } = await supabase.auth.signOut();
-             if (error) Alert.alert("Error", error.message);
-          } 
-        }
-      ]
-    );
+  const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = async () => {
+    setShowLogoutModal(false);
+    setCurrentScreen('login');
+    setIsBusiness(false);
+    const { error } = await supabase.auth.signOut();
+    if (error) setErrorConfig({ visible: true, message: error.message });
   };
 
   if (loading && !refreshing) {
@@ -199,6 +194,30 @@ export const ProfileScreen = ({ navigation }: any) => {
         </View>
 
       </ScrollView>
+
+      {/* Logout Confirmation Modal */}
+      <ObsidianModal
+        isVisible={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        title="Confirmar"
+        message="¿Estás seguro de que quieres cerrar sesión?"
+        iconName="log-out"
+        type="destructive"
+        confirmText="Cerrar Sesión"
+        cancelText="Cancelar"
+        onConfirm={confirmLogout}
+      />
+
+      {/* Error Modal */}
+      <ObsidianModal
+        isVisible={errorConfig.visible}
+        onClose={() => setErrorConfig({ ...errorConfig, visible: false })}
+        title="Error"
+        message={errorConfig.message}
+        iconName="alert-circle"
+        type="destructive"
+        confirmText="Entendido"
+      />
     </SafeAreaView>
   );
 };

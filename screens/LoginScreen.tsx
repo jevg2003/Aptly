@@ -27,6 +27,7 @@ import { CustomInput } from '../components/CustomInput';
 import { CustomButton } from '../components/CustomButton';
 import { supabase } from '../lib/supabase';
 import { useApp } from '../lib/AppContext';
+import { ObsidianModal } from '../components/ObsidianModal';
 
 const { width } = Dimensions.get('window');
 
@@ -49,6 +50,7 @@ export const LoginScreen = ({ navigation }: any) => {
   
   // Local role state for pure UI animation
   const [localRole, setLocalRole] = useState<'candidate' | 'company'>('candidate');
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: '', message: '' });
   
   // Shared values for animations
   const switchAnim = useSharedValue(0); // 0 for candidate, 1 for company
@@ -118,7 +120,11 @@ export const LoginScreen = ({ navigation }: any) => {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Por favor ingresa todos los datos');
+      setAlertConfig({
+        visible: true,
+        title: 'Datos Incompletos',
+        message: 'Por favor ingresa todos los datos para continuar.'
+      });
       return;
     }
     
@@ -130,7 +136,11 @@ export const LoginScreen = ({ navigation }: any) => {
     setLoading(false);
 
     if (error) {
-      Alert.alert('Error', 'Credenciales incorrectas o problema de red');
+      setAlertConfig({
+        visible: true,
+        title: 'Error de Acceso',
+        message: 'Credenciales incorrectas o problema de red. Por favor intenta de nuevo.'
+      });
     } else {
       // Sync global state only upon success
       setIsBusiness(localRole === 'company');
@@ -254,6 +264,16 @@ export const LoginScreen = ({ navigation }: any) => {
                 </TouchableOpacity>
               </View>
             </Animated.View>
+
+            <ObsidianModal
+              isVisible={alertConfig.visible}
+              onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+              title={alertConfig.title}
+              message={alertConfig.message}
+              iconName="alert-circle"
+              type="destructive"
+              confirmText="Reintentar"
+            />
           </KeyboardAvoidingView>
         </SafeAreaView>
       </TouchableWithoutFeedback>

@@ -27,6 +27,7 @@ import { CustomInput } from '../components/CustomInput';
 import { CustomButton } from '../components/CustomButton';
 import { supabase } from '../lib/supabase';
 import { useApp } from '../lib/AppContext';
+import { ObsidianModal } from '../components/ObsidianModal';
 
 const { width } = Dimensions.get('window');
 
@@ -54,6 +55,14 @@ export const RegisterScreen = ({ navigation }: any) => {
   const contentFade = useSharedValue(0);
   const cardTranslateY = useSharedValue(50);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [alertConfig, setAlertConfig] = useState({ 
+    visible: false, 
+    title: '', 
+    message: '', 
+    icon: 'info' as any, 
+    type: 'info' as any, 
+    onOk: () => {} 
+  });
 
   useEffect(() => {
     contentFade.value = withTiming(1, { duration: 800 });
@@ -110,11 +119,25 @@ export const RegisterScreen = ({ navigation }: any) => {
 
   const handleRegister = async () => {
     if (!email || !password || (localRole === 'company' && !companyName)) {
-      Alert.alert('Error', 'Completa todos los campos');
+      setAlertConfig({
+        visible: true,
+        title: 'Datos Incompletos',
+        message: 'Por favor completa todos los campos para continuar.',
+        icon: 'edit-3',
+        type: 'info',
+        onOk: () => {}
+      });
       return;
     }
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Las contraseñas no coinciden');
+      setAlertConfig({
+        visible: true,
+        title: 'Error de Seguridad',
+        message: 'Las contraseñas no coinciden. Por favor verifica.',
+        icon: 'shield-off',
+        type: 'destructive',
+        onOk: () => {}
+      });
       return;
     }
     
@@ -134,10 +157,23 @@ export const RegisterScreen = ({ navigation }: any) => {
     setLoading(false);
 
     if (error) {
-      Alert.alert('Error', error.message);
+      setAlertConfig({
+        visible: true,
+        title: 'Error de Registro',
+        message: error.message,
+        icon: 'alert-circle',
+        type: 'destructive',
+        onOk: () => {}
+      });
     } else {
-      Alert.alert('Éxito', 'Cuenta creada. Verifica tu correo.');
-      navigation.navigate('Login');
+      setAlertConfig({
+        visible: true,
+        title: '¡Bienvenido!',
+        message: 'Cuenta creada con éxito. Hemos enviado un correo de verificación.',
+        icon: 'mail',
+        type: 'success',
+        onOk: () => navigation.navigate('Login')
+      });
     }
   };
 
@@ -197,6 +233,19 @@ export const RegisterScreen = ({ navigation }: any) => {
             </Animated.View>
           </KeyboardAvoidingView>
         </SafeAreaView>
+
+        <ObsidianModal
+          isVisible={alertConfig.visible}
+          onClose={() => {
+            setAlertConfig({ ...alertConfig, visible: false });
+            alertConfig.onOk();
+          }}
+          title={alertConfig.title}
+          message={alertConfig.message}
+          iconName={alertConfig.icon}
+          type={alertConfig.type}
+          confirmText="Continuar"
+        />
       </TouchableWithoutFeedback>
     </View>
   );

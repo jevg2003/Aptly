@@ -20,9 +20,10 @@ export interface JobData {
 interface JobCardProps {
   job: JobData;
   onPress?: () => void;
+  onInfoPress?: () => void;
 }
 
-export const JobCard: React.FC<JobCardProps> = ({ job, onPress }) => {
+export const JobCard: React.FC<JobCardProps> = ({ job, onPress, onInfoPress }) => {
   const defaultImage = 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=800&q=80';
 
   return (
@@ -61,9 +62,13 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onPress }) => {
              <Text style={styles.jobTitle} numberOfLines={1}>
                 {job.title}
              </Text>
-             <View style={styles.typeTag}>
-                 <Text style={styles.typeText}>{job.type}</Text>
-             </View>
+             <TouchableOpacity 
+               onPress={onInfoPress}
+               style={styles.infoBtn}
+               activeOpacity={0.7}
+             >
+                 <Ionicons name="information-circle-outline" size={24} color="#00A3FF" />
+             </TouchableOpacity>
           </View>
 
           <View style={styles.locationRow}>
@@ -168,6 +173,7 @@ const styles = StyleSheet.create({
   contentArea: {
     flex: 1,
     padding: 24,
+    paddingBottom: 70, // Safe zone for floating buttons
     backgroundColor: '#121214',
   },
   titleRow: {
@@ -182,6 +188,16 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     flex: 1,
     marginRight: 10,
+  },
+  infoBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 163, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 163, 255, 0.2)',
   },
   typeTag: {
     backgroundColor: 'rgba(0, 163, 255, 0.1)',

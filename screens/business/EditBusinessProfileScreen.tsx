@@ -53,7 +53,7 @@ export const EditBusinessProfileScreen = ({ route, navigation }: any) => {
           { text: 'Cancelar', style: 'cancel' },
           { 
             text: 'Guardar', 
-            onPress: (newName) => updateTeamMember(id, newName || currentName) 
+            onPress: (newName: string | undefined) => updateTeamMember(id, newName || currentName) 
           }
         ],
         'plain-text',
