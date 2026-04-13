@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, useColorScheme, Image } from 'react-native';
+import { View, Text, TouchableOpacity, useColorScheme, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 export interface JobData {
@@ -23,75 +23,69 @@ interface JobCardProps {
 }
 
 export const JobCard: React.FC<JobCardProps> = ({ job, onPress }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-
-  const initial = job.company.charAt(0).toUpperCase();
   const defaultImage = 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=800&q=80';
 
   return (
-    <View className="flex-1 w-full bg-white dark:bg-slate-900 rounded-[40px] shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800 overflow-hidden">
+    <View style={styles.cardContainer}>
       
-      {/* Imagen de Portada */}
-      <View className="h-[55%] w-full relative">
+      {/* Cover Image with dynamic gradient overlay */}
+      <View style={styles.imageContainer}>
         <Image 
           source={{ uri: job.imageUrl || defaultImage }} 
-          className="w-full h-full absolute" 
+          style={styles.image}
           resizeMode="cover"
         />
         
-        {/* Sombreado simulando Gradiente */}
-        <View className="absolute bottom-0 left-0 right-0 h-32 bg-black/40 justify-end p-5" />
+        {/* Darker Overlay for better text readability */}
+        <View style={styles.overlay} />
 
-        <View className="absolute bottom-5 left-5 flex-row items-center">
-            {/* Logo */}
-            <View className="w-12 h-12 rounded-full items-center justify-center bg-white mr-3 shadow-md">
-                <Ionicons name="cube-outline" size={24} color="#2563eb" />
+        <View style={styles.cardHeader}>
+            <View style={styles.logoCircle}>
+                <Ionicons name="cube" size={24} color="#00A3FF" />
             </View>
             <View>
-                <Text className="text-white font-bold text-xl">{job.company}</Text>
-                <Text className="text-slate-200 text-sm font-medium">{job.companyDescription || 'Empresa destacada'}</Text>
+                <Text style={styles.companyName}>{job.company}</Text>
+                <Text style={styles.companyDesc}>{job.companyDescription || 'Empresa destacada'}</Text>
             </View>
         </View>
 
         {/* Badge Flotante "NEW MATCH" */}
-        <View className="absolute top-6 left-6 bg-white/30 px-4 py-1.5 rounded-full border border-white/40">
-           <Text className="text-white text-xs font-bold tracking-widest">NEW MATCH</Text>
+        <View style={styles.badge}>
+           <Text style={styles.badgeText}>NEW MATCH</Text>
         </View>
       </View>
 
-      {/* Contenido Blanco Inferior */}
-      <View className="flex-1 p-6 bg-white dark:bg-slate-900">
-          
-          <View className="flex-row justify-between items-center mb-1">
-             <Text className="text-2xl font-black text-slate-800 dark:text-white flex-1 mr-2" numberOfLines={1}>
+      {/* Obsidian Dark Content Area */}
+      <View style={styles.contentArea}>
+          <View style={styles.titleRow}>
+             <Text style={styles.jobTitle} numberOfLines={1}>
                 {job.title}
              </Text>
-             <View className="bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full">
-                 <Text className="text-slate-600 dark:text-slate-300 text-xs font-bold">{job.type}</Text>
+             <View style={styles.typeTag}>
+                 <Text style={styles.typeText}>{job.type}</Text>
              </View>
           </View>
 
-          <View className="flex-row items-center mb-4">
-              <Ionicons name="location-outline" size={16} color="#64748b" />
-              <Text className="text-slate-500 dark:text-slate-400 font-medium ml-1 text-sm">
-                 {job.location} ({job.modality})
+          <View style={styles.locationRow}>
+              <Ionicons name="location" size={16} color="#475569" />
+              <Text style={styles.locationText}>
+                 {job.location} • {job.modality}
               </Text>
           </View>
 
-          {/* Tags */}
-          <View className="flex-row flex-wrap gap-2 mb-6">
+          {/* Tags with Obsidian bordering */}
+          <View style={styles.tagsRow}>
              {(job.tags || ['Figma', 'Prototyping', 'User Research']).map((tag, index) => (
-                 <View key={index} className="border border-slate-200 dark:border-slate-700 rounded-full px-3 py-1.5">
-                     <Text className="text-slate-600 dark:text-slate-400 text-xs font-medium">{tag}</Text>
+                 <View key={index} style={styles.tag}>
+                     <Text style={styles.tagText}>{tag}</Text>
                  </View>
              ))}
           </View>
 
-          {/* Salario */}
-          <View className="mt-auto mb-10">
-             <Text className="text-3xl font-black text-blue-800 dark:text-blue-400">
-                {job.salary} <Text className="text-base font-medium text-slate-400 dark:text-slate-500">/ mes</Text>
+          {/* Futuristic Salary Display */}
+          <View style={styles.salaryContainer}>
+             <Text style={styles.salaryValue}>
+                {job.salary} <Text style={styles.salaryLabel}>/ mes</Text>
              </Text>
           </View>
 
@@ -99,3 +93,151 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onPress }) => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  cardContainer: {
+    flex: 1,
+    width: '100%',
+    backgroundColor: '#121214',
+    borderRadius: 36,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  imageContainer: {
+    height: '55%',
+    width: '100%',
+    position: 'relative',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  cardHeader: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logoCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(5, 5, 5, 0.8)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  companyName: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 20,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowRadius: 4,
+  },
+  companyDesc: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  badge: {
+    position: 'absolute',
+    top: 24,
+    left: 24,
+    backgroundColor: 'rgba(5, 5, 5, 0.7)',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 2,
+  },
+  contentArea: {
+    flex: 1,
+    padding: 24,
+    backgroundColor: '#121214',
+  },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  jobTitle: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    flex: 1,
+    marginRight: 10,
+  },
+  typeTag: {
+    backgroundColor: 'rgba(0, 163, 255, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 163, 255, 0.2)',
+  },
+  typeText: {
+    color: '#00A3FF',
+    fontSize: 10,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  locationText: {
+    color: '#64748b',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+  tagsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 20,
+  },
+  tag: {
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  tagText: {
+    color: '#94a3b8',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  salaryContainer: {
+    marginTop: 'auto',
+  },
+  salaryValue: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#00A3FF',
+  },
+  salaryLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#475569',
+  }
+});

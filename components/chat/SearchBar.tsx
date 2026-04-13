@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TextInput, TouchableOpacity } from 'react-native';
+import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 interface SearchBarProps {
@@ -10,15 +10,36 @@ interface SearchBarProps {
 
 export const SearchBar = ({ value, onChangeText, placeholder = 'Search conversations' }: SearchBarProps) => {
   return (
-    <View className="flex-row items-center bg-slate-100 dark:bg-slate-800 rounded-lg px-3 py-2 mx-4 my-2 border border-slate-200 dark:border-slate-700">
-      <Feather name="search" size={18} color="#94a3b8" className="mr-2" />
+    <View style={styles.container}>
+      <Feather name="search" size={18} color="#475569" style={{ marginRight: 10 }} />
       <TextInput
-        className="flex-1 text-slate-800 dark:text-slate-200 text-base py-1"
+        style={styles.input}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#94a3b8"
+        placeholderTextColor="#475569"
       />
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#161618',
+    borderRadius: 14,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    marginHorizontal: 20,
+    marginVertical: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  input: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '500',
+  }
+});

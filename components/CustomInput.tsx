@@ -32,24 +32,25 @@ export const CustomInput = ({
   return (
     <View 
       className={`
-        flex-row items-start border rounded-[22px] px-5 py-[12px] mb-4 
-        ${isFocused ? 'border-primary' : 'border-slate-100 dark:border-slate-800'} 
-        bg-white dark:bg-slate-900 shadow-sm shadow-slate-200 dark:shadow-none
+        flex-row items-center border rounded-[22px] px-5 py-[12px] mb-4 
+        ${isFocused ? 'border-primary-light' : 'border-white/5'} 
+        bg-zinc-900/50 shadow-sm
         ${className}
       `}
+      style={{ backgroundColor: '#1A1A1C' }}
     >
       <MaterialCommunityIcons 
         name={iconName} 
         size={20} 
-        color={isFocused ? "#2B468B" : "#94a3b8"} 
+        color={isFocused ? "#00A3FF" : "#64748b"} 
         style={{ marginTop: multiline ? 4 : 0 }}
       />
       <TextInput
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        className={`flex-1 ml-3 text-slate-800 dark:text-slate-100 text-base ${multiline ? 'min-h-[80px]' : 'py-1'}`}
+        className={`flex-1 ml-3 text-white text-base ${multiline ? 'min-h-[80px]' : 'py-1'}`}
         placeholder={placeholder}
-        placeholderTextColor="#94a3b8"
+        placeholderTextColor="#64748b"
         value={value}
         onChangeText={onChangeText}
         secureTextEntry={isPassword && !showPassword}
@@ -63,12 +64,11 @@ export const CustomInput = ({
         <TouchableOpacity 
           onPress={() => setShowPassword(!showPassword)} 
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          style={{ marginTop: 4 }}
         >
           <MaterialCommunityIcons 
             name={showPassword ? "eye-off-outline" : "eye-outline"} 
             size={20} 
-            color={isFocused ? "#2B468B" : "#94a3b8"} 
+            color={isFocused ? "#00A3FF" : "#64748b"} 
           />
         </TouchableOpacity>
       )}

@@ -7,7 +7,9 @@ import {
   Image, 
   StatusBar,
   Alert,
-  RefreshControl
+  RefreshControl,
+  StyleSheet,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Ionicons, Feather } from '@expo/vector-icons';
@@ -15,9 +17,12 @@ import { supabase } from '../../lib/supabase';
 import { SessionContext } from '../../lib/SessionContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { useBusinessProfile } from '../../lib/BusinessProfileContext';
+import { useApp } from '../../lib/AppContext';
+import { ObsidianHeader } from '../../components/ObsidianHeader';
 
 export const BusinessProfileScreen = ({ navigation }: any) => {
   const session = React.useContext(SessionContext);
+  const { setCurrentScreen, setIsBusiness } = useApp();
   const { profile, updateProfile } = useBusinessProfile();
   const [jobsCount, setJobsCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -25,31 +30,13 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
 
   const fetchCompanyProfile = useCallback(async () => {
     if (!session?.user?.id) return;
-    
     try {
       setLoading(true);
-      
-      // Sync initial name from session if profile name is default
       if (profile.full_name === 'TechFlow Solutions' && session.user.user_metadata?.full_name) {
           updateProfile({ full_name: session.user.user_metadata.full_name });
       }
-
-      // Fetch Jobs Count
-      // Fetch Jobs Count
-      const { count, error: jobsError } = await supabase
-        .from('jobs')
-        .select('*', { count: 'exact', head: true })
-        .eq('company_id', session.user.id);
-
-      // Handle jobs count (fallback to mock if error/table missing)
-      if (jobsError) {
-          // If table doesn't exist, we use a fixed mock count for now 
-          // to keep UI consistent with BusinessVacantesScreen.
-          setJobsCount(2); 
-      } else {
-          setJobsCount(count || 0);
-      }
-
+      const { count, error: jobsError } = await supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('company_id', session.user.id);
+      setJobsCount(jobsError ? 2 : count || 0);
     } catch (error: any) {
       console.error('Error fetching company jobs count:', error.message);
     } finally {
@@ -74,6 +61,8 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
           text: "Cerrar Sesión", 
           style: "destructive", 
           onPress: async () => {
+             setCurrentScreen('login');
+             setIsBusiness(false);
              await supabase.auth.signOut();
           } 
         }
@@ -81,168 +70,130 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
     );
   };
 
-  const StatCard = ({ label, value, icon, color }: any) => (
-    <View className="flex-1 bg-white dark:bg-slate-900 p-4 rounded-[30px] items-center shadow-sm shadow-slate-200 border border-slate-50 dark:border-slate-800">
-      <Text className="text-xl font-black text-slate-900 dark:text-white">{value}</Text>
-      <Text className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase text-center mt-1 leading-3">
-        {label}
-      </Text>
+  const LocalStatCard = ({ label, value, icon, color }: any) => (
+    <View style={styles.statCard}>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
       {icon && (
-          <View className="absolute top-3 right-3">
-              <Ionicons name={icon} size={10} color={color || "#94a3b8"} />
+          <View style={styles.statIcon}>
+              <Ionicons name={icon} size={12} color={color || "#475569"} />
           </View>
       )}
     </View>
   );
 
   return (
-    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <StatusBar barStyle="dark-content" />
-      <SafeAreaView className="flex-1" edges={['top']}>
+    <View style={{ flex: 1, backgroundColor: '#050505' }}>
+      <StatusBar barStyle="light-content" />
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         
-        {/* Header */}
-        <View className="px-6 py-4 flex-row justify-between items-center bg-white dark:bg-slate-900 shadow-sm">
-          <Text className="text-2xl font-bold text-slate-900 dark:text-white">Perfil de Empresa</Text>
-          <TouchableOpacity className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 items-center justify-center">
-             <Ionicons name="settings-outline" size={22} color="#1e293b" className="dark:text-white" />
-          </TouchableOpacity>
-        </View>
+        <ObsidianHeader 
+          title="Enterprise Profile" 
+          subtitle="Corporate Center"
+          rightIcon="settings-outline"
+        />
 
         <ScrollView 
-          className="flex-1"
+          style={{ flex: 1 }}
           contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={fetchCompanyProfile} />
+            <RefreshControl refreshing={refreshing} onRefresh={fetchCompanyProfile} tintColor="#FF005C" />
           }
         >
           {/* Logo Section */}
-          <View className="items-center mt-8 px-6">
-            <View className="relative">
-              <View className="w-36 h-36 bg-blue-600 rounded-[40px] items-center justify-center shadow-2xl shadow-blue-400">
+          <View style={styles.profileHeader}>
+            <View style={styles.logoWrapper}>
+              <View style={styles.logoCircle}>
                  <MaterialCommunityIcons name="office-building" size={60} color="white" />
               </View>
-              <TouchableOpacity className="absolute bottom-1 right-1 bg-white dark:bg-slate-800 w-10 h-10 rounded-full items-center justify-center border-4 border-slate-50 dark:border-slate-950 shadow-sm">
-                 <Feather name="edit-2" size={16} color="#3b82f6" />
+              <TouchableOpacity style={styles.logoEditBtn}>
+                 <Feather name="camera" size={16} color="white" />
               </TouchableOpacity>
             </View>
             
-            <Text className="text-3xl font-black text-slate-900 dark:text-white mt-6 mb-1">
+            <Text style={styles.companyName}>
               {profile?.full_name || 'TechFlow Inc.'}
             </Text>
             
-            <View className="bg-blue-50 dark:bg-blue-900/20 px-4 py-1.5 rounded-full mb-3">
-                 <Text className="text-blue-600 dark:text-blue-400 font-bold text-xs uppercase">{profile.category || 'Software & Tecnología'}</Text>
+            <View style={styles.categoryBadge}>
+                 <Text style={styles.categoryText}>{profile.category || 'Software & Tecnología'}</Text>
             </View>
             
-            <View className="flex-row items-center">
-              <Ionicons name="location" size={14} color="#3b82f6" />
-              <Text className="text-slate-400 dark:text-slate-500 text-sm ml-1 font-medium">{profile.location}</Text>
+            <View style={styles.locationRow}>
+              <Ionicons name="location" size={14} color="#FF005C" />
+              <Text style={styles.locationText}>{profile.location}</Text>
             </View>
 
             <TouchableOpacity 
               onPress={() => navigation.navigate('EditBusinessProfile', { profile })}
-              className="mt-8 bg-white dark:bg-slate-900 px-8 py-3.5 rounded-full border border-slate-200 dark:border-slate-800 flex-row items-center shadow-sm"
+              style={styles.editBtn}
             >
-              <Feather name="edit-3" size={18} color="#1e293b" className="dark:text-white" />
-              <Text className="text-slate-800 dark:text-white font-bold ml-2">Editar Información</Text>
+              <Feather name="edit-3" size={18} color="#FF005C" />
+              <Text style={styles.editBtnText}>Manage Info</Text>
             </TouchableOpacity>
           </View>
 
           {/* Stats Bar */}
-          <View className="flex-row px-6 mt-10 gap-3">
-             <StatCard label="Vacantes Activas" value={jobsCount.toString()} />
-             <StatCard label="Candidatos Proceso" value="85" />
-             <StatCard label="Valoración Global" value="4.8" icon="star" color="#f59e0b" />
+          <View style={styles.statsRow}>
+             <LocalStatCard label="Active Listings" value={jobsCount.toString()} />
+             <LocalStatCard label="Candidates" value="85" />
+             <LocalStatCard label="Valuation" value="4.8" icon="star" color="#FFCC00" />
           </View>
 
           {/* About Section */}
-          <View className="px-6 mt-10">
-            <Text className="text-xl font-bold text-slate-900 dark:text-white mb-4">Sobre la Empresa</Text>
-            <View className="bg-white dark:bg-slate-900 p-6 rounded-[35px] shadow-sm border border-slate-50 dark:border-slate-800">
-               <Text className="text-slate-500 dark:text-slate-400 leading-6 text-[15px]">
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Culture & Mission</Text>
+            <View style={styles.descriptionCard}>
+               <Text style={styles.descriptionText}>
                  {profile.culture}
                </Text>
             </View>
           </View>
 
           {/* Recent Jobs */}
-          <View className="px-6 mt-10">
-             <View className="flex-row justify-between items-center mb-5">
-                <Text className="text-xl font-bold text-slate-900 dark:text-white">Publicaciones Recientes</Text>
+          <View style={styles.section}>
+             <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Recent Postings</Text>
                 <TouchableOpacity>
-                  <Text className="text-blue-600 font-black text-xs uppercase tracking-tighter">Ver Todo</Text>
+                  <Text style={styles.seeAllText}>View All</Text>
                 </TouchableOpacity>
              </View>
 
              {/* Job Item 1 */}
-             <TouchableOpacity className="bg-white dark:bg-slate-900 p-4 rounded-[28px] flex-row items-center mb-3 shadow-sm border border-slate-50 dark:border-slate-800">
-                <View className="w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-2xl items-center justify-center">
-                    <MaterialCommunityIcons name="xml" size={24} color="#64748b" />
+             <TouchableOpacity style={styles.miniJobCard}>
+                <View style={styles.miniJobIcon}>
+                    <MaterialCommunityIcons name="xml" size={24} color="#FF005C" />
                 </View>
-                <View className="flex-1 ml-4 mr-2">
-                   <Text className="text-slate-900 dark:text-white font-bold text-base" numberOfLines={1}>Senior UX Designer</Text>
-                   <Text className="text-slate-400 text-xs mt-0.5">TechFlow HQ • Remoto</Text>
-                   <View className="flex-row mt-2">
-                      <View className="bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg mr-2">
-                          <Text className="text-[10px] text-slate-500 font-bold uppercase">Figma</Text>
-                      </View>
-                      <View className="bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
-                          <Text className="text-[10px] text-slate-500 font-bold uppercase">Prototyping</Text>
-                      </View>
-                   </View>
+                <View style={styles.miniJobContent}>
+                   <Text style={styles.miniJobTitle} numberOfLines={1}>Senior UX Designer</Text>
+                   <Text style={styles.miniJobMeta}>HQ • Medellín • Remote</Text>
                 </View>
-                <Text className="text-[10px] text-slate-300 font-bold absolute top-4 right-4 italic">Hace 2d</Text>
-                <View className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-800 items-center justify-center">
-                    <Ionicons name="chevron-forward" size={18} color="#cbd5e1" />
-                </View>
-             </TouchableOpacity>
-
-             {/* Job Item 2 */}
-             <TouchableOpacity className="bg-white dark:bg-slate-900 p-4 rounded-[28px] flex-row items-center mb-4 shadow-sm border border-slate-50 dark:border-slate-800">
-                <View className="w-14 h-14 bg-green-50 dark:bg-green-900/20 rounded-2xl items-center justify-center">
-                    <MaterialCommunityIcons name="google-circles-extended" size={24} color="#10b981" />
-                </View>
-                <View className="flex-1 ml-4 mr-2">
-                   <Text className="text-slate-900 dark:text-white font-bold text-base" numberOfLines={1}>Product Manager</Text>
-                   <Text className="text-slate-400 text-xs mt-0.5">TechFlow HQ • Híbrido</Text>
-                   <View className="flex-row mt-2">
-                      <View className="bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg mr-2">
-                          <Text className="text-[10px] text-slate-500 font-bold uppercase">Agile</Text>
-                      </View>
-                      <View className="bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
-                          <Text className="text-[10px] text-slate-500 font-bold uppercase">Strategy</Text>
-                      </View>
-                   </View>
-                </View>
-                <Text className="text-[10px] text-slate-300 font-bold absolute top-4 right-4 italic">Hace 5d</Text>
-                <View className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-800 items-center justify-center">
-                    <Ionicons name="chevron-forward" size={18} color="#cbd5e1" />
-                </View>
+                <Ionicons name="chevron-forward" size={18} color="#1A1A1C" />
              </TouchableOpacity>
 
              {/* Add New CTA */}
              <TouchableOpacity 
                 onPress={() => navigation.navigate('CreateVacante')}
-                className="w-full py-5 rounded-[28px] border-2 border-dashed border-slate-200 dark:border-slate-800 flex-row items-center justify-center mt-2"
+                style={styles.createCta}
              >
-                <Ionicons name="add-circle-outline" size={20} color="#64748b" />
-                <Text className="text-slate-500 dark:text-slate-400 font-bold ml-2">Crear Nueva Vacante</Text>
+                <Ionicons name="add-circle-outline" size={20} color="#475569" />
+                <Text style={styles.createCtaText}>Publish New Opening</Text>
              </TouchableOpacity>
           </View>
 
           {/* Bottom Actions */}
-          <View className="px-8 mt-16 items-center">
+          <View style={styles.footerActions}>
             <TouchableOpacity 
               onPress={handleLogout}
-              className="w-full bg-red-50 dark:bg-red-950/20 py-5 rounded-[28px] flex-row items-center justify-center border border-red-100 dark:border-red-900/50"
+              style={styles.logoutBtn}
             >
-               <Feather name="log-out" size={18} color="#ef4444" />
-               <Text className="text-red-500 font-black ml-3">Cerrar Sesión</Text>
+               <Feather name="log-out" size={18} color="#FF3B30" />
+               <Text style={styles.logoutText}>Cerrar Sesión</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity className="mt-5 pb-10">
-               <Text className="text-red-600 dark:text-red-900 text-xs font-bold underline decoration-red-900">Eliminar cuenta de empresa</Text>
+            <TouchableOpacity style={styles.deleteCta}>
+               <Text style={styles.deleteText}>Enterprise Account Options</Text>
             </TouchableOpacity>
           </View>
 
@@ -251,3 +202,240 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  profileHeader: {
+    paddingTop: 30,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+  },
+  logoWrapper: {
+    position: 'relative',
+  },
+  logoCircle: {
+    width: 130,
+    height: 130,
+    borderRadius: 45,
+    backgroundColor: '#FF005C',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#FF005C',
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
+    elevation: 10,
+  },
+  logoEditBtn: {
+    position: 'absolute',
+    bottom: -5,
+    right: -5,
+    backgroundColor: '#121214',
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#050505',
+  },
+  companyName: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    marginTop: 24,
+    textAlign: 'center',
+  },
+  categoryBadge: {
+    marginTop: 10,
+    backgroundColor: 'rgba(255, 0, 92, 0.08)',
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 0, 92, 0.15)',
+  },
+  categoryText: {
+    color: '#FF005C',
+    fontWeight: '800',
+    fontSize: 10,
+    textTransform: 'uppercase',
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  locationText: {
+    color: '#475569',
+    fontSize: 13,
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+  editBtn: {
+    marginTop: 25,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    paddingHorizontal: 35,
+    paddingVertical: 14,
+    borderRadius: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  editBtnText: {
+    color: '#FF005C',
+    fontWeight: '900',
+    marginLeft: 10,
+    fontSize: 14,
+    letterSpacing: 0.5,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginTop: 40,
+    gap: 12,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: '#121214',
+    paddingVertical: 18,
+    borderRadius: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#FFFFFF',
+  },
+  statLabel: {
+    fontSize: 9,
+    color: '#475569',
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  statIcon: {
+    position: 'absolute',
+    top: 10,
+    right: 12,
+  },
+  section: {
+    marginTop: 40,
+    paddingHorizontal: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    marginBottom: 15,
+  },
+  seeAllText: {
+    color: '#FF005C',
+    fontWeight: '800',
+    fontSize: 12,
+  },
+  descriptionCard: {
+    backgroundColor: '#121214',
+    padding: 24,
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.03)',
+  },
+  descriptionText: {
+    color: '#94a3b8',
+    lineHeight: 24,
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  miniJobCard: {
+    backgroundColor: '#121214',
+    padding: 16,
+    borderRadius: 22,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.03)',
+  },
+  miniJobIcon: {
+    width: 50,
+    height: 50,
+    backgroundColor: '#1A1A1C',
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  miniJobContent: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  miniJobTitle: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 15,
+  },
+  miniJobMeta: {
+    color: '#475569',
+    fontSize: 11,
+    marginTop: 2,
+    fontWeight: '600',
+  },
+  createCta: {
+    marginTop: 10,
+    paddingVertical: 18,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.01)',
+  },
+  createCtaText: {
+    color: '#475569',
+    fontWeight: '800',
+    fontSize: 13,
+    marginLeft: 8,
+  },
+  footerActions: {
+    marginTop: 40,
+    paddingHorizontal: 20,
+    paddingBottom: 60,
+  },
+  logoutBtn: {
+    backgroundColor: 'rgba(255, 59, 48, 0.08)',
+    paddingVertical: 18,
+    borderRadius: 22,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 59, 48, 0.1)',
+  },
+  logoutText: {
+    color: '#FF3B30',
+    fontWeight: '900',
+    fontSize: 15,
+    marginLeft: 12,
+  },
+  deleteCta: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  deleteText: {
+    color: '#1A1A1C',
+    fontSize: 10,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+  }
+});

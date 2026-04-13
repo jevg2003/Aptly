@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Image, Animated, StatusBar, useColorScheme, ImageBackground } from 'react-native';
 
-export const WelcomeScreen = ({ onFinish }: { onFinish: () => void }) => {
+export const WelcomeScreen = ({ navigation, onFinish }: { navigation: any, onFinish: () => void }) => {
   const colorScheme = useColorScheme();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
@@ -38,11 +38,14 @@ export const WelcomeScreen = ({ onFinish }: { onFinish: () => void }) => {
           duration: 700,
           useNativeDriver: true,
         })
-      ]).start(() => onFinish());
+      ]).start(() => {
+        onFinish();
+        navigation.replace('Login');
+      });
     }, 2800);
 
     return () => clearTimeout(timer);
-  }, [fadeAnim, onFinish, scaleAnim, translateY]);
+  }, [fadeAnim, onFinish, navigation, scaleAnim, translateY]);
 
   return (
     <View className="flex-1">
