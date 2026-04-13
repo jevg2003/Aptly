@@ -1,45 +1,118 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
-  ImageBackground, 
   TouchableOpacity, 
-  Platform, 
-  Image,
+  Image, 
   StatusBar,
-  useColorScheme,
-  Alert
+  Alert,
+  Dimensions,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withSpring, 
+  withTiming,
+  interpolateColor,
+  withDelay
+} from 'react-native-reanimated';
 import { CustomInput } from '../components/CustomInput';
 import { CustomButton } from '../components/CustomButton';
 import { supabase } from '../lib/supabase';
 import { useApp } from '../lib/AppContext';
 
+const { width } = Dimensions.get('window');
+
+const COLORS = {
+  background: '#050505',
+  card: '#121214',
+  candidate: '#00A3FF',
+  company: '#FF005C',
+  text: '#FFFFFF',
+  textSecondary: '#94a3b8',
+  border: 'rgba(255, 255, 255, 0.05)',
+};
+
 export const RegisterScreen = ({ navigation }: any) => {
-  const { isBusiness, setIsBusiness, setCurrentScreen: onNavigate } = useApp();
-  const colorScheme = useColorScheme();
+  const { setIsBusiness } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [loading, setLoading] = useState(false);
-  const isDarkMode = colorScheme === 'dark';
+  
+  const [localRole, setLocalRole] = useState<'candidate' | 'company'>('candidate');
+  
+  const switchAnim = useSharedValue(0);
+  const contentFade = useSharedValue(0);
+  const cardTranslateY = useSharedValue(50);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  useEffect(() => {
+    contentFade.value = withTiming(1, { duration: 800 });
+    cardTranslateY.value = withSpring(0, { damping: 15 });
+  }, []);
+
+  const handleRoleChange = (role: 'candidate' | 'company') => {
+    setLocalRole(role);
+    switchAnim.value = withSpring(role === 'candidate' ? 0 : 1, { damping: 20 });
+  };
+
+  const animatedSwitchStyle = useAnimatedStyle(() => {
+    const isMoving = switchAnim.value > 0.1 && switchAnim.value < 0.9;
+    const stretch = withSpring(isMoving ? 1.1 : 1, { damping: 10 });
+    const travelDistance = (containerWidth - 12) / 2;
+
+    return {
+      transform: [
+        { translateX: withSpring(switchAnim.value * travelDistance) },
+        { scaleX: stretch }
+      ],
+      backgroundColor: interpolateColor(
+        switchAnim.value,
+        [0, 1],
+        [COLORS.candidate, COLORS.company]
+      ),
+      shadowColor: interpolateColor(
+        switchAnim.value,
+        [0, 1],
+        [COLORS.candidate, COLORS.company]
+      ),
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.8,
+      shadowRadius: 10,
+    };
+  });
+
+  const animatedAccentStyle = useAnimatedStyle(() => {
+    return {
+      color: interpolateColor(
+        switchAnim.value,
+        [0, 1],
+        [COLORS.candidate, COLORS.company]
+      ),
+    };
+  });
+
+  const animatedCardStyle = useAnimatedStyle(() => {
+    return {
+      opacity: contentFade.value,
+      transform: [{ translateY: cardTranslateY.value }],
+    };
+  });
 
   const handleRegister = async () => {
-    if (isBusiness) {
-      if (!email || !password || !confirmPassword || !companyName) {
-        Alert.alert('Error', 'Por favor llena todos los campos de la empresa');
-        return;
-      }
-    } else {
-      if (!email || !password || !confirmPassword) {
-        Alert.alert('Error', 'Por favor llena todos los campos');
-        return;
-      }
+    if (!email || !password || (localRole === 'company' && !companyName)) {
+      Alert.alert('Error', 'Completa todos los campos');
+      return;
     }
-
     if (password !== confirmPassword) {
       Alert.alert('Error', 'Las contraseñas no coinciden');
       return;
@@ -50,7 +123,7 @@ export const RegisterScreen = ({ navigation }: any) => {
       email,
       password,
       options: {
-        data: isBusiness ? { 
+        data: localRole === 'company' ? { 
           full_name: companyName,
           role: 'company'
         } : { 
@@ -61,160 +134,96 @@ export const RegisterScreen = ({ navigation }: any) => {
     setLoading(false);
 
     if (error) {
-      if (error.message.includes('already registered')) {
-        Alert.alert(
-          'Cuenta Existente', 
-          'Este correo ya está registrado (quizás iniciaste sesión antes con Google o GitHub). ¿Deseas recibir un enlace para asignarle una contraseña y poder iniciar sesión con correo y contraseña?',
-          [
-            { text: 'Cancelar', style: 'cancel' },
-            { 
-              text: 'Sí, enviar enlace', 
-              onPress: async () => {
-                const { error: resetError } = await supabase.auth.resetPasswordForEmail(email);
-                if (resetError) {
-                  Alert.alert('Error', resetError.message);
-                } else {
-                  Alert.alert('¡Enviado!', 'Revisa tu bandeja de entrada o spam para establecer tu contraseña.');
-                  navigation.navigate('Login');
-                }
-              }
-            }
-          ]
-        );
-      } else {
-        Alert.alert('Error al registrarse', error.message);
-      }
+      Alert.alert('Error', error.message);
     } else {
-      Alert.alert('Registro exitoso', 'Revisa tu correo para verificar tu cuenta (si tienes habilitada la confirmación) o inicia sesión.');
+      Alert.alert('Éxito', 'Cuenta creada. Verifica tu correo.');
       navigation.navigate('Login');
     }
   };
 
   return (
-    <View className="flex-1">
-      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
-      
-      <ImageBackground
-        source={require('../assets/morocho.jpg')}
-        className="flex-1"
-        resizeMode="cover"
-      >
-        <View className="absolute inset-0 bg-black/30 dark:bg-black/60" />
-        
-        {/* @ts-ignore */}
-        <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
-          {/* @ts-ignore */}
-          <KeyboardAwareScrollView 
-            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
-            className="flex-1 px-6"
-            enableOnAndroid={true}
-            extraScrollHeight={80}
-            keyboardShouldPersistTaps="handled"
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <SafeAreaView style={styles.safeArea}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ flex: 1, justifyContent: 'center' }}
           >
-            <View className="bg-white/80 dark:bg-slate-900/80 rounded-[45px] p-7 shadow-2xl border border-white/30 dark:border-slate-800/30">
-              
-              <View className="items-center mb-4">
-                <View className="bg-blue-50/20 dark:bg-blue-900/10 p-4 rounded-[28px] items-center justify-center">
-                  {/* @ts-ignore */}
-                  <Image 
-                    source={require('../assets/favicon.png')} 
-                    className="w-24 h-24" 
-                    resizeMode="contain"
-                  />
-                </View>
+            <Animated.View style={[styles.card, animatedCardStyle]}>
+              <View style={styles.logoContainer}>
+                <Image source={require('../assets/favicon.png')} style={styles.logo} resizeMode="contain" />
+                <Animated.Text style={[styles.title, animatedAccentStyle]}>Unirse a Aptly</Animated.Text>
               </View>
 
-              <View className="items-center mb-6">
-                <Text className="text-slate-900 dark:text-slate-50 text-3xl font-bold mb-1 tracking-tight">
-                  {isBusiness ? "Registro Empresa" : "Crear Cuenta"}
-                </Text>
-                <Text className="text-slate-600 dark:text-slate-400 text-center text-[15px] px-6 leading-5 font-medium">
-                   {isBusiness 
-                     ? "Registra tu empresa para empezar a publicar vacantes." 
-                     : "Únete a Aptly y encuentra tu empleo ideal."}
-                </Text>
-              </View>
-
-              {/* Role Switcher */}
-              <View className="flex-row items-center p-1.5 bg-slate-200/80 dark:bg-slate-800/80 rounded-2xl mb-6">
-                <TouchableOpacity 
-                  className={'flex-1 py-2.5 rounded-xl items-center ' + (!isBusiness ? 'bg-white dark:bg-slate-700 shadow-sm' : '')}
-                  onPress={() => setIsBusiness(false)}
-                >
-                  <Text className={'text-[13px] font-bold ' + (!isBusiness ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400')}>Candidato</Text>
+              <View 
+                style={styles.switcherContainer}
+                onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
+              >
+                <Animated.View style={[styles.switcherPill, animatedSwitchStyle]} />
+                <TouchableOpacity onPress={() => handleRoleChange('candidate')} style={styles.switcherButton}>
+                  <Text style={[styles.switcherText, localRole === 'candidate' && styles.switcherTextActive]}>Candidato</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                  className={'flex-1 py-2.5 rounded-xl items-center ' + (isBusiness ? 'bg-white dark:bg-slate-700 shadow-sm' : '')}
-                  onPress={() => setIsBusiness(true)}
-                >
-                  <Text className={'text-[13px] font-bold ' + (isBusiness ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400')}>Empresa</Text>
+                <TouchableOpacity onPress={() => handleRoleChange('company')} style={styles.switcherButton}>
+                  <Text style={[styles.switcherText, localRole === 'company' && styles.switcherTextActive]}>Empresa</Text>
                 </TouchableOpacity>
               </View>
 
-              <View>
-                <CustomInput
-                  placeholder="Correo electrónico"
-                  value={email}
-                  onChangeText={setEmail}
-                  iconName="email-outline"
-                  keyboardType="email-address"
-                />
-
-                {isBusiness && (
-                  <CustomInput
-                    placeholder="Nombre de la empresa"
-                    value={companyName}
-                    onChangeText={setCompanyName}
-                    iconName="office-building"
-                  />
+              <View style={styles.form}>
+                <CustomInput placeholder="Correo electrónico" value={email} onChangeText={setEmail} iconName="email-outline" />
+                
+                {localRole === 'company' && (
+                  <CustomInput placeholder="Nombre de la empresa" value={companyName} onChangeText={setCompanyName} iconName="office-building" />
                 )}
 
-                <CustomInput
-                  placeholder="Contraseña"
-                  value={password}
-                  onChangeText={setPassword}
-                  iconName="lock-outline"
-                  isPassword
-                />
+                <CustomInput placeholder="Contraseña" value={password} onChangeText={setPassword} iconName="lock-outline" isPassword />
+                <CustomInput placeholder="Confirmar contraseña" value={confirmPassword} onChangeText={setConfirmPassword} iconName="lock-check-outline" isPassword />
 
-                <CustomInput
-                  placeholder="Confirmar contraseña"
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  iconName="lock-check-outline"
-                  isPassword
-                />
-                
-                <CustomButton 
-                  title={loading ? "Registrando..." : "Registrarse"} 
-                  onPress={handleRegister} 
-                  variant="primary" 
-                  className={`mt-4 mb-4 py-4 px-10 ${isBusiness ? 'bg-slate-900 dark:bg-slate-800' : ''}`} 
-                />
+                <TouchableOpacity onPress={handleRegister} disabled={loading} activeOpacity={0.8} style={{ marginTop: 10 }}>
+                  <Animated.View style={[styles.mainButton, { 
+                    backgroundColor: interpolateColor(switchAnim.value, [0, 1], [COLORS.candidate, COLORS.company])
+                  } as any]}>
+                    <Text style={styles.buttonText}>{loading ? 'Creando cuenta...' : 'Registrarse'}</Text>
+                  </Animated.View>
+                </TouchableOpacity>
               </View>
 
-              <View className="flex-row justify-center mt-4">
-                <Text className="text-slate-600 dark:text-slate-400 text-sm">¿Ya tienes una cuenta? </Text>
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>¿Ya tienes cuenta? </Text>
                 <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                  <Text className="text-primary-light font-black text-sm">Inicia Sesión</Text>
+                  <Animated.Text style={[styles.linkText, animatedAccentStyle]}>Inicia sesión</Animated.Text>
                 </TouchableOpacity>
               </View>
-
-              <View className="flex-row justify-center mt-2 mb-4">
-                <Text className="text-slate-600 dark:text-slate-400 text-sm">
-                  {isBusiness ? "¿Eres candidato? " : "¿Eres una empresa? "}
-                </Text>
-                <TouchableOpacity onPress={() => setIsBusiness(!isBusiness)}>
-                  <Text className="text-primary-light font-black text-sm">
-                    {isBusiness ? "Regístrate aquí" : "Cuenta de empresa"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-            </View>
-          </KeyboardAwareScrollView>
+            </Animated.View>
+          </KeyboardAvoidingView>
         </SafeAreaView>
-      </ImageBackground>
+      </TouchableWithoutFeedback>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: COLORS.background },
+  safeArea: { flex: 1, paddingHorizontal: 24 },
+  card: {
+    backgroundColor: COLORS.card,
+    borderRadius: 32,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  logoContainer: { alignItems: 'center', marginBottom: 24 },
+  logo: { width: 70, height: 70, marginBottom: 12 },
+  title: { fontSize: 24, fontWeight: '800' },
+  switcherContainer: { flexDirection: 'row', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 20, padding: 6, marginBottom: 24, position: 'relative' },
+  switcherPill: { position: 'absolute', top: 6, left: 6, width: '50%', height: '100%', borderRadius: 14 },
+  switcherButton: { flex: 1, paddingVertical: 12, alignItems: 'center', zIndex: 1 },
+  switcherText: { color: COLORS.textSecondary, fontSize: 13, fontWeight: '700' },
+  switcherTextActive: { color: '#FFF' },
+  form: { width: '100%' },
+  mainButton: { borderRadius: 20, paddingVertical: 16, alignItems: 'center' },
+  buttonText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
+  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
+  footerText: { color: COLORS.textSecondary, fontSize: 14 },
+  linkText: { fontSize: 14, fontWeight: '800' },
+});

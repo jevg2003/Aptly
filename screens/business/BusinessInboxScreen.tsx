@@ -8,6 +8,10 @@ import { ChatListItem } from '../../components/chat/ChatListItem';
 
 import { useBusinessChat } from '../../lib/BusinessChatContext';
 
+import { ObsidianHeader } from '../../components/ObsidianHeader';
+import { ObsidianSwitcher } from '../../components/ObsidianSwitcher';
+import { StyleSheet } from 'react-native';
+
 export const BusinessInboxScreen = ({ navigation }: any) => {
   const { conversations } = useBusinessChat();
   const [searchQuery, setSearchQuery] = useState('');
@@ -15,7 +19,6 @@ export const BusinessInboxScreen = ({ navigation }: any) => {
 
   const filteredConversations = useMemo(() => {
     let result = conversations;
-
     if (searchQuery.trim()) {
       const lowerQuery = searchQuery.toLowerCase();
       result = result.filter(c => 
@@ -23,7 +26,6 @@ export const BusinessInboxScreen = ({ navigation }: any) => {
         c.lastMessage.toLowerCase().includes(lowerQuery)
       );
     }
-
     return result;
   }, [searchQuery, conversations]);
 
@@ -32,34 +34,26 @@ export const BusinessInboxScreen = ({ navigation }: any) => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-slate-950" edges={['top']}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#050505' }} edges={['top']}>
+      <StatusBar barStyle="light-content" />
       
-      {/* Header */}
-      <View className="px-6 pt-4 pb-2 flex-row justify-between items-center">
-        <View>
-            <Text className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Empresa</Text>
-            <Text className="text-3xl font-black text-slate-900 dark:text-white">Mensajes</Text>
-        </View>
-        <TouchableOpacity className="w-12 h-12 bg-slate-50 dark:bg-slate-900 rounded-2xl items-center justify-center">
-          <Feather name="filter" size={20} color="#1e293b" className="dark:text-slate-200" />
-        </TouchableOpacity>
-      </View>
+      <ObsidianHeader 
+        title="Messages" 
+        subtitle="Candidate Chat"
+        rightIcon="filter-outline"
+      />
 
-      <View className="px-2">
+      <View style={{ paddingHorizontal: 10, marginTop: 5 }}>
         <SearchBar value={searchQuery} onChangeText={setSearchQuery} />
       </View>
       
-      <View className="flex-row px-6 mb-4 mt-2">
-         {['All', 'Unread', 'Matches'].map((f) => (
-             <TouchableOpacity 
-                key={f}
-                onPress={() => setActiveFilter(f)}
-                className={`mr-3 px-5 py-2 rounded-full ${activeFilter === f ? 'bg-blue-600' : 'bg-slate-100 dark:bg-slate-900'}`}
-             >
-                <Text className={`text-xs font-bold ${activeFilter === f ? 'text-white' : 'text-slate-500'}`}>{f}</Text>
-             </TouchableOpacity>
-         ))}
+      <View style={{ marginTop: 10, marginBottom: 15 }}>
+        <ObsidianSwitcher 
+           options={['All', 'Unread', 'Matches']}
+           activeOption={activeFilter}
+           onOptionChange={(opt) => setActiveFilter(opt)}
+           accentColor="#FF005C"
+        />
       </View>
 
       <FlatList
@@ -71,12 +65,30 @@ export const BusinessInboxScreen = ({ navigation }: any) => {
         contentContainerStyle={{ paddingVertical: 8, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <View className="flex-1 items-center justify-center pt-20">
-             <Feather name="message-circle" size={48} color="#cbd5e1" />
-             <Text className="text-slate-500 mt-4 text-center px-8">No hay conversaciones con candidatos todavía.</Text>
+          <View style={styles.emptyContainer}>
+             <Ionicons name="chatbubbles-outline" size={60} color="rgba(255,255,255,0.05)" />
+             <Text style={styles.emptyText}>No hay conversaciones con candidatos todavía.</Text>
           </View>
         }
       />
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 60,
+    paddingHorizontal: 40,
+  },
+  emptyText: {
+    color: '#475569',
+    marginTop: 20,
+    textAlign: 'center',
+    fontSize: 14,
+    fontStyle: 'italic',
+    lineHeight: 20,
+  }
+});

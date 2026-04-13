@@ -7,12 +7,14 @@ import { SearchBar } from '../../components/chat/SearchBar';
 import { FilterTabs, FilterParam } from '../../components/chat/FilterTabs';
 import { ChatListItem } from '../../components/chat/ChatListItem';
 
+import { ObsidianHeader } from '../../components/ObsidianHeader';
+import { ObsidianSwitcher } from '../../components/ObsidianSwitcher';
+
 export const InboxScreen = ({ navigation }: any) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterParam>('All');
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Force re-render when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       setRefreshKey(prev => prev + 1);
@@ -21,14 +23,9 @@ export const InboxScreen = ({ navigation }: any) => {
 
   const filteredConversations = useMemo(() => {
     let result = mockConversations;
-
-    if (activeFilter === 'Unread') {
-      result = result.filter(c => c.unreadCount > 0);
-    } else if (activeFilter === 'Archived') {
-       result = result.filter(c => c.isArchived); // Assuming we'll add isArchived
-    } else {
-       result = result.filter(c => !c.isArchived);
-    }
+    if (activeFilter === 'Unread') result = result.filter(c => c.unreadCount > 0);
+    else if (activeFilter === 'Archived') result = result.filter(c => c.isArchived);
+    else result = result.filter(c => !c.isArchived);
 
     if (searchQuery.trim()) {
       const lowerQuery = searchQuery.toLowerCase();
@@ -37,7 +34,6 @@ export const InboxScreen = ({ navigation }: any) => {
         c.lastMessage.toLowerCase().includes(lowerQuery)
       );
     }
-
     return result;
   }, [searchQuery, activeFilter, refreshKey]);
 
@@ -46,20 +42,22 @@ export const InboxScreen = ({ navigation }: any) => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-slate-950">
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#050505' }}>
+      <StatusBar barStyle="light-content" backgroundColor="#050505" />
       
-      {/* Header */}
-      <View className="px-4 pt-4 pb-2 flex-row justify-between items-center bg-white dark:bg-slate-950">
-        <Text className="text-2xl font-bold text-slate-900 dark:text-white">Messages</Text>
-        <TouchableOpacity className="p-2">
-          <Feather name="edit" size={22} color="#1e293b" className="dark:text-slate-200" />
-        </TouchableOpacity>
-      </View>
+      <ObsidianHeader 
+        title="Messages" 
+        subtitle="Inbox"
+        rightIcon="create-outline"
+      />
 
       <SearchBar value={searchQuery} onChangeText={setSearchQuery} />
       
-      <FilterTabs activeFilter={activeFilter} onFilterChange={setActiveFilter} />
+      <ObsidianSwitcher 
+        options={['All', 'Unread', 'Archived']}
+        activeOption={activeFilter}
+        onOptionChange={(opt) => setActiveFilter(opt as FilterParam)}
+      />
 
       <FlatList
         data={filteredConversations}
@@ -67,12 +65,12 @@ export const InboxScreen = ({ navigation }: any) => {
         renderItem={({ item }) => (
           <ChatListItem conversation={item} onPress={handleConversationPress} />
         )}
-        contentContainerStyle={{ paddingVertical: 8, paddingBottom: 100 }}
+        contentContainerStyle={{ paddingVertical: 10, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <View className="flex-1 items-center justify-center pt-20">
-             <Feather name="message-circle" size={48} color="#cbd5e1" />
-             <Text className="text-slate-500 mt-4 text-center px-8">
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 60 }}>
+             <Feather name="message-circle" size={50} color="rgba(255,255,255,0.1)" />
+             <Text style={{ color: '#475569', marginTop: 15, textAlign: 'center', paddingHorizontal: 40 }}>
                {searchQuery ? "No conversations found." : "You don't have any messages yet."}
              </Text>
           </View>

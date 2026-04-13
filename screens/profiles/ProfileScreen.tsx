@@ -8,7 +8,8 @@ import {
   SafeAreaView, 
   StatusBar,
   Alert,
-  RefreshControl
+  RefreshControl,
+  StyleSheet
 } from 'react-native';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
@@ -17,9 +18,12 @@ import { StatCard } from '../../components/profiles/StatCard';
 import { ExperienceItem, Experience } from '../../components/profiles/ExperienceItem';
 import { ResumeSection } from '../../components/profiles/ResumeSection';
 import { useFocusEffect } from '@react-navigation/native';
+import { useApp } from '../../lib/AppContext';
+import { ObsidianHeader } from '../../components/ObsidianHeader';
 
 export const ProfileScreen = ({ navigation }: any) => {
   const session = React.useContext(SessionContext);
+  const { setCurrentScreen, setIsBusiness } = useApp();
   const [profile, setProfile] = useState<any>(null);
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,30 +31,15 @@ export const ProfileScreen = ({ navigation }: any) => {
 
   const fetchProfileData = useCallback(async () => {
     if (!session?.user?.id) return;
-    
     try {
       setLoading(true);
-      
-      // Fetch Profile
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-      
+      const { data: profileData, error: profileError } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
       if (profileError && profileError.code !== 'PGRST116') throw profileError;
       setProfile(profileData);
 
-      // Fetch Experiences
-      const { data: expData, error: expError } = await supabase
-        .from('experiences')
-        .select('*')
-        .eq('profile_id', session.user.id)
-        .order('start_date', { ascending: false });
-      
+      const { data: expData, error: expError } = await supabase.from('experiences').select('*').eq('profile_id', session.user.id).order('start_date', { ascending: false });
       if (expError) throw expError;
       setExperiences(expData || []);
-      
     } catch (error: any) {
       console.error('Error fetching profile:', error.message);
     } finally {
@@ -80,8 +69,10 @@ export const ProfileScreen = ({ navigation }: any) => {
           text: "Cerrar Sesión", 
           style: "destructive", 
           onPress: async () => {
-            const { error } = await supabase.auth.signOut();
-            if (error) Alert.alert("Error", error.message);
+             setCurrentScreen('login');
+             setIsBusiness(false);
+             const { error } = await supabase.auth.signOut();
+             if (error) Alert.alert("Error", error.message);
           } 
         }
       ]
@@ -90,81 +81,82 @@ export const ProfileScreen = ({ navigation }: any) => {
 
   if (loading && !refreshing) {
     return (
-      <View className="flex-1 bg-white dark:bg-slate-950 items-center justify-center">
-        <Text className="text-slate-500 italic">Cargando perfil...</Text>
+      <View style={{ flex: 1, backgroundColor: '#050505', alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ color: '#475569', fontStyle: 'italic' }}>Iniciando Obsidian...</Text>
       </View>
     );
   }
 
-  const profileCompletePercent = 85; // This could be calculated
+  const profileCompletePercent = 85;
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#050505' }}>
+      <StatusBar barStyle="light-content" />
       
+      <ObsidianHeader 
+        title="Profile" 
+        subtitle="Professional Hub"
+        rightIcon="settings-outline"
+      />
+
       <ScrollView 
-        className="flex-1"
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00A3FF" />
         }
       >
-        {/* Header Background */}
-        <View className="h-40 bg-blue-50/50 dark:bg-slate-900 absolute top-0 left-0 right-0" />
-        
         {/* Profile Card Section */}
-        <View className="pt-12 px-6 items-center">
-          <View className="relative">
-            <View className="w-32 h-32 rounded-full border-4 border-white dark:border-slate-800 shadow-lg overflow-hidden bg-white">
+        <View style={styles.profileHeader}>
+          <View style={styles.avatarWrapper}>
+            <View style={styles.avatarCircle}>
               {profile?.avatar_url ? (
-                <Image source={{ uri: profile.avatar_url }} className="w-full h-full" />
+                <Image source={{ uri: profile.avatar_url }} style={styles.avatarImage} />
               ) : (
-                <MaterialCommunityIcons name="account" size={80} color="#cbd5e1" className="self-center mt-4" />
+                <MaterialCommunityIcons name="account" size={80} color="#1A1A1C" />
               )}
             </View>
-            <TouchableOpacity className="absolute bottom-1 right-1 bg-green-500 w-8 h-8 rounded-full items-center justify-center border-2 border-white dark:border-slate-800 shadow-sm">
+            <TouchableOpacity style={styles.cameraBtn}>
                <MaterialCommunityIcons name="camera" size={16} color="white" />
             </TouchableOpacity>
           </View>
           
-          <Text className="text-2xl font-bold text-slate-800 dark:text-white mt-4">
+          <Text style={styles.nameText}>
             {profile?.full_name || 'Sin nombre'}
           </Text>
-          <Text className="text-blue-600 dark:text-blue-400 font-semibold text-sm">
+          <Text style={styles.titleText}>
             {profile?.professional_title || 'Añadir título profesional'}
           </Text>
           
           {profile?.location && (
-            <View className="flex-row items-center mt-1">
-              <MaterialCommunityIcons name="map-marker-outline" size={14} color="#94a3b8" />
-              <Text className="text-slate-400 dark:text-slate-500 text-xs ml-1">
-                {profile.location}
-              </Text>
+            <View style={styles.locationRow}>
+              <MaterialCommunityIcons name="map-marker-outline" size={14} color="#475569" />
+              <Text style={styles.locationText}>{profile.location}</Text>
             </View>
           )}
 
           <TouchableOpacity 
             onPress={() => navigation.navigate('EditProfile', { profile })}
-            className="mt-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-8 py-3 rounded-2xl flex-row items-center shadow-sm"
+            style={styles.editBtn}
           >
-            <Feather name="edit-3" size={18} color="#2563eb" />
-            <Text className="text-blue-600 font-bold ml-2">Editar Info</Text>
+            <Feather name="edit-3" size={18} color="#00A3FF" />
+            <Text style={styles.editBtnText}>Editar Perfil</Text>
           </TouchableOpacity>
         </View>
 
         {/* Stats Row */}
-        <View className="flex-row px-6 mt-8 gap-4">
+        <View style={styles.statsRow}>
             <StatCard label="Profile Complete" value={`${profileCompletePercent}%`} sublabel="Añadir experiencia" />
             <StatCard label="Applications" value="12" />
             <StatCard label="Profile Views" value="34" />
         </View>
 
         {/* Experience Section */}
-        <View className="px-6 mt-8">
-          <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-lg font-bold text-slate-900 dark:text-white">Mi Experiencia</Text>
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Mi Experiencia</Text>
             <TouchableOpacity>
-              <Text className="text-blue-600 font-bold text-xs">Ver Todo</Text>
+              <Text style={styles.seeAllText}>Ver Todo</Text>
             </TouchableOpacity>
           </View>
           
@@ -174,17 +166,17 @@ export const ProfileScreen = ({ navigation }: any) => {
             ))
           ) : (
             <TouchableOpacity 
-              className="p-6 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 items-center justify-center mb-4"
+              style={styles.emptyExperience}
               onPress={() => navigation.navigate('EditProfile')}
             >
-              <Text className="text-slate-400 text-sm italic">Aún no has añadido experiencias</Text>
-              <Text className="text-blue-600 font-bold mt-2">+ Añadir</Text>
+              <Text style={styles.emptyText}>Aún no has añadido experiencias</Text>
+              <Text style={styles.addText}>+ Añadir</Text>
             </TouchableOpacity>
           )}
         </View>
 
         {/* Resume Section */}
-        <View className="px-6 mt-2">
+        <View style={styles.section}>
             <ResumeSection 
               resumeUrl={profile?.resume_url} 
               onUpload={() => navigation.navigate('EditProfile')}
@@ -192,17 +184,17 @@ export const ProfileScreen = ({ navigation }: any) => {
         </View>
 
         {/* Action Buttons */}
-        <View className="px-6 mt-4 pb-12">
+        <View style={styles.footerActions}>
           <TouchableOpacity 
             onPress={handleLogout}
-            className="flex-row items-center justify-center bg-red-50/50 dark:bg-red-950/20 py-4 rounded-3xl border border-red-100 dark:border-red-900/50"
+            style={styles.logoutBtn}
           >
-            <MaterialCommunityIcons name="logout" size={20} color="#ef4444" className="mr-2" />
-            <Text className="text-red-500 font-bold ml-2">Cerrar Sesión</Text>
+            <MaterialCommunityIcons name="logout" size={20} color="#FF3B30" />
+            <Text style={styles.logoutText}>Cerrar Sesión</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity className="mt-4 items-center">
-            <Text className="text-red-200 dark:text-red-900 text-[10px] font-bold uppercase tracking-wider">Eliminar Cuenta</Text>
+          <TouchableOpacity style={styles.deleteBtn}>
+            <Text style={styles.deleteText}>Eliminar Cuenta</Text>
           </TouchableOpacity>
         </View>
 
@@ -210,3 +202,160 @@ export const ProfileScreen = ({ navigation }: any) => {
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  profileHeader: {
+    paddingTop: 30,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+  },
+  avatarWrapper: {
+    position: 'relative',
+  },
+  avatarCircle: {
+    width: 128,
+    height: 128,
+    borderRadius: 64,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    overflow: 'hidden',
+    backgroundColor: '#121214',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+  },
+  cameraBtn: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#00A3FF',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#050505',
+  },
+  nameText: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    marginTop: 20,
+  },
+  titleText: {
+    fontSize: 14,
+    color: '#00A3FF',
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  locationText: {
+    color: '#475569',
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  editBtn: {
+    marginTop: 25,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  editBtnText: {
+    color: '#00A3FF',
+    fontWeight: '800',
+    marginLeft: 10,
+    fontSize: 14,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginTop: 35,
+    gap: 12,
+  },
+  section: {
+    paddingHorizontal: 20,
+    marginTop: 35,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  seeAllText: {
+    color: '#00A3FF',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  emptyExperience: {
+    padding: 30,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: '#475569',
+    fontSize: 13,
+    fontStyle: 'italic',
+  },
+  addText: {
+    color: '#00A3FF',
+    fontWeight: '900',
+    marginTop: 8,
+  },
+  footerActions: {
+    paddingHorizontal: 20,
+    marginTop: 20,
+    paddingBottom: 60,
+  },
+  logoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 59, 48, 0.1)',
+    paddingVertical: 18,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 59, 48, 0.1)',
+  },
+  logoutText: {
+    color: '#FF3B30',
+    fontWeight: '800',
+    fontSize: 16,
+    marginLeft: 10,
+  },
+  deleteBtn: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  deleteText: {
+    color: '#1e293b',
+    fontSize: 10,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+  }
+});

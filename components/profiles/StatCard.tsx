@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 
 interface StatCardProps {
   label: string;
@@ -9,16 +9,43 @@ interface StatCardProps {
 
 export const StatCard = ({ label, value, sublabel }: StatCardProps) => {
   return (
-    <View className="flex-1 bg-white dark:bg-slate-900 rounded-3xl p-4 items-center justify-center shadow-sm border border-slate-100 dark:border-slate-800">
-      <Text className="text-xl font-bold text-slate-900 dark:text-white">{value}</Text>
-      <Text className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase mt-1 text-center">
-        {label}
-      </Text>
-      {sublabel && (
-        <Text className="text-[9px] text-slate-400 dark:text-slate-600 mt-0.5 text-center lowercase">
-          {sublabel}
-        </Text>
-      )}
+    <View style={styles.card}>
+      <Text style={styles.value}>{value}</Text>
+      <Text style={styles.label}>{label}</Text>
+      {sublabel && <Text style={styles.sublabel}>{sublabel}</Text>}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  card: {
+    flex: 1,
+    backgroundColor: '#121214',
+    borderRadius: 24,
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  value: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#FFFFFF',
+  },
+  label: {
+    fontSize: 10,
+    color: '#94a3b8',
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    marginTop: 4,
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  sublabel: {
+    fontSize: 9,
+    color: '#475569',
+    marginTop: 2,
+    textAlign: 'center',
+  }
+});
