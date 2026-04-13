@@ -286,6 +286,7 @@ export const HomeScreen = () => {
             salary={currentJob.salary}
             tags={currentJob.tags}
             content={currentJob.companyDescription || 'Forma parte de una de las empresas más innovadoras del sector.'}
+            accentColor="#00A3FF"
           />
         )}
       </SafeAreaView>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -8,9 +8,11 @@ import {
   Dimensions, 
   ScrollView,
   Image,
-  Platform 
+  Platform,
+  PanResponder,
+  Animated,
 } from 'react-native';
-import { Ionicons, Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -25,6 +27,7 @@ interface ObsidianDetailModalProps {
   tags?: string[];
   salary?: string;
   location?: string;
+  accentColor?: string;
 }
 
 export const ObsidianDetailModal: React.FC<ObsidianDetailModalProps> = ({
@@ -36,8 +39,45 @@ export const ObsidianDetailModal: React.FC<ObsidianDetailModalProps> = ({
   imageUrl,
   tags,
   salary,
-  location
+  location,
+  accentColor = '#FF005C',
 }) => {
+  const translateY = useRef(new Animated.Value(0)).current;
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Only capture downward swipes
+        return gestureState.dy > 5 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dy > 0) {
+          translateY.setValue(gestureState.dy);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy > 120 || gestureState.vy > 1.2) {
+          // Swipe down far enough → dismiss
+          Animated.timing(translateY, {
+            toValue: SCREEN_HEIGHT,
+            duration: 300,
+            useNativeDriver: true,
+          }).start(() => {
+            translateY.setValue(0);
+            onClose();
+          });
+        } else {
+          // Snap back
+          Animated.spring(translateY, {
+            toValue: 0,
+            friction: 8,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
   return (
     <Modal
       transparent
@@ -58,9 +98,12 @@ export const ObsidianDetailModal: React.FC<ObsidianDetailModalProps> = ({
           )}
         </TouchableOpacity>
 
-        <View style={styles.container}>
-          <View style={styles.handle} />
-          
+        <Animated.View style={[styles.container, { transform: [{ translateY }] }]}>
+          {/* Handle with PanResponder attached */}
+          <View {...panResponder.panHandlers} style={styles.handleZone}>
+            <View style={styles.handle} />
+          </View>
+
           <ScrollView 
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContent}
@@ -71,20 +114,20 @@ export const ObsidianDetailModal: React.FC<ObsidianDetailModalProps> = ({
 
             <View style={styles.header}>
               <Text style={styles.title}>{title}</Text>
-              {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+              {subtitle && <Text style={[styles.subtitle, { color: accentColor }]}>{subtitle}</Text>}
             </View>
 
             {(location || salary) && (
               <View style={styles.metaRow}>
                 {location && (
-                  <View style={styles.metaItem}>
-                    <Ionicons name="location-outline" size={16} color="#00A3FF" />
+                  <View style={[styles.metaItem, { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` }]}>
+                    <Ionicons name="location-outline" size={16} color={accentColor} />
                     <Text style={styles.metaText}>{location}</Text>
                   </View>
                 )}
                 {salary && (
-                  <View style={styles.metaItem}>
-                    <Ionicons name="cash-outline" size={16} color="#00A3FF" />
+                  <View style={[styles.metaItem, { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` }]}>
+                    <Ionicons name="cash-outline" size={16} color={accentColor} />
                     <Text style={styles.metaText}>{salary}</Text>
                   </View>
                 )}
@@ -94,8 +137,8 @@ export const ObsidianDetailModal: React.FC<ObsidianDetailModalProps> = ({
             {tags && tags.length > 0 && (
               <View style={styles.tagsContainer}>
                 {tags.map((tag, i) => (
-                  <View key={i} style={styles.tag}>
-                    <Text style={styles.tagText}>{tag}</Text>
+                  <View key={i} style={[styles.tag, { backgroundColor: `${accentColor}1a`, borderColor: `${accentColor}33` }]}>
+                    <Text style={[styles.tagText, { color: accentColor }]}>{tag}</Text>
                   </View>
                 ))}
               </View>
@@ -106,7 +149,6 @@ export const ObsidianDetailModal: React.FC<ObsidianDetailModalProps> = ({
               <Text style={styles.contentText}>{content}</Text>
             </View>
 
-            {/* Placeholder for more info like requirements */}
             <View style={[styles.contentSection, { marginBottom: 40 }]}>
               <Text style={styles.sectionTitle}>Requisitos & Cultura</Text>
               <Text style={styles.contentText}>
@@ -115,10 +157,10 @@ export const ObsidianDetailModal: React.FC<ObsidianDetailModalProps> = ({
             </View>
           </ScrollView>
 
-          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+          <TouchableOpacity style={[styles.closeBtn, { backgroundColor: `${accentColor}26`, borderColor: `${accentColor}4d` }]} onPress={onClose}>
              <Ionicons name="close" size={28} color="white" />
           </TouchableOpacity>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -138,17 +180,20 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.1)',
     overflow: 'hidden',
   },
+  handleZone: {
+    width: '100%',
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
   handle: {
     width: 40,
     height: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     borderRadius: 2,
-    alignSelf: 'center',
-    marginTop: 12,
   },
   scrollContent: {
     padding: 24,
-    paddingTop: 10,
+    paddingTop: 0,
   },
   coverImage: {
     width: '100%',
@@ -168,7 +213,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#00A3FF',
+    color: '#FF005C',
     marginTop: 4,
   },
   metaRow: {
@@ -180,12 +225,12 @@ const styles = StyleSheet.create({
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: 'rgba(255, 0, 92, 0.05)',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: 'rgba(255, 0, 92, 0.12)',
   },
   metaText: {
     color: '#94a3b8',
@@ -200,15 +245,15 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   tag: {
-    backgroundColor: 'rgba(0, 163, 255, 0.1)',
+    backgroundColor: 'rgba(255, 0, 92, 0.1)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(0, 163, 255, 0.2)',
+    borderColor: 'rgba(255, 0, 92, 0.2)',
   },
   tagText: {
-    color: '#00A3FF',
+    color: '#FF005C',
     fontSize: 12,
     fontWeight: '800',
   },
@@ -236,10 +281,10 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(255, 0, 92, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 0, 92, 0.3)',
   }
 });
