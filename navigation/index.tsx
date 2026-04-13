@@ -6,7 +6,6 @@ import { WelcomeScreen } from '../screens/WelcomeScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
 import { MainTabNavigator, BusinessTabNavigator } from './AppNavigator';
-import { useApp } from '../lib/AppContext';
 import { SessionContext } from '../lib/SessionContext';
 import { MatchProvider } from '../lib/MatchContext';
 import { BusinessChatProvider } from '../lib/BusinessChatContext';
@@ -15,12 +14,7 @@ import { BusinessProfileProvider } from '../lib/BusinessProfileContext';
 const Stack = createNativeStackNavigator();
 
 export const RootNavigator = ({ session }: { session: Session | null }) => {
-  const { currentScreen, setCurrentScreen, isBusiness } = useApp();
   const role = session?.user?.user_metadata?.role || 'candidate';
-
-  const handleWelcomeFinish = () => {
-    setCurrentScreen(session ? 'home' : 'login');
-  };
 
   return (
     <SessionContext.Provider value={session}>
@@ -28,14 +22,16 @@ export const RootNavigator = ({ session }: { session: Session | null }) => {
         <BusinessChatProvider>
           <MatchProvider>
             <Stack.Navigator 
-              key={session ? 'app' : `${currentScreen}-${isBusiness}`}
-              screenOptions={{ headerShown: false }}
-              initialRouteName={session ? 'Main' : (currentScreen === 'welcome' ? 'Welcome' : 'Login')}
+              screenOptions={{ 
+                headerShown: false,
+                animation: 'fade_from_bottom',
+                contentStyle: { backgroundColor: '#050505' } // Force darkest background
+              }}
             >
               {!session ? (
                 <>
                   <Stack.Screen name="Welcome">
-                    {(props) => <WelcomeScreen {...props} onFinish={handleWelcomeFinish} />}
+                    {(props) => <WelcomeScreen {...props} onFinish={() => {}} />}
                   </Stack.Screen>
                   <Stack.Screen name="Login" component={LoginScreen} />
                   <Stack.Screen name="Register" component={RegisterScreen} />

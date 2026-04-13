@@ -1,30 +1,18 @@
+import 'react-native-gesture-handler';
 import React, { useState, useEffect } from 'react';
-import { useColorScheme } from 'nativewind';
-import { useColorScheme as useRNColorScheme } from 'react-native';
+import { View, useColorScheme as useRNColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme } from '@react-navigation/native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-import { WelcomeScreen } from './screens/WelcomeScreen';
-import { LoginScreen } from './screens/LoginScreen';
-import { RegisterScreen } from './screens/RegisterScreen';
 import { RootNavigator } from './navigation/index';
-
 import { supabase } from './lib/supabase';
 import { Session } from '@supabase/supabase-js';
+import { AppProvider } from './lib/AppContext';
 import './global.css';
-
-import { AppProvider, useApp } from './lib/AppContext';
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
-  const { setColorScheme } = useColorScheme();
-  const systemColorScheme = useRNColorScheme();
-
-  useEffect(() => {
-    if (systemColorScheme) {
-      setColorScheme(systemColorScheme);
-    }
-  }, [systemColorScheme, setColorScheme]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -41,12 +29,15 @@ export default function App() {
   }, []);
 
   return (
-    <SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <AppProvider>
-        <NavigationContainer>
-          <RootNavigator session={session} />
-        </NavigationContainer>
+        <SafeAreaProvider>
+          {/* Forcing Dark Theme for the entire app context */}
+          <NavigationContainer theme={DarkTheme}>
+            <RootNavigator session={session} />
+          </NavigationContainer>
+        </SafeAreaProvider>
       </AppProvider>
-    </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

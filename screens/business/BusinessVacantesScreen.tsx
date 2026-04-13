@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StatusBar, ActivityIndicator, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState, useCallback } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, StatusBar } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { SessionContext } from '../../lib/SessionContext';
+
+import { ObsidianHeader } from '../../components/ObsidianHeader';
 
 const MOCK_BUSINESS_JOBS = [
   {
@@ -29,23 +31,15 @@ const MOCK_BUSINESS_JOBS = [
 
 export const BusinessVacantesScreen = ({ navigation }: any) => {
   const session = React.useContext(SessionContext);
-  const [jobs, setJobs] = useState<any[]>(MOCK_BUSINESS_JOBS); // Iniciamos con mock data
+  const [jobs, setJobs] = useState<any[]>(MOCK_BUSINESS_JOBS);
   const [loading, setLoading] = useState(false);
 
   const fetchJobs = React.useCallback(async () => {
     if (!session?.user?.id) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('jobs')
-        .select('*')
-        .eq('company_id', session.user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.log('Usando datos de prueba (Supabase no configurado)');
-        setJobs(MOCK_BUSINESS_JOBS);
-      } else if (data && data.length > 0) {
+      const { data, error } = await supabase.from('jobs').select('*').eq('company_id', session.user.id).order('created_at', { ascending: false });
+      if (!error && data && data.length > 0) {
         setJobs(data);
       } else {
         setJobs(MOCK_BUSINESS_JOBS);
@@ -65,79 +59,80 @@ export const BusinessVacantesScreen = ({ navigation }: any) => {
 
   const renderJobItem = ({ item }: { item: any }) => (
     <TouchableOpacity 
-      activeOpacity={0.7}
+      activeOpacity={0.8}
       onPress={() => navigation.navigate('JobDetail', { job: item })}
-      className="bg-white dark:bg-slate-900 mx-6 mb-4 p-5 rounded-[30px] shadow-sm border border-slate-100 dark:border-slate-800"
+      style={styles.jobCard}
     >
-      <View className="flex-row justify-between items-start mb-2">
-        <View className="flex-1">
-          <Text className="text-lg font-bold text-slate-900 dark:text-white mb-1">{item.title}</Text>
-          <Text className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">{item.location}</Text>
+      <View style={styles.cardHeader}>
+        <View style={styles.titleInfo}>
+          <Text style={styles.jobTitle}>{item.title}</Text>
+          <Text style={styles.jobLocation}>{item.location}</Text>
         </View>
-        <View className="bg-green-100 dark:bg-green-900/30 px-3 py-1 rounded-full">
-          <Text className="text-green-600 dark:text-green-400 text-[10px] font-bold">ACTIVA</Text>
+        <View style={styles.statusBadge}>
+          <Text style={styles.statusLabel}>ACTIVA</Text>
         </View>
       </View>
-      <View className="flex-row items-center mt-3 pt-3 border-t border-slate-50 dark:border-slate-800">
-        <View className="flex-row items-center mr-4">
-          <Ionicons name="people-outline" size={14} color="#64748b" />
-          <Text className="text-slate-500 dark:text-slate-400 text-xs ml-1">{item.postulaciones || 0} Postulaciones</Text>
+      
+      <View style={styles.cardFooter}>
+        <View style={styles.statItem}>
+          <Ionicons name="people-outline" size={14} color="#FF005C" />
+          <Text style={styles.statText}>{item.postulaciones || 0} Aplicaciones</Text>
         </View>
-        <View className="flex-row items-center">
+        <View style={styles.statItem}>
           <Ionicons name="cash-outline" size={14} color="#64748b" />
-          <Text className="text-slate-500 dark:text-slate-400 text-xs ml-1">{item.salary}</Text>
+          <Text style={styles.statText}>{item.salary}</Text>
         </View>
       </View>
     </TouchableOpacity>
   );
 
   return (
-    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <StatusBar barStyle="dark-content" />
-      <SafeAreaView className="flex-1" edges={['top']}>
-        {/* Header */}
-        <View className="px-6 py-4 flex-row justify-between items-center bg-white dark:bg-slate-900 shadow-sm">
-          <Text className="text-2xl font-bold text-slate-900 dark:text-white">Mis Vacantes</Text>
-        </View>
+    <View style={{ flex: 1, backgroundColor: '#050505' }}>
+      <StatusBar barStyle="light-content" />
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+        
+        <ObsidianHeader 
+          title="My Vacancies" 
+          subtitle="Management Console"
+          rightIcon="options-outline"
+        />
 
         {loading ? (
-          <View className="flex-1 items-center justify-center">
-            <ActivityIndicator color="#3b82f6" />
+          <View style={styles.centerBox}>
+            <ActivityIndicator color="#FF005C" />
           </View>
         ) : jobs.length > 0 ? (
           <FlatList
             data={jobs}
             renderItem={renderJobItem}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={{ paddingVertical: 24, paddingBottom: 100 }}
+            contentContainerStyle={styles.listContent}
             onRefresh={fetchJobs}
             refreshing={loading}
+            showsVerticalScrollIndicator={false}
           />
         ) : (
-          <View className="flex-1 items-center justify-center px-10">
-            <View className="w-20 h-20 bg-blue-50 dark:bg-slate-800 rounded-full items-center justify-center mb-4">
-              <Ionicons name="briefcase-outline" size={40} color="#3b82f6" />
+          <View style={styles.centerBox}>
+            <View style={styles.emptyIconCircle}>
+              <Ionicons name="briefcase-outline" size={40} color="#FF005C" />
             </View>
-            <Text className="text-xl font-bold text-slate-800 dark:text-white text-center mb-2">No tienes vacantes aún</Text>
-            <Text className="text-slate-500 dark:text-slate-400 text-center mb-8">Empieza publicando tu primera oferta de empleo para atraer talento.</Text>
+            <Text style={styles.emptyTitle}>No tienes vacantes aún</Text>
+            <Text style={styles.emptyText}>Empieza publicando tu primera oferta de empleo para atraer talento.</Text>
             <TouchableOpacity 
               onPress={() => navigation.navigate('CreateVacante')}
-              className="bg-blue-600 px-8 py-4 rounded-2xl shadow-lg shadow-blue-200"
+              style={styles.createBtn}
             >
-              <Text className="text-white font-bold">Publicar Vacante</Text>
+              <Text style={styles.createBtnText}>Publicar Vacante</Text>
             </TouchableOpacity>
           </View>
         )}
-
       </SafeAreaView>
 
-      {/* Floating Action Button (FAB) moved outside SafeArea for true floating */}
       {!loading && (
         <TouchableOpacity 
           onPress={() => navigation.navigate('CreateVacante')}
-          activeOpacity={0.8}
-          className="absolute bottom-28 right-6 w-16 h-16 rounded-full bg-blue-600 items-center justify-center shadow-xl shadow-blue-400 z-50"
-          style={{ elevation: 15 }}
+          activeOpacity={0.9}
+          style={styles.fab}
         >
           <Ionicons name="add" size={32} color="white" />
         </TouchableOpacity>
@@ -145,3 +140,136 @@ export const BusinessVacantesScreen = ({ navigation }: any) => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  centerBox: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 40,
+  },
+  listContent: {
+    paddingVertical: 20,
+    paddingBottom: 120,
+  },
+  jobCard: {
+    backgroundColor: '#121214',
+    marginHorizontal: 20,
+    marginBottom: 16,
+    padding: 20,
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 15,
+  },
+  titleInfo: {
+    flex: 1,
+  },
+  jobTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  jobLocation: {
+    fontSize: 12,
+    color: '#475569',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  statusBadge: {
+    backgroundColor: 'rgba(255, 0, 92, 0.1)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 0, 92, 0.2)',
+  },
+  statusLabel: {
+    color: '#FF005C',
+    fontSize: 9,
+    fontWeight: '900',
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 15,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.03)',
+    gap: 20,
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statText: {
+    color: '#94a3b8',
+    fontSize: 12,
+    marginLeft: 6,
+    fontWeight: '600',
+  },
+  emptyIconCircle: {
+    width: 80,
+    height: 80,
+    backgroundColor: 'rgba(255, 0, 92, 0.05)',
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 0, 92, 0.1)',
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#475569',
+    textAlign: 'center',
+    marginBottom: 30,
+    lineHeight: 20,
+  },
+  createBtn: {
+    backgroundColor: '#FF005C',
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+    borderRadius: 18,
+    shadowColor: '#FF005C',
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  createBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 15,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 30,
+    right: 25,
+    width: 65,
+    height: 65,
+    borderRadius: 33,
+    backgroundColor: '#FF005C',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#FF005C',
+    shadowOpacity: 0.5,
+    shadowRadius: 15,
+    elevation: 20,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  }
+});

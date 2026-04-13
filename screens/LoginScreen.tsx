@@ -1,229 +1,208 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
-  ImageBackground, 
   TouchableOpacity, 
-  KeyboardAvoidingView, 
-  Platform, 
-  Image,
-  Animated,
+  Image, 
   StatusBar,
-  useColorScheme,
-  Alert
+  Alert,
+  Dimensions,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard
 } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { supabase } from '../lib/supabase';
-import { useApp } from '../lib/AppContext';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withSpring, 
+  withTiming,
+  interpolateColor,
+  withDelay
+} from 'react-native-reanimated';
 import { CustomInput } from '../components/CustomInput';
 import { CustomButton } from '../components/CustomButton';
+import { supabase } from '../lib/supabase';
+import { useApp } from '../lib/AppContext';
+import { ObsidianModal } from '../components/ObsidianModal';
 
-WebBrowser.maybeCompleteAuthSession();
+const { width } = Dimensions.get('window');
+
+// Colors from favicon and futuristic palette
+const COLORS = {
+  background: '#050505',
+  card: '#121214',
+  candidate: '#00A3FF',
+  company: '#FF005C',
+  text: '#FFFFFF',
+  textSecondary: '#94a3b8',
+  border: 'rgba(255, 255, 255, 0.05)',
+};
 
 export const LoginScreen = ({ navigation }: any) => {
-  const { isBusiness, setIsBusiness, setCurrentScreen: onNavigate } = useApp();
-  const colorScheme = useColorScheme();
-  const isDarkMode = colorScheme === 'dark';
+  const { setIsBusiness } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  // Local UI role state
-  const [role, setRole] = useState<'candidate' | 'company'>(isBusiness ? 'company' : 'candidate');
-
-  // Sync isBusiness with parent state when local role changes
-  const handleRoleChange = (newRole: 'candidate' | 'company') => {
-    setRole(newRole);
-    setIsBusiness(newRole === 'company');
-  };
   
-  // Animation state
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(25)).current;
+  // Local role state for pure UI animation
+  const [localRole, setLocalRole] = useState<'candidate' | 'company'>('candidate');
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: '', message: '' });
+  
+  // Shared values for animations
+  const switchAnim = useSharedValue(0); // 0 for candidate, 1 for company
+  const contentFade = useSharedValue(0);
+  const cardTranslateY = useSharedValue(50);
+  const [containerWidth, setContainerWidth] = useState(0);
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 900,
-        useNativeDriver: true,
-      }),
-      Animated.spring(slideAnim, {
-        toValue: 0,
-        friction: 9,
-        tension: 40,
-        useNativeDriver: true,
-      })
-    ]).start();
-  }, [fadeAnim, slideAnim]);
+    // Initial entrance animation
+    contentFade.value = withDelay(200, withTiming(1, { duration: 1000 }));
+    cardTranslateY.value = withDelay(200, withSpring(0, { damping: 15 }));
+  }, []);
+
+  const handleRoleChange = (role: 'candidate' | 'company') => {
+    setLocalRole(role);
+    switchAnim.value = withSpring(role === 'candidate' ? 0 : 1, { damping: 20 });
+    // Note: We don't call setIsBusiness here to avoid app-wide re-renders during UI interaction
+  };
+
+  const animatedSwitchStyle = useAnimatedStyle(() => {
+    // Calculate a stretch effect based on the animation speed/position
+    const isMoving = switchAnim.value > 0.1 && switchAnim.value < 0.9;
+    const stretch = withSpring(isMoving ? 1.1 : 1, { damping: 10 });
+    
+    // Calculate exact travel distance: (containerWidth - innerPaddingTotal) / 2
+    // Inner padding is 12 (6 from each side)
+    const travelDistance = (containerWidth - 12) / 2;
+
+    return {
+      transform: [
+        { translateX: withSpring(switchAnim.value * travelDistance) },
+        { scaleX: stretch }
+      ],
+      backgroundColor: interpolateColor(
+        switchAnim.value,
+        [0, 1],
+        [COLORS.candidate, COLORS.company]
+      ),
+      // Add a dynamic glow effect
+      shadowColor: interpolateColor(
+        switchAnim.value,
+        [0, 1],
+        [COLORS.candidate, COLORS.company]
+      ),
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.8,
+      shadowRadius: 10,
+    };
+  });
+
+  const animatedAccentStyle = useAnimatedStyle(() => {
+    return {
+      color: interpolateColor(
+        switchAnim.value,
+        [0, 1],
+        [COLORS.candidate, COLORS.company]
+      ),
+    };
+  });
+
+  const animatedCardStyle = useAnimatedStyle(() => {
+    return {
+      opacity: contentFade.value,
+      transform: [{ translateY: cardTranslateY.value }],
+    };
+  });
 
   const handleLogin = async () => {
-    console.log('Login attempt with:', email, password, 'Role:', role);
     if (!email || !password) {
-      Alert.alert('Faltan datos', 'Por favor ingresa tu correo y contraseña');
+      setAlertConfig({
+        visible: true,
+        title: 'Datos Incompletos',
+        message: 'Por favor ingresa todos los datos para continuar.'
+      });
       return;
     }
+    
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     setLoading(false);
 
     if (error) {
-      Alert.alert('Error al iniciar sesión', error.message);
+      setAlertConfig({
+        visible: true,
+        title: 'Error de Acceso',
+        message: 'Credenciales incorrectas o problema de red. Por favor intenta de nuevo.'
+      });
     } else {
-      onNavigate('home');
-    }
-  };
-
-  const handleSocialLogin = async (platform: string) => {
-    // Generate an app-specific URL to return to after authentication
-    const redirectUrl = Linking.createURL('auth/callback', { scheme: 'aptly' });
-    console.log({redirectUrl})
-    
-
-
-    // Get the login URL from Supabase WITHOUT opening the external browser automatically
-    const { data, error } = await supabase.auth.signInWithOAuth({ 
-      provider: platform.toLowerCase() as any,
-      options: {
-        redirectTo: redirectUrl,
-        skipBrowserRedirect: true,
-        queryParams: {
-          prompt: 'select_account' // Fija la pantalla en blanco en Android previendo redirecciones fantasma
-        }
-      }
-    });
-
-    if (error) {
-      Alert.alert('Error', error.message);
-      return;
-    }
-
-    if (data?.url) {
-      // Open the URL inside an in-app overlay window
-      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
-      
-      // When the user comes back securely, process the deep link connection
-      if (result.type === 'success' && result.url) {
-        try {
-          // Supabase returns credentials in the URL fragment (#) or sometimes query (?)
-          // e.g., app://auth/callback#access_token=TOKEN&refresh_token=TOKEN
-          const paramsString = result.url.split('#')[1] || result.url.split('?')[1] || '';
-          const paramsList = paramsString.split('&');
-          let access_token: string | null = null;
-          let refresh_token: string | null = null;
-          let provider_error: string | null = null;
-
-          for (const param of paramsList) {
-            const [key, value] = param.split('=');
-            if (key === 'access_token') access_token = value;
-            if (key === 'refresh_token') refresh_token = value;
-            if (key === 'error_description') {
-              provider_error = decodeURIComponent(value.replace(/\+/g, ' '));
-            }
-          }
-
-          if (access_token && refresh_token) {
-            await supabase.auth.setSession({ access_token, refresh_token });
-          } else if (provider_error) {
-            if (provider_error.includes('Multiple accounts')) {
-              Alert.alert(
-                'Cuenta Vinculada', 
-                'Ya existe una cuenta con este correo (seguro ya iniciaste con Google). Para poder iniciar con ambos, debes habilitar "Link identities to a single user" en los ajustes de Supabase (Authentication > Providers).'
-              );
-            } else {
-              Alert.alert('Error del Proveedor', provider_error);
-            }
-          } else {
-            Alert.alert("Error de Inicio", "No se detectó la sesión iniciada correctamente. Intenta de nuevo.");
-            console.error("No tokens found in URL:", result.url);
-          }
-        } catch (e) {
-          console.error("Error parsing URL:", e);
-        }
-      }
+      // Sync global state only upon success
+      setIsBusiness(localRole === 'company');
     }
   };
 
   return (
-    <View className="flex-1 bg-white dark:bg-slate-950">
-      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
-      
-      {/* Background with Glassmorphism */}
-      <ImageBackground
-        source={require('../assets/morocho.jpg')}
-        className="flex-1"
-        resizeMode="cover"
-      >
-        <View className="absolute inset-0 bg-black/30 dark:bg-black/60" />
-        
-          {/* @ts-ignore */}
-          <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
-            {/* @ts-ignore */}
-            <KeyboardAwareScrollView 
-            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
-            className="flex-1 px-6"
-            enableOnAndroid={true}
-            extraScrollHeight={80}
-            keyboardShouldPersistTaps="handled"
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <SafeAreaView style={styles.safeArea}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ flex: 1, justifyContent: 'center' }}
           >
-            <Animated.View 
-              style={{ 
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }]
-              }}
-              className="bg-white/80 dark:bg-slate-900/80 rounded-[45px] p-7 shadow-2xl border border-white/30 dark:border-slate-800/30 max-h-[94%]"
-            >
-              
-              {/* Branding Header */}
-              <View className="items-center mb-4">
-                  {/* @ts-ignore */}
-                  <Image 
-                    source={require('../assets/favicon.png')} 
-                    className="w-32 h-32" 
-                    resizeMode="contain"
-                  />
+            <Animated.View style={[styles.card, animatedCardStyle]}>
+              {/* Logo section */}
+              <View style={styles.logoContainer}>
+                <Image 
+                  source={require('../assets/favicon.png')} 
+                  style={styles.logo} 
+                  resizeMode="contain"
+                />
+                <Animated.Text style={[styles.title, animatedAccentStyle]}>
+                  {localRole === 'candidate' ? 'Aptly' : 'Aptly Business'}
+                </Animated.Text>
               </View>
 
-              {/* Messaging Area */}
-              <View className="items-center mb-6">
-                <Text className="text-slate-900 dark:text-slate-50 text-3xl font-bold mb-1 tracking-tight">
-                  {isBusiness ? "Aptly Business" : "Bienvenido a Aptly"}
-                </Text>
-                <Text className="text-slate-600 dark:text-slate-400 text-center text-[15px] px-6 leading-5 font-medium">
-                   {isBusiness 
-                     ? "Inicia sesión para gestionar tus ofertas y encontrar talento." 
-                     : "Encuentra tu próximo empleo de forma simple y rápida."}
-                </Text>
+              {/* Innovative Switcher */}
+              <View 
+                style={styles.switcherContainer}
+                onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
+              >
+                <Animated.View style={[styles.switcherPill, animatedSwitchStyle]} />
+                <TouchableOpacity 
+                   onPress={() => handleRoleChange('candidate')}
+                   style={styles.switcherButton}
+                >
+                  <Text style={[styles.switcherText, localRole === 'candidate' && styles.switcherTextActive]}>
+                    Candidato
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                   onPress={() => handleRoleChange('company')}
+                   style={styles.switcherButton}
+                >
+                  <Text style={[styles.switcherText, localRole === 'company' && styles.switcherTextActive]}>
+                    Empresa
+                  </Text>
+                </TouchableOpacity>
               </View>
 
-              {/* Auth Form */}
-              <View>
-                {/* Role Switcher */}
-                <View className="flex-row items-center p-1.5 bg-slate-200/80 dark:bg-slate-800/80 rounded-2xl mb-6">
-                  <TouchableOpacity 
-                    className={`flex-1 py-2.5 rounded-xl items-center ${role === 'candidate' ? 'bg-white dark:bg-slate-700 shadow-sm' : ''}`}
-                    onPress={() => handleRoleChange('candidate')}
-                  >
-                    <Text className={`text-[13px] font-bold ${role === 'candidate' ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>Candidato</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    className={`flex-1 py-2.5 rounded-xl items-center ${role === 'company' ? 'bg-white dark:bg-slate-700 shadow-sm' : ''}`}
-                    onPress={() => handleRoleChange('company')}
-                  >
-                    <Text className={`text-[13px] font-bold ${role === 'company' ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>Empresa</Text>
-                  </TouchableOpacity>
-                </View>
-
+              {/* Form section */}
+              <View style={styles.form}>
                 <CustomInput
-                  placeholder="Correo electrónico"
+                  placeholder="Email institucional"
                   value={email}
                   onChangeText={setEmail}
                   iconName="email-outline"
                   keyboardType="email-address"
                 />
+                
                 <CustomInput
                   placeholder="Contraseña"
                   value={password}
@@ -231,68 +210,218 @@ export const LoginScreen = ({ navigation }: any) => {
                   iconName="lock-outline"
                   isPassword
                 />
-                
-                <TouchableOpacity className="items-end mb-6 -mt-3">
-                  <Text className="text-primary-light font-bold text-[13px] tracking-tight">
-                    ¿Olvidaste tu contraseña?
-                  </Text>
+
+                <TouchableOpacity style={styles.forgotPass}>
+                  <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
                 </TouchableOpacity>
 
-                <CustomButton 
-                  title={loading ? "Iniciando..." : (isBusiness ? "Acceso Empresa" : "Iniciar Sesión")} 
-                  onPress={handleLogin} 
-                  variant="primary" 
-                  className={`mb-8 py-4 px-10 ${isBusiness ? 'bg-slate-900 dark:bg-slate-800' : ''}`} 
-                />
+                <TouchableOpacity 
+                  onPress={handleLogin}
+                  disabled={loading}
+                  activeOpacity={0.8}
+                >
+                  <Animated.View style={[styles.mainButton, { 
+                    backgroundColor: interpolateColor(
+                      switchAnim.value,
+                      [0, 1],
+                      [COLORS.candidate, COLORS.company]
+                    )
+                  } as any]}>
+                    <Text style={styles.buttonText}>
+                      {loading ? 'Accediendo...' : (localRole === 'company' ? 'Acceso Empresa' : 'Entrar')}
+                    </Text>
+                  </Animated.View>
+                </TouchableOpacity>
+
+                {/* Fast Access Section */}
+                <View style={styles.dividerContainer}>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerText}>ACCESO RÁPIDO</Text>
+                  <View style={styles.dividerLine} />
+                </View>
+
+                <View style={styles.socialContainer}>
+                  <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
+                    <Image 
+                      source={{ uri: 'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png' }} 
+                      style={styles.socialIcon}
+                    />
+                    <Text style={styles.socialButtonText}>Google</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
+                    <MaterialCommunityIcons name="github" size={20} color="#FFF" />
+                    <Text style={[styles.socialButtonText, { marginLeft: 8 }]}>GitHub</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
 
-              {/* Semantic Divider */}
-              <View className="flex-row items-center mb-8">
-                <View className="flex-1 h-[0.5px] bg-slate-300 dark:bg-slate-700" />
-                <Text className="mx-4 text-slate-500 dark:text-slate-400 text-[10px] font-black tracking-widest uppercase">
-                   Acceso rápido
-                </Text>
-                <View className="flex-1 h-[0.5px] bg-slate-300 dark:bg-slate-700" />
-              </View>
-
-              {/* Social Login Grid */}
-              <View className="flex-row gap-4 mb-4">
-                <CustomButton 
-                  title="Google" 
-                  onPress={() => handleSocialLogin('Google')} 
-                  variant="social" 
-                  icon="google"
-                  className="flex-1 py-[12px] bg-white/50 dark:bg-slate-800/50"
-                />
-                <CustomButton 
-                  title="GitHub" 
-                  onPress={() => handleSocialLogin('GitHub')} 
-                  variant="social" 
-                  icon="github"
-                  className="flex-1 py-[12px] bg-white/50 dark:bg-slate-800/50"
-                />
-              </View>
-
-              {/* Navigation Link */}
-              <View className="flex-row justify-center mt-4">
-                <Text className="text-slate-600 dark:text-slate-400 text-sm">¿Nuevo por aquí? </Text>
+              {/* Footer */}
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>¿Nuevo por aquí? </Text>
                 <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                  <Text className="text-primary-light font-black text-sm">Registrate gratis</Text>
+                  <Animated.Text style={[styles.linkText, animatedAccentStyle]}>Regístrate gratis</Animated.Text>
                 </TouchableOpacity>
               </View>
-
             </Animated.View>
 
-            {/* Application Identifier */}
-            <View className="mt-8 items-center pb-8">
-              <Text className="text-white/70 dark:text-slate-500 text-[10px] font-bold tracking-widest uppercase py-2">
-                 versión 1.0.4 - Aptly Inc.
-              </Text>
-            </View>
-
-          </KeyboardAwareScrollView>
+            <ObsidianModal
+              isVisible={alertConfig.visible}
+              onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+              title={alertConfig.title}
+              message={alertConfig.message}
+              iconName="alert-circle"
+              type="destructive"
+              confirmText="Reintentar"
+            />
+          </KeyboardAvoidingView>
         </SafeAreaView>
-      </ImageBackground>
+      </TouchableWithoutFeedback>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  safeArea: {
+    flex: 1,
+    paddingHorizontal: 24,
+  },
+  card: {
+    backgroundColor: COLORS.card,
+    borderRadius: 32,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  logo: {
+    width: 90,
+    height: 90,
+    marginBottom: 8,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  switcherContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 20,
+    padding: 6,
+    marginBottom: 24,
+    position: 'relative',
+  },
+  switcherPill: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+    width: '50%',
+    height: '100%',
+    borderRadius: 14,
+  },
+  switcherButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  switcherText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  switcherTextActive: {
+    color: '#FFF',
+  },
+  form: {
+    width: '100%',
+  },
+  forgotPass: {
+    alignSelf: 'flex-end',
+    marginBottom: 16,
+  },
+  forgotText: {
+    color: '#64748b',
+    fontSize: 13,
+  },
+  mainButton: {
+    borderRadius: 20,
+    paddingVertical: 16,
+    alignItems: 'center',
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+  },
+  buttonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  dividerText: {
+    color: '#475569',
+    fontSize: 10,
+    fontWeight: '800',
+    marginHorizontal: 12,
+    letterSpacing: 1,
+  },
+  socialContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  socialButton: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 20,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  socialIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 8,
+  },
+  socialButtonText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 24,
+  },
+  footerText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+  },
+  linkText: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+});

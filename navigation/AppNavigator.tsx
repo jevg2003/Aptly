@@ -51,21 +51,17 @@ export const MainTabNavigator = () => {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#ffffff',
-          borderTopColor: '#e2e8f0',
+          backgroundColor: '#050505',
+          borderTopColor: 'rgba(255, 255, 255, 0.05)',
           borderTopWidth: 1,
-          height: 65,
-          paddingBottom: 8,
+          height: 70,
+          paddingBottom: 12,
           paddingTop: 8,
-          elevation: 10,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
+          elevation: 0,
         },
-        tabBarActiveTintColor: '#3b82f6',
-        tabBarInactiveTintColor: '#64748b',
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarActiveTintColor: '#00A3FF',
+        tabBarInactiveTintColor: '#475569',
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '700', marginBottom: 2 },
         tabBarIcon: ({ color, size }) => {
           let iconName: any = 'home';
           if (route.name === 'Chat') iconName = 'message-square';
@@ -90,16 +86,17 @@ export const BusinessTabNavigator = () => {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#ffffff',
-          borderTopColor: '#f1f5f9',
+          backgroundColor: '#050505',
+          borderTopColor: 'rgba(255, 255, 255, 0.05)',
           borderTopWidth: 1,
-          height: 65,
-          paddingBottom: 10,
-          paddingTop: 10,
+          height: 70,
+          paddingBottom: 12,
+          paddingTop: 8,
+          elevation: 0,
         },
-        tabBarActiveTintColor: '#506FC0',
-        tabBarInactiveTintColor: '#94a3b8',
-        tabBarLabelStyle: { fontSize: 10, fontWeight: '700' },
+        tabBarActiveTintColor: '#FF005C',
+        tabBarInactiveTintColor: '#475569',
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '700', marginBottom: 2 },
         tabBarIcon: ({ color, size }) => {
           let iconName: any = 'home';
           if (route.name === 'Vacantes') iconName = 'briefcase';

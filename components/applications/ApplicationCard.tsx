@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { Application } from '../../screens/applications/mockData';
 
 interface ApplicationCardProps {
@@ -10,52 +10,126 @@ interface ApplicationCardProps {
 export const ApplicationCard = ({ application, onPress }: ApplicationCardProps) => {
   const { companyName, status, statusColor, subtitle, buttonVariant, buttonText, imageUri } = application;
   
-  // Decide title color depending on selection
-  const titleColor = buttonVariant === 'filled' ? 'text-slate-900 dark:text-white' : 'text-slate-800 dark:text-slate-200';
-  const subtitleColor = buttonVariant === 'filled' ? 'text-green-600 dark:text-green-400 font-semibold' : 'text-blue-500 dark:text-blue-400';
-
   return (
-    <View className="bg-white dark:bg-slate-900 rounded-3xl m-4 p-5 shadow-sm border border-slate-100 dark:border-slate-800 flex-row overflow-hidden">
-      <View className="flex-1 pr-4 justify-between min-h-[120px]">
-        
+    <TouchableOpacity 
+      style={styles.card} 
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      <View style={styles.leftContent}>
         <View>
-          <View className="flex-row items-center mb-1">
-            <View className={`w-2 h-2 rounded-full mr-2 ${statusColor}`} />
-            <Text className="text-slate-500 dark:text-slate-400 text-sm">{status}</Text>
+          <View style={styles.statusRow}>
+             <View style={[styles.statusDot, { backgroundColor: status === 'Entrevista' ? '#00A3FF' : '#475569' }]} />
+             <Text style={styles.statusText}>{status}</Text>
           </View>
           
-          <Text className={`text-lg font-bold mt-1 mb-1 ${titleColor}`}>
-            {companyName}
-          </Text>
-          
-          <Text className={`text-sm ${subtitleColor} leading-tight`}>
-            {subtitle}
-          </Text>
+          <Text style={styles.companyName}>{companyName}</Text>
+          <Text style={styles.subtitle}>{subtitle}</Text>
         </View>
 
-        <TouchableOpacity 
-          onPress={onPress}
-          className={`mt-4 py-2 px-4 rounded-xl self-start ${
-            buttonVariant === 'filled' 
-              ? 'bg-blue-600' 
-              : 'bg-indigo-50 dark:bg-slate-800'
-          }`}
+        <View 
+          style={[
+            styles.actionBtn, 
+            buttonVariant === 'filled' ? styles.btnFilled : styles.btnGhost
+          ]}
         >
-          <Text 
-            className={`font-semibold text-[13px] ${
-              buttonVariant === 'filled' 
-                ? 'text-white' 
-                : 'text-blue-600 dark:text-blue-400'
-            }`}
-          >
+          <Text style={[
+            styles.btnText,
+            buttonVariant === 'filled' ? styles.textWhite : styles.textBlue
+          ]}>
             {buttonText}
           </Text>
-        </TouchableOpacity>
+        </View>
       </View>
       
-      <View className="w-28 h-28 rounded-2xl overflow-hidden self-center bg-slate-100">
-         <Image source={{ uri: imageUri }} className="w-full h-full" resizeMode="cover" />
+      <View style={styles.imageContainer}>
+         <Image source={{ uri: imageUri }} style={styles.image} resizeMode="cover" />
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: '#121214',
+    borderRadius: 24,
+    marginHorizontal: 20,
+    marginVertical: 10,
+    padding: 20,
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    overflow: 'hidden',
+  },
+  leftContent: {
+    flex: 1,
+    paddingRight: 15,
+    justifyContent: 'space-between',
+    minHeight: 120,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  statusText: {
+    color: '#94a3b8',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  companyName: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '800',
+    marginTop: 4,
+  },
+  subtitle: {
+    color: '#00A3FF',
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  actionBtn: {
+    marginTop: 15,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    alignSelf: 'flex-start',
+  },
+  btnFilled: {
+    backgroundColor: '#00A3FF',
+  },
+  btnGhost: {
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  btnText: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  textWhite: {
+    color: '#FFFFFF',
+  },
+  textBlue: {
+    color: '#00A3FF',
+  },
+  imageContainer: {
+    width: 110,
+    height: 110,
+    borderRadius: 18,
+    overflow: 'hidden',
+    alignSelf: 'center',
+    backgroundColor: '#050505',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  }
+});

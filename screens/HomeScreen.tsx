@@ -1,26 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StatusBar, useColorScheme, TouchableOpacity, Alert, Dimensions } from 'react-native';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
+import { 
+  View, 
+  Text, 
+  Dimensions, 
+  TouchableOpacity, 
+  Alert, 
+  StyleSheet,
+  StatusBar,
+  ActivityIndicator
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
-import { OnboardingCandidate } from './profiles/OnboardingCandidate';
-import { JobCard, JobData } from '../components/JobCard';
-import {
-  GestureHandlerRootView,
-  Gesture,
-  GestureDetector
-} from 'react-native-gesture-handler';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  runOnJS,
-  interpolate,
-  Extrapolate
-} from 'react-native-reanimated';
-import { COMPANIES } from '../lib/data';
 import { SessionContext } from '../lib/SessionContext';
 import { useMatches } from '../lib/MatchContext';
+import { JobCard, JobData } from '../components/JobCard';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withSpring, 
+  interpolate,
+  Extrapolate,
+  runOnJS
+} from 'react-native-reanimated';
+
+import { ObsidianHeader } from '../components/ObsidianHeader';
+import { ObsidianSwitcher } from '../components/ObsidianSwitcher';
+import { ObsidianModal } from '../components/ObsidianModal';
+import { ObsidianDetailModal } from '../components/ObsidianDetailModal';
+import { OnboardingCandidate } from './profiles/OnboardingCandidate';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
@@ -29,7 +38,7 @@ const MOCK_JOBS: JobData[] = [
   {
     id: '1',
     title: 'Gerente de Tienda',
-    company: COMPANIES[0].name,
+    company: 'D1 S.A.S.',
     companyDescription: 'Líder en retail de descuento',
     salary: '$3.5M - $4.5M COP',
     location: 'Bogotá, Colombia',
@@ -42,7 +51,7 @@ const MOCK_JOBS: JobData[] = [
   {
     id: '2',
     title: 'Supervisor de Zona',
-    company: COMPANIES[1].name,
+    company: 'Tiendas ARA',
     companyDescription: 'Expansión nacional',
     salary: '$3.0M - $3.8M COP',
     location: 'Medellín, Colombia',
@@ -55,7 +64,7 @@ const MOCK_JOBS: JobData[] = [
   {
     id: '3',
     title: 'Asesor Comercial',
-    company: COMPANIES[2].name,
+    company: 'Homecenter',
     companyDescription: 'Mejoramiento del hogar',
     salary: '$1.8M - $2.2M COP',
     location: 'Cali, Colombia',
@@ -70,8 +79,6 @@ const MOCK_JOBS: JobData[] = [
 export const HomeScreen = () => {
   const session = React.useContext(SessionContext);
   const { addMatch } = useMatches();
-  const colorScheme = useColorScheme();
-  const isDarkMode = colorScheme === 'dark';
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [checkingProfile, setCheckingProfile] = useState(true);
 
@@ -82,9 +89,18 @@ export const HomeScreen = () => {
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
 
+  const [modalConfig, setModalConfig] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    icon: 'star',
+    type: 'info' as 'success' | 'info'
+  });
+
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+
   const checkProfile = React.useCallback(async () => {
     if (!session?.user?.id) return;
-
     setCheckingProfile(true);
     try {
       const { data, error } = await supabase
@@ -92,18 +108,9 @@ export const HomeScreen = () => {
         .select('id')
         .eq('id', session.user.id)
         .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error checking profile:', error);
-      }
-
-      if (!data) {
-        setShowOnboarding(true);
-      } else {
-        setShowOnboarding(false);
-      }
+      if (!data && !error) setShowOnboarding(true);
     } catch (err) {
-      console.error('Check profile catch:', err);
+      console.error(err);
     } finally {
       setCheckingProfile(false);
     }
@@ -119,14 +126,32 @@ export const HomeScreen = () => {
 
     if (type === 'match') {
       addMatch(currentJob);
-      Alert.alert('¡Es un Match! 🎉', `Has mostrado gran interés en ${currentJob.company}`);
+      setModalConfig({
+        visible: true,
+        title: '¡Es un Match!',
+        message: '¡Excelente elección! La empresa evaluará tu perfil para determinar si eres el candidato apto. Se comunicarán contigo en un plazo estimado de 3 a 5 días hábiles. ¡Mantente atento!',
+        icon: 'heart',
+        type: 'success'
+      });
     } else if (type === 'superlike') {
-      Alert.alert('¡Super Like! ⭐', `Tu perfil destacará en ${currentJob.company}`);
-    } else {
-      Alert.alert('Empleo rechazado 👎', `Has rechazado la vacante en ${currentJob.company}`);
+      setModalConfig({
+        visible: true,
+        title: '¡Super Like!',
+        message: '¡Tu perfil acaba de ser priorizado! Gracias por tu interés. La empresa revisará tus habilidades destacadas y se pondrá en contacto pronto.',
+        icon: 'zap',
+        type: 'success'
+      });
+    } else if (type === 'reject') {
+      setModalConfig({
+        visible: true,
+        title: 'Preferencia Guardada',
+        message: 'Entendido. Hemos filtrado esta vacante; tu tiempo es valioso y buscaremos algo que se ajuste mejor a lo que deseas.',
+        icon: 'x-circle',
+        type: 'info'
+      });
+      translateX.value = withSpring(-SCREEN_WIDTH * 1.5);
     }
 
-    // Reset position and advance index
     translateX.value = 0;
     translateY.value = 0;
     setCurrentIndex(prev => prev + 1);
@@ -138,7 +163,6 @@ export const HomeScreen = () => {
     else if (direction === 'up') handleAction('superlike');
   };
 
-  // 1. New Gesture API (Reanimated 3 style)
   const gesture = Gesture.Pan()
     .onUpdate((event) => {
       translateX.value = event.translationX;
@@ -146,158 +170,210 @@ export const HomeScreen = () => {
     })
     .onEnd((event) => {
       if (translateX.value > SWIPE_THRESHOLD) {
-        translateX.value = withSpring(SCREEN_WIDTH * 1.5, {}, () => {
-          runOnJS(onSwipeComplete)('right');
-        });
+        translateX.value = withSpring(SCREEN_WIDTH * 1.5, {}, () => runOnJS(onSwipeComplete)('right'));
       } else if (translateX.value < -SWIPE_THRESHOLD) {
-        translateX.value = withSpring(-SCREEN_WIDTH * 1.5, {}, () => {
-          runOnJS(onSwipeComplete)('left');
-        });
+        translateX.value = withSpring(-SCREEN_WIDTH * 1.5, {}, () => runOnJS(onSwipeComplete)('left'));
       } else if (translateY.value < -SWIPE_THRESHOLD) {
-        translateY.value = withSpring(-SCREEN_WIDTH * 1.5, {}, () => {
-          runOnJS(onSwipeComplete)('up');
-        });
+        translateY.value = withSpring(-SCREEN_WIDTH * 1.5, {}, () => runOnJS(onSwipeComplete)('up'));
       } else {
         translateX.value = withSpring(0);
         translateY.value = withSpring(0);
       }
     });
 
-  // 2. Animated Style for the Front Card
   const cardStyle = useAnimatedStyle(() => {
-    const rotate = interpolate(
-      translateX.value,
-      [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
-      [-10, 0, 10],
-      Extrapolate.CLAMP
-    );
-
+    const rotate = interpolate(translateX.value, [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2], [-8, 0, 8], Extrapolate.CLAMP);
     return {
-      transform: [
-        { translateX: translateX.value },
-        { translateY: translateY.value },
-        { rotate: `${rotate}deg` }
-      ]
+      transform: [{ translateX: translateX.value }, { translateY: translateY.value }, { rotate: `${rotate}deg` }]
     };
   });
 
-  // 3. Next Card Style (Scale up as the top card moves)
   const nextCardStyle = useAnimatedStyle(() => {
-    const scale = interpolate(
-      Math.abs(translateX.value),
-      [0, SWIPE_THRESHOLD],
-      [0.9, 1],
-      Extrapolate.CLAMP
-    );
-
-    return {
-      transform: [{ scale }]
-    };
+    const scale = interpolate(Math.abs(translateX.value), [0, SWIPE_THRESHOLD], [0.92, 1], Extrapolate.CLAMP);
+    const opacity = interpolate(Math.abs(translateX.value), [0, SWIPE_THRESHOLD], [0.6, 1], Extrapolate.CLAMP);
+    return { transform: [{ scale }], opacity };
   });
 
   if (checkingProfile) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-slate-950">
-        <Text className="text-slate-500 italic">Cargando...</Text>
+      <View style={{ flex: 1, backgroundColor: '#050505', alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ color: '#94a3b8', fontStyle: 'italic' }}>Iniciando Obsidian...</Text>
       </View>
     );
   }
 
   if (showOnboarding && session?.user?.id) {
-    return (
-      <OnboardingCandidate
-        userId={session.user.id}
-        session={session}
-        onComplete={() => setShowOnboarding(false)}
-      />
-    );
+    return <OnboardingCandidate userId={session.user.id} session={session} onComplete={() => setShowOnboarding(false)} />;
   }
 
   const currentJob = MOCK_JOBS[currentIndex];
   const nextJob = MOCK_JOBS[currentIndex + 1];
 
   return (
-    <GestureHandlerRootView className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
+    <View style={{ flex: 1, backgroundColor: '#050505' }}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+        
+        <ObsidianHeader 
+          title="Exploration" 
+          subtitle="Top Matches"
+          leftIcon="menu"
+          rightIcon="options"
+        />
 
-      <SafeAreaView className="flex-1" edges={['top']}>
-
-        {/* HEADER TOP BAR */}
-        <View className="flex-row items-center justify-between px-6 pt-2 pb-4">
-          <TouchableOpacity className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-slate-800 items-center justify-center">
-            <Ionicons name="menu" size={24} color="#3b82f6" />
-          </TouchableOpacity>
-
-          <Text className="text-xl font-bold text-slate-800 dark:text-white">Exploration</Text>
-
-          <TouchableOpacity className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-slate-800 items-center justify-center">
-            <Ionicons name="options" size={24} color="#3b82f6" />
-          </TouchableOpacity>
-        </View>
-
-        {/* AREA DE TARJETAS */}
-        <View className="flex-1 px-4 justify-center">
+        <View style={styles.cardArea}>
           {currentJob ? (
-            <View className="w-full flex-1 mb-16 z-10 relative">
-
-              {/* Next Card (Background) */}
+            <View style={styles.cardWrapper}>
               {nextJob && (
-                <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%', zIndex: -1 }, nextCardStyle]}>
-                  <JobCard job={nextJob} />
+                <Animated.View style={[styles.nextCard, nextCardStyle]}>
+                  <JobCard 
+                    job={nextJob} 
+                    onInfoPress={() => setDetailModalVisible(true)} 
+                  />
                 </Animated.View>
               )}
 
-              {/* Current Card (Draggable) */}
               <GestureDetector gesture={gesture}>
                 <Animated.View style={[{ flex: 1 }, cardStyle]}>
-                  <JobCard job={currentJob} />
+                  <JobCard 
+                    job={currentJob} 
+                    onInfoPress={() => setDetailModalVisible(true)} 
+                  />
                 </Animated.View>
               </GestureDetector>
 
-              {/* Botones Flotantes Sobre la Tarjeta */}
-              <View
-                className="absolute -bottom-8 left-0 right-0 flex-row justify-center items-center gap-6 px-4 z-20"
-              >
-                {/* Rechazar (X) */}
-                <TouchableOpacity
-                  onPress={() => currentJob && handleAction('reject')}
-                  className="w-[70px] h-[70px] rounded-full bg-white dark:bg-slate-800 items-center justify-center shadow-xl shadow-red-200/50 dark:shadow-black border border-slate-100 dark:border-slate-700"
-                  style={{ elevation: 8 }}
-                >
-                  <Ionicons name="close" size={32} color="#ef4444" />
+              <View style={styles.actionsContainer}>
+                <TouchableOpacity onPress={() => handleAction('reject')} style={[styles.actionBtn, styles.rejectBtn]}>
+                  <Ionicons name="close" size={30} color="#FF3B30" />
                 </TouchableOpacity>
 
-                {/* Super Like (Estrella) - Más pequeño */}
-                <TouchableOpacity
-                  onPress={() => currentJob && handleAction('superlike')}
-                  className="w-[55px] h-[55px] rounded-full bg-white dark:bg-slate-800 items-center justify-center shadow-lg shadow-orange-200/50 dark:shadow-black border border-slate-100 dark:border-slate-700"
-                  style={{ elevation: 6 }}
-                >
-                  <Ionicons name="star" size={24} color="#f59e0b" />
+                <TouchableOpacity onPress={() => handleAction('superlike')} style={[styles.actionBtn, styles.superBtn]}>
+                  <Ionicons name="star" size={24} color="#FFCC00" />
                 </TouchableOpacity>
 
-                {/* Match / Like (Corazón) - Principal azul */}
-                <TouchableOpacity
-                  onPress={() => currentJob && handleAction('match')}
-                  className="w-[85px] h-[85px] rounded-full bg-[#2563eb] items-center justify-center shadow-xl shadow-[#2563eb]/40 dark:shadow-black"
-                  style={{ elevation: 10 }}
-                >
-                  <Ionicons name="heart" size={38} color="#ffffff" />
+                <TouchableOpacity onPress={() => handleAction('match')} style={[styles.actionBtn, styles.matchBtn]}>
+                  <Ionicons name="heart" size={32} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
             </View>
           ) : (
-            <View className="w-full h-80 bg-white dark:bg-slate-900 rounded-3xl items-center justify-center p-6 border border-slate-200 dark:border-slate-800 z-10">
-              <Text className="text-2xl font-bold text-slate-800 dark:text-white mb-2 text-center">
-                ¡Eso es todo por hoy!
-              </Text>
-              <Text className="text-sm text-slate-500 dark:text-slate-400 text-center">
-                Vuelve más tarde para descubrir nuevas oportunidades.
-              </Text>
+            <View style={styles.emptyContainer}>
+               <Ionicons name="sparkles" size={60} color="rgba(255,255,255,0.1)" />
+               <Text style={styles.emptyTitle}>¡Eso es todo por hoy!</Text>
+               <Text style={styles.emptyText}>Vuelve más tarde para descubrir nuevas oportunidades en el universo Aptly.</Text>
             </View>
           )}
         </View>
+
+        <ObsidianModal
+          isVisible={modalConfig.visible}
+          onClose={() => setModalConfig({ ...modalConfig, visible: false })}
+          title={modalConfig.title}
+          message={modalConfig.message}
+          iconName={modalConfig.icon as any}
+          type={modalConfig.type === 'success' ? 'success' : 'info'}
+          confirmText="Continuar"
+        />
+
+        {currentJob && (
+          <ObsidianDetailModal
+            isVisible={detailModalVisible}
+            onClose={() => setDetailModalVisible(false)}
+            title={currentJob.title}
+            subtitle={currentJob.company}
+            imageUrl={currentJob.imageUrl}
+            location={currentJob.location}
+            salary={currentJob.salary}
+            tags={currentJob.tags}
+            content={currentJob.companyDescription || 'Forma parte de una de las empresas más innovadoras del sector.'}
+          />
+        )}
       </SafeAreaView>
-    </GestureHandlerRootView>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  cardArea: {
+    flex: 1,
+    paddingHorizontal: 20,
+    justifyContent: 'center',
+    paddingTop: 10,
+  },
+  cardWrapper: {
+    width: '100%',
+    flex: 1,
+    marginBottom: 40,
+    position: 'relative',
+  },
+  nextCard: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    zIndex: -1,
+  },
+  actionsContainer: {
+    position: 'absolute',
+    bottom: -30,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 20,
+    zIndex: 20,
+  },
+  actionBtn: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1A1A1C',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  rejectBtn: {
+    borderColor: 'rgba(255, 59, 48, 0.2)',
+  },
+  superBtn: {
+    width: 50,
+    height: 50,
+    borderColor: 'rgba(255, 204, 0, 0.2)',
+  },
+  matchBtn: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: '#00A3FF',
+    borderColor: 'rgba(0, 163, 255, 0.3)',
+    shadowColor: '#00A3FF',
+    shadowOpacity: 0.4,
+  },
+  emptyContainer: {
+    backgroundColor: '#121214',
+    padding: 40,
+    borderRadius: 32,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    marginTop: 20,
+    textAlign: 'center',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#94a3b8',
+    textAlign: 'center',
+    marginTop: 10,
+    lineHeight: 20,
+  }
+});

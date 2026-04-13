@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image } from 'react-native';
+import { View, Text, Image, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export interface Experience {
@@ -23,33 +23,33 @@ export const ExperienceItem = ({ experience }: ExperienceItemProps) => {
   const { title, company, startDate, endDate, isCurrent, tags, logoUrl } = experience;
   
   return (
-    <View className="flex-row bg-white dark:bg-slate-900 rounded-3xl p-4 mb-4 border border-slate-100 dark:border-slate-800 shadow-sm">
-      <View className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-800 items-center justify-center mr-4 overflow-hidden">
+    <View style={styles.card}>
+      <View style={styles.logoContainer}>
         {logoUrl ? (
-          <Image source={{ uri: logoUrl }} className="w-full h-full" resizeMode="contain" />
+          <Image source={{ uri: logoUrl }} style={styles.logo} resizeMode="contain" />
         ) : (
-          <MaterialCommunityIcons name="office-building" size={24} color="#94a3b8" />
+          <MaterialCommunityIcons name="office-building" size={24} color="#475569" />
         )}
       </View>
       
-      <View className="flex-1">
-        <View className="flex-row justify-between items-start">
+      <View style={styles.content}>
+        <View style={styles.headerRow}>
           <View>
-            <Text className="text-base font-bold text-slate-900 dark:text-white">{title}</Text>
-            <Text className="text-sm font-semibold text-blue-600 dark:text-blue-400 mt-0.5">{company}</Text>
+            <Text style={styles.title}>{title}</Text>
+            <Text style={styles.company}>{company}</Text>
           </View>
-          <MaterialCommunityIcons name="drag" size={20} color="#cbd5e1" />
+          <MaterialCommunityIcons name="menu" size={20} color="#1e293b" />
         </View>
         
-        <Text className="text-[12px] text-slate-400 dark:text-slate-500 mt-1 uppercase font-medium">
+        <Text style={styles.date}>
           {startDate} - {isCurrent ? 'Presente' : endDate}
         </Text>
         
         {tags && tags.length > 0 && (
-          <View className="flex-row flex-wrap mt-3 gap-2">
+          <View style={styles.tagsContainer}>
             {tags.map((tag, idx) => (
-              <View key={idx} className="bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-700">
-                <Text className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">{tag}</Text>
+              <View key={idx} style={styles.tag}>
+                <Text style={styles.tagText}>{tag}</Text>
               </View>
             ))}
           </View>
@@ -58,3 +58,76 @@ export const ExperienceItem = ({ experience }: ExperienceItemProps) => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  card: {
+    flexDirection: 'row',
+    backgroundColor: '#121214',
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  logoContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#1A1A1C',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  logo: {
+    width: '100%',
+    height: '100%',
+  },
+  content: {
+    flex: 1,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  company: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#00A3FF',
+    marginTop: 2,
+  },
+  date: {
+    fontSize: 11,
+    color: '#475569',
+    marginTop: 4,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 12,
+    gap: 8,
+  },
+  tag: {
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  tagText: {
+    color: '#94a3b8',
+    fontSize: 10,
+    fontWeight: '800',
+  }
+});

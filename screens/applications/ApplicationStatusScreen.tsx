@@ -23,13 +23,13 @@ export const ApplicationStatusScreen = ({ route, navigation }: any) => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-slate-950">
+    <SafeAreaView className="flex-1 bg-[#050505]">
       {/* Header */}
-      <View className="flex-row items-center px-4 py-4 border-b border-none bg-white dark:bg-slate-950">
+      <View className="flex-row items-center px-4 py-4 border-b border-white/5 bg-[#050505]">
         <TouchableOpacity onPress={() => navigation.goBack()} className="p-1">
-          <Feather name="arrow-left" size={24} color="#0f172a" className="dark:text-white" />
+          <Feather name="arrow-left" size={24} color="white" />
         </TouchableOpacity>
-        <Text className="flex-1 text-center text-lg font-bold text-slate-900 dark:text-white pr-6">
+        <Text className="flex-1 text-center text-sm font-black text-white uppercase tracking-widest pr-6">
           Estado de Aplicación
         </Text>
       </View>
@@ -37,24 +37,24 @@ export const ApplicationStatusScreen = ({ route, navigation }: any) => {
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
          
          {/* Top Card */}
-         <View className="flex-row items-center bg-white dark:bg-slate-900 mx-5 my-4 p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
-            <View className="w-16 h-16 rounded-2xl bg-[#f5ebd9] items-center justify-center mr-4 overflow-hidden">
+         <View className="flex-row items-center bg-[#121214] mx-5 my-6 p-5 rounded-[32px] border border-white/5">
+            <View className="w-16 h-16 rounded-2xl bg-slate-800 items-center justify-center mr-4 overflow-hidden border border-white/5">
                {application.logoUri ? (
-                  <Image source={{ uri: application.logoUri }} className="w-full h-full opacity-60" resizeMode="cover" />
+                  <Image source={{ uri: application.logoUri }} className="w-full h-full opacity-80" resizeMode="cover" />
                ) : (
-                  <Text className="text-slate-400 font-bold text-lg">D1</Text>
+                  <Text className="text-slate-500 font-bold text-lg">AP</Text>
                )}
             </View>
             <View className="flex-1 justify-center">
-               <Text className="text-lg font-bold text-slate-900 dark:text-white mb-0.5">{application.jobTitle}</Text>
-               <Text className="text-blue-600 dark:text-blue-400 font-semibold mb-1">{application.companyName}</Text>
-               <Text className="text-slate-500 text-xs">{application.appliedDate}</Text>
+               <Text className="text-lg font-bold text-white mb-0.5">{application.jobTitle}</Text>
+               <Text className="text-[#00A3FF] font-black uppercase text-[10px] tracking-widest mb-1">{application.companyName}</Text>
+               <Text className="text-slate-500 text-[11px] font-medium">{application.appliedDate}</Text>
             </View>
          </View>
 
          {/* Timeline Section */}
-         <View className="px-6 mt-4">
-            <Text className="text-lg font-bold text-slate-900 dark:text-white mb-6">Progreso de la Aplicación</Text>
+         <View className="px-6 mt-2">
+            <Text className="text-xs font-black text-slate-500 uppercase tracking-[3px] mb-8">Progreso de la Aplicación</Text>
             
             <View>
                {application.timeline.map((step, index) => (
@@ -70,20 +70,22 @@ export const ApplicationStatusScreen = ({ route, navigation }: any) => {
          {/* Contact Recruiter Button */}
          <TouchableOpacity 
            onPress={handleContactRecruiter}
-           className="bg-blue-600 flex-row items-center justify-center mx-5 py-4 rounded-full mt-6 mb-8"
+           className="bg-[#00A3FF] flex-row items-center justify-center mx-5 py-5 rounded-[24px] mt-8 mb-8 shadow-[0_8px_30px_rgba(0,163,255,0.3)]"
          >
             <Feather name="message-square" size={20} color="white" className="mr-2" />
-            <Text className="text-white font-bold text-base">Contactar reclutador</Text>
+            <Text className="text-white font-black uppercase tracking-widest text-sm">Contactar reclutador</Text>
          </TouchableOpacity>
 
          {/* FAQ Banner */}
-         <View className="mx-5 p-4 rounded-2xl bg-indigo-50 dark:bg-slate-800/50 border border-indigo-100 dark:border-slate-700/50">
+         <View className="mx-5 p-6 rounded-[24px] bg-[#121214] border border-white/5">
             <View className="flex-row items-start">
-               <Feather name="info" size={20} color="#4f46e5" className="mt-0.5 mr-3" />
+               <View className="w-10 h-10 rounded-full bg-blue-500/10 items-center justify-center mr-4">
+                  <Feather name="info" size={20} color="#00A3FF" />
+               </View>
                <View className="flex-1">
-                  <Text className="font-bold text-slate-900 dark:text-white mb-1">¿Tienes dudas sobre el proceso?</Text>
+                  <Text className="font-bold text-white mb-1 text-base">¿Tienes dudas sobre el proceso?</Text>
                   <Text className="text-slate-500 leading-5 text-[13px]">
-                     Revisa nuestras preguntas frecuentes o contacta al reclutador asignado.
+                     Revisa nuestras preguntas frecuentes o contacta al reclutador asignado directamente.
                   </Text>
                </View>
             </View>

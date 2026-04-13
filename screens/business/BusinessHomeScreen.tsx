@@ -1,22 +1,31 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StatusBar, useColorScheme, TouchableOpacity, Alert, Dimensions, Image, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  Dimensions, 
+  TouchableOpacity, 
+  Image, 
+  StatusBar, 
+  Alert 
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, Feather } from '@expo/vector-icons';
-import {
-  GestureHandlerRootView,
-  Gesture,
-  GestureDetector
-} from 'react-native-gesture-handler';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  runOnJS,
-  interpolate,
-  Extrapolate
+import { Ionicons } from '@expo/vector-icons';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withSpring, 
+  interpolate, 
+  Extrapolate, 
+  runOnJS 
 } from 'react-native-reanimated';
-import { supabase } from '../../lib/supabase';
 import { SessionContext } from '../../lib/SessionContext';
+
+import { ObsidianHeader } from '../../components/ObsidianHeader';
+import { ObsidianSwitcher } from '../../components/ObsidianSwitcher';
+import { ObsidianModal } from '../../components/ObsidianModal';
+import { ObsidianDetailModal } from '../../components/ObsidianDetailModal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
@@ -38,7 +47,7 @@ const MOCK_CANDIDATES: CandidateData[] = [
     name: 'Pepito',
     age: 28,
     location: 'Cali, Colombia',
-    availability: 'Tiempo completo / Medio tiempo',
+    availability: 'Tiempo completo',
     role: 'Programador',
     tags: ['React Native', 'UI/UX', 'Inglés B2'],
     imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
@@ -65,26 +74,32 @@ const MOCK_CANDIDATES: CandidateData[] = [
   }
 ];
 
-const CATEGORIES = ['Todos', ...new Set(MOCK_CANDIDATES.map(c => c.role))];
+const CATEGORIES = ['Todos', 'Programador', 'Vendedor', 'Tienda'];
 
 export const BusinessHomeScreen = () => {
   const session = React.useContext(SessionContext);
-  const colorScheme = useColorScheme();
-  const isDarkMode = colorScheme === 'dark';
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState('Todos');
 
-  // Filter candidates based on selected role
+  // Modal State
+  const [modalConfig, setModalConfig] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    icon: 'star',
+    type: 'info' as 'info' | 'success'
+  });
+ 
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+
   const filteredCandidates = selectedCategory === 'Todos' 
     ? MOCK_CANDIDATES 
-    : MOCK_CANDIDATES.filter(candidate => candidate.role === selectedCategory);
+    : MOCK_CANDIDATES.filter(candidate => candidate.role.includes(selectedCategory) || selectedCategory === 'Tienda' && candidate.role.includes('Aux'));
 
-  // Reset index when category changes
   useEffect(() => {
     setCurrentIndex(0);
   }, [selectedCategory]);
 
-  // Swipe State
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
 
@@ -93,11 +108,29 @@ export const BusinessHomeScreen = () => {
     if (!currentCandidate) return;
 
     if (type === 'match') {
-      Alert.alert('¡Match Sugerido! 🤝', `Has mostrado interés en ${currentCandidate.name}`);
+      setModalConfig({
+        visible: true,
+        title: '¡Candidato Preseleccionado!',
+        message: `Excelente, hemos guardado el perfil de ${currentCandidate.name}. En breve notificaremos al candidato para iniciar el proceso de selección y los contactaremos con ustedes.`,
+        icon: 'heart',
+        type: 'success'
+      });
     } else if (type === 'superlike') {
-      Alert.alert('¡Super Contacto! ⭐', `Notificaremos prioritariamente a ${currentCandidate.name}`);
-    } else {
-      console.log('Candidato rechazado');
+      setModalConfig({
+        visible: true,
+        title: '¡Evaluación Prioritaria!',
+        message: `Hemos notificado a ${currentCandidate.name} sobre tu alto interés en su perfil para acelerar la comunicación.`,
+        icon: 'zap',
+        type: 'success'
+      });
+    } else if (type === 'reject') {
+      setModalConfig({
+        visible: true,
+        title: 'Perfil Descartado',
+        message: 'Hemos registrado tu decisión. Buscaremos candidatos que se alineen mejor con los requerimientos de la empresa.',
+        icon: 'x-circle',
+        type: 'info'
+      });
     }
 
     translateX.value = 0;
@@ -118,17 +151,11 @@ export const BusinessHomeScreen = () => {
     })
     .onEnd((event) => {
       if (translateX.value > SWIPE_THRESHOLD) {
-        translateX.value = withSpring(SCREEN_WIDTH * 1.5, {}, () => {
-          runOnJS(onSwipeComplete)('right');
-        });
+        translateX.value = withSpring(SCREEN_WIDTH * 1.5, {}, () => runOnJS(onSwipeComplete)('right'));
       } else if (translateX.value < -SWIPE_THRESHOLD) {
-        translateX.value = withSpring(-SCREEN_WIDTH * 1.5, {}, () => {
-          runOnJS(onSwipeComplete)('left');
-        });
+        translateX.value = withSpring(-SCREEN_WIDTH * 1.5, {}, () => runOnJS(onSwipeComplete)('left'));
       } else if (translateY.value < -SWIPE_THRESHOLD) {
-        translateY.value = withSpring(-SCREEN_WIDTH * 1.5, {}, () => {
-          runOnJS(onSwipeComplete)('up');
-        });
+        translateY.value = withSpring(-SCREEN_WIDTH * 1.5, {}, () => runOnJS(onSwipeComplete)('up'));
       } else {
         translateX.value = withSpring(0);
         translateY.value = withSpring(0);
@@ -136,70 +163,51 @@ export const BusinessHomeScreen = () => {
     });
 
   const cardStyle = useAnimatedStyle(() => {
-    const rotate = interpolate(
-      translateX.value,
-      [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
-      [-10, 0, 10],
-      Extrapolate.CLAMP
-    );
-
+    const rotate = interpolate(translateX.value, [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2], [-8, 0, 8], Extrapolate.CLAMP);
     return {
-      transform: [
-        { translateX: translateX.value },
-        { translateY: translateY.value },
-        { rotate: `${rotate}deg` }
-      ]
+      transform: [{ translateX: translateX.value }, { translateY: translateY.value }, { rotate: `${rotate}deg` }]
     };
   });
 
   const nextCardStyle = useAnimatedStyle(() => {
-    const scale = interpolate(
-      Math.abs(translateX.value),
-      [0, SWIPE_THRESHOLD],
-      [0.9, 1],
-      Extrapolate.CLAMP
-    );
-
-    return {
-      transform: [{ scale }]
-    };
+    const scale = interpolate(Math.abs(translateX.value), [0, SWIPE_THRESHOLD], [0.92, 1], Extrapolate.CLAMP);
+    const opacity = interpolate(Math.abs(translateX.value), [0, SWIPE_THRESHOLD], [0.6, 1], Extrapolate.CLAMP);
+    return { transform: [{ scale }], opacity };
   });
 
   const currentCandidate = filteredCandidates[currentIndex];
   const nextCandidate = filteredCandidates[currentIndex + 1];
 
   const CandidateCard = ({ candidate }: { candidate: CandidateData }) => (
-    <View className="flex-1 bg-white dark:bg-slate-900 rounded-[45px] overflow-hidden shadow-2xl relative">
-      <Image 
-        source={{ uri: candidate.imageUrl }} 
-        className="absolute inset-0 w-full h-full"
-        resizeMode="cover"
-      />
-      {/* Gradient Overlay bottom to top */}
-      <View className="absolute inset-x-0 bottom-0 h-1/2 bg-black/60 pt-10 px-6 justify-end pb-8">
-        <View className="flex-row items-center space-x-2 mb-2">
-            <View className="bg-blue-600 px-3 py-1 rounded-lg">
-                <Text className="text-white text-[10px] font-black uppercase">Disponible</Text>
+    <View style={styles.candidateCard}>
+      <Image source={{ uri: candidate.imageUrl }} style={styles.candidateImage} resizeMode="cover" />
+      <View style={styles.candidateOverlay}>
+        <View style={styles.availabilityRow}>
+            <View style={styles.availabilityBadge}>
+                <Text style={styles.availabilityText}>DISPONIBLE</Text>
             </View>
-            <Text className="text-white/90 text-xs font-bold">{candidate.availability}</Text>
+            <Text style={styles.infoText}>{candidate.availability}</Text>
         </View>
 
-        <View className="flex-row items-baseline mb-1">
-            <Text className="text-white text-3xl font-black">{candidate.name}, {candidate.age}</Text>
-            <TouchableOpacity className="ml-auto w-10 h-10 rounded-full bg-white/20 items-center justify-center border border-white/30">
-                <Ionicons name="information" size={20} color="white" />
+        <View style={styles.nameRow}>
+            <Text style={styles.candidateName}>{candidate.name}, {candidate.age}</Text>
+            <TouchableOpacity 
+              onPress={() => setDetailModalVisible(true)}
+              style={styles.infoBtn}
+            >
+                <Ionicons name="information-circle-outline" size={24} color="#FF005C" />
             </TouchableOpacity>
         </View>
 
-        <View className="flex-row items-center mb-4">
-            <Ionicons name="location" size={14} color="#3b82f6" />
-            <Text className="text-white/80 text-sm ml-1 font-medium">{candidate.location}</Text>
+        <View style={styles.candidateLocation}>
+            <Ionicons name="location" size={14} color="#FF005C" />
+            <Text style={styles.locationLabel}>{candidate.location}</Text>
         </View>
 
-        <View className="flex-row flex-wrap gap-2">
+        <View style={styles.candidateTags}>
             {candidate.tags.map((tag, idx) => (
-                <View key={idx} className="bg-white/20 px-4 py-1.5 rounded-full border border-white/20">
-                    <Text className="text-white text-[10px] font-bold">{tag}</Text>
+                <View key={idx} style={styles.candidateTag}>
+                    <Text style={styles.tagLabel}>{tag}</Text>
                 </View>
             ))}
         </View>
@@ -208,100 +216,268 @@ export const BusinessHomeScreen = () => {
   );
 
   return (
-    <GestureHandlerRootView className="flex-1 bg-white dark:bg-slate-950">
-      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
+    <View style={{ flex: 1, backgroundColor: '#050505' }}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+        
+        <ObsidianHeader 
+          title="Candidates" 
+          subtitle="Match Finder"
+          leftIcon="menu"
+          rightIcon="notifications-outline"
+        />
 
-      <SafeAreaView className="flex-1" edges={['top']}>
-        {/* HEADER TOP BAR */}
-        <View className="flex-row items-center justify-between px-6 pt-2 pb-4">
-          <TouchableOpacity className="w-10 h-10 items-center justify-center">
-            <Ionicons name="menu" size={28} color={isDarkMode ? "white" : "#1e293b"} />
-          </TouchableOpacity>
-
-          <Text className="text-2xl font-black text-[#506FC0]">JobMatch</Text>
-
-          <TouchableOpacity className="relative w-10 h-10 items-center justify-center">
-            <Ionicons name="notifications-outline" size={28} color={isDarkMode ? "white" : "#1e293b"} />
-            <View className="absolute top-1 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-950" />
-          </TouchableOpacity>
+        <View style={{ marginTop: 5 }}>
+          <ObsidianSwitcher 
+             options={CATEGORIES}
+             activeOption={selectedCategory}
+             onOptionChange={(opt) => setSelectedCategory(opt)}
+             accentColor="#FF005C"
+          />
         </View>
 
-        {/* Categories Horizontal */}
-        <View className="flex-row items-center px-6 mb-6">
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-1">
-                {CATEGORIES.map((cat, idx) => (
-                    <TouchableOpacity 
-                        key={idx}
-                        onPress={() => setSelectedCategory(cat)}
-                        className={`mr-3 px-6 py-2.5 rounded-2xl ${selectedCategory === cat ? 'bg-[#506FC0]' : 'bg-slate-100 dark:bg-slate-800'}`}
-                    >
-                        <Text className={`text-xs font-black ${selectedCategory === cat ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}>
-                            {cat}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </ScrollView>
-            <TouchableOpacity className="ml-2 w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-2xl items-center justify-center">
-                <Ionicons name="options-outline" size={20} color={isDarkMode ? "white" : "#64748b"} />
-            </TouchableOpacity>
-        </View>
-
-        {/* CARD AREA */}
-        <View className="flex-1 px-4 justify-center">
+        <View style={styles.cardArea}>
           {currentCandidate ? (
-            <View className="w-full h-[550px] mb-20 z-10 relative">
-              {/* Next Card */}
+            <View style={styles.cardWrapper}>
               {nextCandidate && (
-                <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%', zIndex: -1 }, nextCardStyle]}>
+                <Animated.View style={[styles.nextCard, nextCardStyle]}>
                   <CandidateCard candidate={nextCandidate} />
                 </Animated.View>
               )}
 
-              {/* Current Card */}
               <GestureDetector gesture={gesture}>
                 <Animated.View style={[{ flex: 1 }, cardStyle]}>
                   <CandidateCard candidate={currentCandidate} />
                 </Animated.View>
               </GestureDetector>
 
-              {/* Floating Buttons */}
-              <View className="absolute -bottom-10 left-0 right-0 flex-row justify-center items-center gap-5 z-20">
-                <TouchableOpacity
-                  onPress={() => handleAction('reject')}
-                  className="w-[65px] h-[65px] rounded-full bg-white dark:bg-slate-800 items-center justify-center shadow-lg border border-slate-50 dark:border-slate-800"
-                >
-                  <Ionicons name="close" size={32} color="#ef4444" />
+              <View style={styles.actionsContainer}>
+                <TouchableOpacity onPress={() => handleAction('reject')} style={[styles.actionBtn, styles.rejectBtn]}>
+                  <Ionicons name="close" size={30} color="#FF3B30" />
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  onPress={() => handleAction('superlike')}
-                  className="w-[55px] h-[55px] rounded-full bg-white dark:bg-slate-800 items-center justify-center shadow-lg border border-slate-50 dark:border-slate-800"
-                >
-                  <Ionicons name="star" size={26} color="#4c6ef5" />
+                <TouchableOpacity onPress={() => handleAction('superlike')} style={[styles.actionBtn, styles.superBtn]}>
+                  <Ionicons name="star" size={24} color="#FFCC00" />
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  onPress={() => handleAction('match')}
-                  className="w-[75px] h-[75px] rounded-full bg-[#506FC0] items-center justify-center shadow-xl shadow-[#506FC0]/40"
-                >
-                  <Ionicons name="heart" size={36} color="white" />
+                <TouchableOpacity onPress={() => handleAction('match')} style={[styles.actionBtn, styles.matchBtn]}>
+                  <Ionicons name="heart" size={32} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
             </View>
           ) : (
-            <View className="w-full h-80 bg-white dark:bg-slate-900 rounded-[45px] items-center justify-center p-6 border border-slate-100 dark:border-slate-800">
-              <Ionicons name="sparkles" size={50} color="#3b82f6" className="mb-4" />
-              <Text className="text-2xl font-black text-slate-800 dark:text-white mb-2 text-center">
-                ¡Búsqueda terminada!
-              </Text>
-              <Text className="text-sm text-slate-500 dark:text-slate-400 text-center">
-                Has visto a todos los candidatos disponibles para {selectedCategory}.
-              </Text>
+            <View style={styles.emptyContainer}>
+               <Ionicons name="sparkles" size={60} color="rgba(255,255,255,0.1)" />
+               <Text style={styles.emptyTitle}>¡Eso es todo!</Text>
+               <Text style={styles.emptyText}>Has visto a todos los candidatos disponibles para esta categoría.</Text>
             </View>
           )}
         </View>
 
+        <ObsidianModal
+          isVisible={modalConfig.visible}
+          onClose={() => setModalConfig({ ...modalConfig, visible: false })}
+          title={modalConfig.title}
+          message={modalConfig.message}
+          iconName={modalConfig.icon as any}
+          type={modalConfig.type}
+          confirmText="Continuar"
+        />
+
+        {currentCandidate && (
+          <ObsidianDetailModal
+            isVisible={detailModalVisible}
+            onClose={() => setDetailModalVisible(false)}
+            title={currentCandidate.name}
+            subtitle={currentCandidate.role}
+            imageUrl={currentCandidate.imageUrl}
+            location={currentCandidate.location}
+            tags={currentCandidate.tags}
+            content={`Experto en el sector de ${currentCandidate.role}. Con amplia disponibilidad (${currentCandidate.availability}) para incorporarse a equipos dinámicos.`}
+          />
+        )}
       </SafeAreaView>
-    </GestureHandlerRootView>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  cardArea: {
+    flex: 1,
+    paddingHorizontal: 20,
+    justifyContent: 'center',
+    paddingTop: 10,
+  },
+  cardWrapper: {
+    width: '100%',
+    flex: 1,
+    marginBottom: 40,
+    position: 'relative',
+  },
+  nextCard: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    zIndex: -1,
+  },
+  candidateCard: {
+    flex: 1,
+    backgroundColor: '#121214',
+    borderRadius: 36,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  candidateImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+  },
+  candidateOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '50%',
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    padding: 24,
+    paddingBottom: 70, // Safe zone for buttons
+    justifyContent: 'flex-end',
+  },
+  availabilityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  availabilityBadge: {
+    backgroundColor: '#FF005C',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  availabilityText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '900',
+  },
+  infoText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  candidateName: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#FFFFFF',
+  },
+  infoBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  candidateLocation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  locationLabel: {
+    color: '#94a3b8',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+  candidateTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  candidateTag: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  tagLabel: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  actionsContainer: {
+    position: 'absolute',
+    bottom: -30,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 20,
+    zIndex: 20,
+  },
+  actionBtn: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1A1A1C',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  rejectBtn: {
+    borderColor: 'rgba(255, 59, 48, 0.2)',
+  },
+  superBtn: {
+    width: 50,
+    height: 50,
+    borderColor: 'rgba(255, 204, 0, 0.2)',
+  },
+  matchBtn: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: '#FF005C',
+    borderColor: 'rgba(255, 0, 92, 0.3)',
+    shadowColor: '#FF005C',
+    shadowOpacity: 0.4,
+  },
+  emptyContainer: {
+    backgroundColor: '#121214',
+    padding: 40,
+    borderRadius: 32,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    marginTop: 20,
+    textAlign: 'center',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#94a3b8',
+    textAlign: 'center',
+    marginTop: 10,
+    lineHeight: 20,
+  }
+});
