@@ -1,10 +1,11 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { Conversation } from '../../screens/chat/mockData';
+import { BusinessConversation } from '../../lib/BusinessChatContext';
 
 interface ChatListItemProps {
-  conversation: Conversation;
-  onPress: (conversation: Conversation) => void;
+  conversation: Conversation | BusinessConversation;
+  onPress: (conversation: any) => void;
 }
 
 export const ChatListItem = ({ conversation, onPress }: ChatListItemProps) => {
