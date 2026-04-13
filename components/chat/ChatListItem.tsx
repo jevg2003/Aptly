@@ -56,7 +56,7 @@ export const ChatListItem = ({ conversation, onPress }: ChatListItemProps) => {
               {lastMessage}
            </Text>
            {unreadCount > 0 && (
-             <View className="bg-[#00A3FF] rounded-full min-w-[20px] h-[20px] items-center justify-center px-1.5 shadow-[0_0_10px_rgba(0,163,255,0.3)]">
+             <View className="bg-[#FF005C] rounded-full min-w-[20px] h-[20px] items-center justify-center px-1.5 shadow-[0_0_10px_rgba(255,0,92,0.3)]">
                <Text className="text-white text-[10px] font-black">{unreadCount > 99 ? '99+' : unreadCount}</Text>
              </View>
            )}

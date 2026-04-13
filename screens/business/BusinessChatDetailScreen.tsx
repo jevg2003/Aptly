@@ -37,7 +37,7 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
     return (
       <View className={`flex-row mb-4 ${isMe ? 'justify-end' : 'justify-start'}`}>
         {!isMe && (
-          <View className="w-8 h-8 rounded-full bg-slate-200 mr-2 overflow-hidden self-end mb-1">
+          <View className="w-8 h-8 rounded-full bg-[#1A1A1C] border border-[#333] mr-2 overflow-hidden self-end mb-1">
              {conversation.participant.avatar && (
                  <Image source={{ uri: conversation.participant.avatar }} className="w-full h-full" />
              )}
@@ -46,18 +46,19 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
         <View 
           className={`max-w-[80%] p-4 rounded-[25px] ${
             isMe 
-              ? 'bg-blue-600 rounded-br-none' 
-              : 'bg-slate-100 dark:bg-slate-800 rounded-bl-none'
+              ? 'rounded-br-none' 
+              : 'rounded-bl-none border border-[#1e1e1e]'
           }`}
           style={{
-            shadowColor: isMe ? '#2563eb' : '#000',
+            backgroundColor: isMe ? '#FF005C' : '#121214',
+            shadowColor: isMe ? '#FF005C' : '#000',
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: isMe ? 0.3 : 0.05,
             shadowRadius: 5,
             elevation: isMe ? 4 : 1
           }}
         >
-          <Text className={`${isMe ? 'text-white' : 'text-slate-800 dark:text-slate-200'} text-sm leading-5`}>
+          <Text className={`text-white text-sm leading-5`}>
             {item.text}
           </Text>
           <Text className={`text-[9px] mt-1 ${isMe ? 'text-white/70 text-right' : 'text-slate-400'}`}>
@@ -69,14 +70,14 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
   };
 
   return (
-    <View className="flex-1 bg-white dark:bg-slate-950">
-      <StatusBar barStyle="dark-content" />
+    <View style={{ flex: 1, backgroundColor: '#050505' }}>
+      <StatusBar barStyle="light-content" />
       <SafeAreaView className="flex-1" edges={['top']}>
         
         {/* Header */}
-        <View className="px-5 py-3 flex-row items-center border-b border-slate-50 dark:border-slate-800 bg-white dark:bg-slate-900">
+        <View className="px-5 py-3 flex-row items-center border-b border-[#1e1e1e] bg-[#1A1A1C]">
           <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
-            <Ionicons name="arrow-back" size={24} color="#1e293b" className="dark:text-white" />
+            <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
           
           <View className="flex-row flex-1 items-center">
@@ -96,8 +97,8 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
              </View>
              
              <View className="ml-3">
-                <Text className="text-slate-900 dark:text-white font-bold text-base">{conversation.participant.name}</Text>
-                <Text className="text-blue-600 text-[10px] font-black uppercase tracking-tighter">{conversation.participant.role}</Text>
+                <Text className="text-white font-bold text-base">{conversation.participant.name}</Text>
+                <Text className="text-[#FF005C] text-[10px] font-black uppercase tracking-tighter">{conversation.participant.role}</Text>
              </View>
           </View>
 
@@ -122,16 +123,16 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
           />
 
           {/* Footer Input */}
-          <View className="p-4 border-t border-slate-50 dark:border-slate-800 bg-white dark:bg-slate-900 mb-2">
-            <View className="flex-row items-center bg-slate-50 dark:bg-slate-800 p-2 rounded-[30px] border border-slate-100 dark:border-slate-700">
-              <TouchableOpacity className="w-10 h-10 items-center justify-center rounded-full bg-white dark:bg-slate-700 shadow-sm mr-2">
-                <Ionicons name="add" size={24} color="#3b82f6" />
+          <View className="p-4 border-t border-[#1e1e1e] bg-[#1A1A1C] mb-2">
+            <View className="flex-row items-center bg-[#121214] p-2 rounded-[30px] border border-[#333]">
+              <TouchableOpacity className="w-10 h-10 items-center justify-center rounded-full bg-[#1A1A1C] shadow-sm mr-2">
+                <Ionicons name="add" size={24} color="#FF005C" />
               </TouchableOpacity>
               
               <TextInput
                 placeholder="Escribe un mensaje..."
-                placeholderTextColor="#94a3b8"
-                className="flex-1 text-slate-800 dark:text-white text-sm px-2"
+                placeholderTextColor="#64748b"
+                className="flex-1 text-white text-sm px-2"
                 value={message}
                 onChangeText={setMessage}
                 multiline
@@ -140,7 +141,8 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
               <TouchableOpacity 
                 onPress={handleSend}
                 disabled={!message.trim()}
-                className={`w-10 h-10 items-center justify-center rounded-full ${message.trim() ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-700'}`}
+                style={{ backgroundColor: message.trim() ? '#FF005C' : '#333' }}
+                className="w-10 h-10 items-center justify-center rounded-full"
               >
                 <Ionicons name="send" size={18} color="white" />
               </TouchableOpacity>

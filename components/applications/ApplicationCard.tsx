@@ -11,7 +11,11 @@ export const ApplicationCard = ({ application, onPress }: ApplicationCardProps) 
   const { companyName, status, statusColor, subtitle, buttonVariant, buttonText, imageUri } = application;
   
   return (
-    <View style={styles.card}>
+    <TouchableOpacity 
+      style={styles.card} 
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
       <View style={styles.leftContent}>
         <View>
           <View style={styles.statusRow}>
@@ -23,8 +27,7 @@ export const ApplicationCard = ({ application, onPress }: ApplicationCardProps) 
           <Text style={styles.subtitle}>{subtitle}</Text>
         </View>
 
-        <TouchableOpacity 
-          onPress={onPress}
+        <View 
           style={[
             styles.actionBtn, 
             buttonVariant === 'filled' ? styles.btnFilled : styles.btnGhost
@@ -36,13 +39,13 @@ export const ApplicationCard = ({ application, onPress }: ApplicationCardProps) 
           ]}>
             {buttonText}
           </Text>
-        </TouchableOpacity>
+        </View>
       </View>
       
       <View style={styles.imageContainer}>
          <Image source={{ uri: imageUri }} style={styles.image} resizeMode="cover" />
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 

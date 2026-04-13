@@ -124,20 +124,20 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
               style={styles.editBtn}
             >
               <Feather name="edit-3" size={18} color="#FF005C" />
-              <Text style={styles.editBtnText}>Manage Info</Text>
+              <Text style={styles.editBtnText}>Gestionar Información</Text>
             </TouchableOpacity>
           </View>
 
           {/* Stats Bar */}
           <View style={styles.statsRow}>
-             <LocalStatCard label="Active Listings" value={jobsCount.toString()} />
-             <LocalStatCard label="Candidates" value="85" />
-             <LocalStatCard label="Valuation" value="4.8" icon="star" color="#FFCC00" />
+             <LocalStatCard label="Vacantes Activas" value={jobsCount.toString()} />
+             <LocalStatCard label="Candidatos" value="85" />
+             <LocalStatCard label="Valoración" value="4.8" icon="star" color="#FFCC00" />
           </View>
 
           {/* About Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Culture & Mission</Text>
+            <Text style={styles.sectionTitle}>Cultura y Misión</Text>
             <View style={styles.descriptionCard}>
                <Text style={styles.descriptionText}>
                  {profile.culture}
