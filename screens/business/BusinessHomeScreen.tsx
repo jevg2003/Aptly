@@ -294,6 +294,7 @@ export const BusinessHomeScreen = () => {
             location={currentCandidate.location}
             tags={currentCandidate.tags}
             content={`Experto en el sector de ${currentCandidate.role}. Con amplia disponibilidad (${currentCandidate.availability}) para incorporarse a equipos dinámicos.`}
+            accentColor="#FF005C"
           />
         )}
       </SafeAreaView>
