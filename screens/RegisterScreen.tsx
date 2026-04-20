@@ -231,21 +231,21 @@ export const RegisterScreen = ({ navigation }: any) => {
                 </TouchableOpacity>
               </View>
             </Animated.View>
+
+            <ObsidianModal
+              isVisible={alertConfig.visible}
+              onClose={() => {
+                setAlertConfig({ ...alertConfig, visible: false });
+                alertConfig.onOk();
+              }}
+              title={alertConfig.title}
+              message={alertConfig.message}
+              iconName={alertConfig.icon}
+              type={alertConfig.type}
+              confirmText="Continuar"
+            />
           </KeyboardAvoidingView>
         </SafeAreaView>
-
-        <ObsidianModal
-          isVisible={alertConfig.visible}
-          onClose={() => {
-            setAlertConfig({ ...alertConfig, visible: false });
-            alertConfig.onOk();
-          }}
-          title={alertConfig.title}
-          message={alertConfig.message}
-          iconName={alertConfig.icon}
-          type={alertConfig.type}
-          confirmText="Continuar"
-        />
       </TouchableWithoutFeedback>
     </View>
   );

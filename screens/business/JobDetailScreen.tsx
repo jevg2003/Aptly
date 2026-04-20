@@ -1,11 +1,22 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StatusBar, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StatusBar, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { supabase } from '../../lib/supabase';
 
 export const JobDetailScreen = ({ route, navigation }: any) => {
   const { job } = route.params || {};
-  
+  const [applications, setApplications] = useState<any[]>([]);
+
+  useEffect(() => {
+     if (job?.id) {
+       supabase.from('applications')
+         .select('id, status, profiles!applications_candidate_id_fkey(full_name, avatar_url)')
+         .eq('job_id', job.id)
+         .then(({ data }) => setApplications(data || []));
+     }
+  }, [job?.id]);
+
   console.log('DEBUG: JobDetailScreen received job:', !!job);
 
   if (!job) {
@@ -64,7 +75,7 @@ export const JobDetailScreen = ({ route, navigation }: any) => {
             <View className="flex-row mt-6 pt-6 border-t border-[#1e1e1e]">
               <View className="flex-row items-center bg-[#1A1A1C] px-4 py-2 rounded-2xl">
                 <Ionicons name="people" size={16} color="#FF005C" />
-                <Text className="text-white font-bold text-xs ml-2">12 Postulados</Text>
+                <Text className="text-white font-bold text-xs ml-2">{applications.length} Postulados</Text>
               </View>
             </View>
           </View>
@@ -92,6 +103,30 @@ export const JobDetailScreen = ({ route, navigation }: any) => {
                 <Text className="text-slate-400 text-xs ml-2 flex-1">Proactividad y trabajo en equipo.</Text>
               </View>
             </View>
+
+            {applications.length > 0 && (
+              <View className="mb-8 p-6 bg-[#121214] rounded-[35px] border border-[#1e1e1e]">
+                <Text className="text-white font-black text-lg mb-4">Candidatos Aplicados</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+                   {applications.map((app) => {
+                      const profile = Array.isArray(app.profiles) ? app.profiles[0] : app.profiles;
+                      return (
+                        <View key={app.id} className="items-center mr-4">
+                           <View className="w-14 h-14 rounded-full border-2 border-[#1A1A1C] overflow-hidden mb-2 bg-[#2a2a2c]">
+                              {profile?.avatar_url ? (
+                                <Image source={{uri: profile.avatar_url}} className="w-full h-full" />
+                              ) : (
+                                <View className="w-full h-full justify-center items-center"><Text className="text-white font-bold">{profile?.full_name?.charAt(0) || 'C'}</Text></View>
+                              )}
+                           </View>
+                           <Text className="text-slate-400 text-xs text-center w-16" numberOfLines={1}>{profile?.full_name?.split(' ')[0]}</Text>
+                           {app.status === 'interview' && <View className="w-2 h-2 rounded-full bg-green-500 absolute top-0 right-0" />}
+                        </View>
+                      )
+                   })}
+                </ScrollView>
+              </View>
+            )}
 
             <TouchableOpacity className="bg-[#2a0d15] p-5 rounded-[30px] items-center mb-10 border border-[#4d1323]">
               <Text className="text-[#ff3b30] font-bold">Cerrar esta vacante</Text>

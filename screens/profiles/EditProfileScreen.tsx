@@ -14,6 +14,8 @@ import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
 import { SessionContext } from '../../lib/SessionContext';
+import { pickAndOptimizeImage } from '../../lib/imageUtils';
+import { uploadAvatar } from '../../lib/storageUtils';
 
 export const EditProfileScreen = ({ navigation, route }: any) => {
   const session = React.useContext(SessionContext);
@@ -24,6 +26,8 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
   const [title, setTitle] = useState(initialProfile.professional_title || '');
   const [location, setLocation] = useState(initialProfile.location || '');
   const [bio, setBio] = useState(initialProfile.bio || '');
+  const [avatarUrl, setAvatarUrl] = useState(initialProfile.avatar_url || '');
+  const [uploadingImage, setUploadingImage] = useState(false);
   
   // Experience State
   const [experiences, setExperiences] = useState<any[]>([]);
@@ -61,6 +65,30 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
   useEffect(() => {
     fetchExperiences();
   }, [fetchExperiences]);
+
+  const handleImageUpload = async () => {
+    if (!session?.user?.id) return;
+    try {
+      setUploadingImage(true);
+      const localUri = await pickAndOptimizeImage();
+      if (!localUri) return;
+
+      const publicUrl = await uploadAvatar(localUri, session.user.id);
+      if (!publicUrl) throw new Error('Error al subir la imagen al servidor.');
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', session.user.id);
+
+      if (error) throw error;
+      setAvatarUrl(publicUrl);
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Problema al actualizar la foto.');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const handleSaveProfile = async () => {
     if (!fullName) {
@@ -148,14 +176,14 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
           <View className="items-center mt-12 mb-12">
             <View className="relative">
               <View className="w-28 h-28 rounded-[40px] bg-[#121214] overflow-hidden border border-white/5 items-center justify-center">
-                {initialProfile?.avatar_url ? (
-                  <Image source={{ uri: initialProfile.avatar_url }} className="w-full h-full" />
+                {avatarUrl ? (
+                  <Image source={{ uri: avatarUrl }} className="w-full h-full" />
                 ) : (
                   <MaterialCommunityIcons name="account" size={50} color="#334155" />
                 )}
               </View>
-              <TouchableOpacity className="absolute -bottom-2 -right-2 bg-[#00A3FF] w-10 h-10 rounded-full items-center justify-center border-4 border-[#050505]">
-                 <Feather name="edit-2" size={14} color="white" />
+              <TouchableOpacity onPress={handleImageUpload} disabled={uploadingImage} className="absolute -bottom-2 -right-2 bg-[#00A3FF] w-10 h-10 rounded-full items-center justify-center border-4 border-[#050505]">
+                 {uploadingImage ? <ActivityIndicator size="small" color="white" /> : <Feather name="edit-2" size={14} color="white" />}
               </TouchableOpacity>
             </View>
           </View>

@@ -46,16 +46,16 @@ export const CreateVacanteScreen = ({ navigation }: any) => {
       ]);
 
       if (error) {
-        console.error('CRITICAL_ERROR [Supabase Insert]:', JSON.stringify(error, null, 2));
-        // Para pruebas sociales/UI, permitimos avanzar aunque falle el insert por falta de tabla
-        console.log('Simulando éxito para pruebas de UI...');
+        console.error('Supabase Insert Error:', error.message);
+        Alert.alert('Error', 'No se pudo publicar la vacante: ' + error.message);
+        return;
       } 
       
-      Alert.alert('¡Publicada! (Modo Prueba) 🚀', 'La vacante se ha procesado correctamente.');
+      Alert.alert('¡Publicada! 🚀', 'La vacante está ahora disponible para postulaciones.');
       navigation.goBack();
       
     } catch (err) {
-      Alert.alert('Error', 'Hubo un problema de conexión');
+      Alert.alert('Error', 'Hubo un problema de conexión al guardar la oferta.');
     } finally {
       setLoading(false);
     }
@@ -63,13 +63,13 @@ export const CreateVacanteScreen = ({ navigation }: any) => {
 
   const Selector = ({ label, options, current, onSelect }: any) => (
     <View className="mb-6">
-      <Text className="text-slate-700 dark:text-slate-200 font-bold mb-3 ml-1">{label}</Text>
+      <Text className="text-white font-bold mb-3 ml-1">{label}</Text>
       <View className="flex-row flex-wrap gap-2">
         {options.map((opt: string) => (
           <TouchableOpacity 
             key={opt}
             onPress={() => onSelect(opt)}
-            className={`px-4 py-2 rounded-xl border ${current === opt ? 'bg-blue-600 border-blue-600' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'}`}
+            className={`px-4 py-2 rounded-xl border ${current === opt ? 'bg-[#FF005C] border-[#FF005C]' : 'bg-[#121214] border-white/5'}`}
           >
             <Text className={`text-xs font-bold ${current === opt ? 'text-white' : 'text-slate-500'}`}>{opt}</Text>
           </TouchableOpacity>
@@ -79,15 +79,15 @@ export const CreateVacanteScreen = ({ navigation }: any) => {
   );
 
   return (
-    <View className="flex-1 bg-white dark:bg-slate-950">
-      <StatusBar barStyle="dark-content" />
+    <View className="flex-1 bg-[#050505]">
+      <StatusBar barStyle="light-content" />
       <SafeAreaView className="flex-1" edges={['top']}>
         {/* Header */}
-        <View className="px-6 py-4 flex-row items-center border-b border-slate-50 dark:border-slate-800">
-          <TouchableOpacity onPress={() => navigation.goBack()} className="w-10 h-10 items-center justify-center bg-slate-50 dark:bg-slate-900 rounded-full mr-3">
-            <Ionicons name="arrow-back" size={20} color="#1e293b" />
+        <View className="px-6 py-4 flex-row items-center border-b border-[#1e1e1e]">
+          <TouchableOpacity onPress={() => navigation.goBack()} className="w-10 h-10 items-center justify-center bg-[#1a1a1c] rounded-full mr-3">
+            <Ionicons name="arrow-back" size={20} color="white" />
           </TouchableOpacity>
-          <Text className="text-xl font-black text-slate-900 dark:text-white">Nueva Oferta</Text>
+          <Text className="text-xl font-black text-white">Nueva Oferta</Text>
         </View>
 
         <ScrollView 

@@ -3,22 +3,63 @@ import { View, Text, SafeAreaView, TouchableOpacity, ScrollView, Image } from 'r
 import { Feather } from '@expo/vector-icons';
 import { Application } from './mockData';
 import { TimelineStep } from '../../components/applications/TimelineStep';
-import { SHARED_CONVERSATIONS } from '../../lib/data';
+import { supabase } from '../../lib/supabase';
+import { SessionContext } from '../../lib/SessionContext';
+import { Alert } from 'react-native';
 
 export const ApplicationStatusScreen = ({ route, navigation }: any) => {
-  const { application } = route.params as { application: Application };
+  const { application, userRole } = route.params as { application: Application, userRole: string };
+  const session = React.useContext(SessionContext);
 
-  const handleContactRecruiter = () => {
-     // Find the conversation for this company
-     const conversation = SHARED_CONVERSATIONS.find(c => c.companyId === application.companyId);
-     
-     if (conversation) {
+  const handleContactRecruiter = async () => {
+     if (userRole === 'candidate') {
+        Alert.alert(
+           "Chat Bloqueado", 
+           "De acuerdo con nuestras políticas, debes esperar a que la empresa dé el primer paso y te envíe un mensaje para habilitar el chat."
+        );
+        return;
+     }
+
+     // User is company, create or fetch chat room
+     try {
+        const companyId = session?.user?.id;
+        const candidateId = application.companyId; // Para la empresa, companyId en Application es el candidateId
+        
+        if (!companyId || !candidateId) return;
+
+        // Buscar si existe la sala
+        let { data: room, error } = await supabase
+          .from('chat_rooms')
+          .select('*')
+          .eq('company_id', companyId)
+          .eq('candidate_id', candidateId)
+          .single();
+
+        // Si no existe, crearla
+        if (!room) {
+           const { data: newRoom, error: createError } = await supabase
+             .from('chat_rooms')
+             .insert({
+                company_id: companyId,
+                candidate_id: candidateId,
+                job_id: application.jobId
+             })
+             .select('*')
+             .single();
+             
+           if (createError) throw createError;
+           room = newRoom;
+        }
+
+        // Navegar a ChatDetail con la información del room
         navigation.navigate('Chat', {
           screen: 'ChatDetail',
-          params: { conversation }
+          params: { roomId: room.id, oppositeUserId: candidateId }
         });
-     } else {
-        navigation.navigate('Chat');
+
+     } catch (err) {
+        console.error('Error starting chat:', err);
+        Alert.alert("Error", "No se pudo iniciar el chat.");
      }
   };
 
@@ -70,10 +111,13 @@ export const ApplicationStatusScreen = ({ route, navigation }: any) => {
          {/* Contact Recruiter Button */}
          <TouchableOpacity 
            onPress={handleContactRecruiter}
+           style={{ opacity: userRole === 'candidate' ? 0.5 : 1 }}
            className="bg-[#00A3FF] flex-row items-center justify-center mx-5 py-5 rounded-[24px] mt-8 mb-8 shadow-[0_8px_30px_rgba(0,163,255,0.3)]"
          >
             <Feather name="message-square" size={20} color="white" className="mr-2" />
-            <Text className="text-white font-black uppercase tracking-widest text-sm">Contactar reclutador</Text>
+            <Text className="text-white font-black uppercase tracking-widest text-sm">
+               {userRole === 'candidate' ? 'Esperando Contacto...' : 'Iniciar Conversación'}
+            </Text>
          </TouchableOpacity>
 
          {/* FAQ Banner */}

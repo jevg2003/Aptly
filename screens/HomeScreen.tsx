@@ -34,53 +34,15 @@ import { OnboardingCandidate } from './profiles/OnboardingCandidate';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
 
-const MOCK_JOBS: JobData[] = [
-  {
-    id: '1',
-    title: 'Gerente de Tienda',
-    company: 'D1 S.A.S.',
-    companyDescription: 'Líder en retail de descuento',
-    salary: '$3.5M - $4.5M COP',
-    location: 'Bogotá, Colombia',
-    type: 'Full-time',
-    modality: 'Presencial',
-    postedAt: '2 horas',
-    tags: ['Liderazgo', 'Ventas', 'Inventarios'],
-    imageUrl: 'https://images.unsplash.com/photo-1534723452862-4c874018d66d?w=800&q=80',
-  },
-  {
-    id: '2',
-    title: 'Supervisor de Zona',
-    company: 'Tiendas ARA',
-    companyDescription: 'Expansión nacional',
-    salary: '$3.0M - $3.8M COP',
-    location: 'Medellín, Colombia',
-    type: 'Full-time',
-    modality: 'Híbrido',
-    postedAt: '1 día',
-    tags: ['Operaciones', 'Logística'],
-    imageUrl: 'https://images.unsplash.com/photo-1604719312566-f4129e93f429?w=800&q=80',
-  },
-  {
-    id: '3',
-    title: 'Asesor Comercial',
-    company: 'Homecenter',
-    companyDescription: 'Mejoramiento del hogar',
-    salary: '$1.8M - $2.2M COP',
-    location: 'Cali, Colombia',
-    type: 'Contract',
-    modality: 'Presencial',
-    postedAt: '3 días',
-    tags: ['Servicio al cliente', 'Ventas'],
-    imageUrl: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=800&q=80',
-  }
-];
-
 export const HomeScreen = () => {
   const session = React.useContext(SessionContext);
   const { addMatch } = useMatches();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [checkingProfile, setCheckingProfile] = useState(true);
+
+  // Database Jobs
+  const [jobs, setJobs] = useState<JobData[]>([]);
+  const [loadingJobs, setLoadingJobs] = useState(true);
 
   // Swipe State
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -116,29 +78,70 @@ export const HomeScreen = () => {
     }
   }, [session]);
 
+  const fetchJobs = useCallback(async () => {
+    try {
+      setLoadingJobs(true);
+      // Fetch active jobs and include company info by joining the profiles table
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*, profiles(full_name, bio, avatar_url)')
+        .eq('status', 'active');
+        
+      if (error) throw error;
+      
+      const mappedJobs: JobData[] = (data || []).map(job => ({
+        id: job.id,
+        title: job.title,
+        company: job.profiles?.full_name || 'Empresa Privada',
+        companyDescription: job.profiles?.bio || '',
+        location: job.location,
+        salary: job.salary,
+        type: job.type,
+        modality: job.modality,
+        postedAt: 'Reciente',
+        imageUrl: job.profiles?.avatar_url || '',
+        tags: job.tags || []
+      }));
+      
+      // Randomize the order a bit for a better swipe experience
+      const shuffled = mappedJobs.sort(() => 0.5 - Math.random());
+      setJobs(shuffled);
+    } catch (err) {
+      console.error('Error fetching jobs:', err);
+    } finally {
+      setLoadingJobs(false);
+    }
+  }, []);
+
   useEffect(() => {
     checkProfile();
-  }, [checkProfile]);
+    if (session?.user?.id) {
+      fetchJobs();
+    }
+  }, [checkProfile, fetchJobs, session?.user?.id]);
 
-  const handleAction = (type: 'reject' | 'match' | 'superlike') => {
-    const currentJob = MOCK_JOBS[currentIndex];
+  const handleAction = async (type: 'reject' | 'match' | 'superlike') => {
+    const currentJob = jobs[currentIndex];
     if (!currentJob) return;
 
-    if (type === 'match') {
+    if (type === 'match' || type === 'superlike') {
       addMatch(currentJob);
+      // Guardar la postulación real en Supabase
+      try {
+        await supabase.from('applications').insert({
+          candidate_id: session?.user?.id,
+          job_id: currentJob.id,
+          status: 'pending'
+        });
+      } catch (err) {
+        console.error('Error guardando aplicacion:', err);
+      }
+
       setModalConfig({
         visible: true,
         title: '¡Es un Match!',
         message: '¡Excelente elección! La empresa evaluará tu perfil para determinar si eres el candidato apto. Se comunicarán contigo en un plazo estimado de 3 a 5 días hábiles. ¡Mantente atento!',
         icon: 'heart',
-        type: 'success'
-      });
-    } else if (type === 'superlike') {
-      setModalConfig({
-        visible: true,
-        title: '¡Super Like!',
-        message: '¡Tu perfil acaba de ser priorizado! Gracias por tu interés. La empresa revisará tus habilidades destacadas y se pondrá en contacto pronto.',
-        icon: 'zap',
         type: 'success'
       });
     } else if (type === 'reject') {
@@ -206,8 +209,8 @@ export const HomeScreen = () => {
     return <OnboardingCandidate userId={session.user.id} session={session} onComplete={() => setShowOnboarding(false)} />;
   }
 
-  const currentJob = MOCK_JOBS[currentIndex];
-  const nextJob = MOCK_JOBS[currentIndex + 1];
+  const currentJob = jobs[currentIndex];
+  const nextJob = jobs[currentIndex + 1];
 
   return (
     <View style={{ flex: 1, backgroundColor: '#050505' }}>
@@ -257,10 +260,18 @@ export const HomeScreen = () => {
               </View>
             </View>
           ) : (
-            <View style={styles.emptyContainer}>
-               <Ionicons name="sparkles" size={60} color="rgba(255,255,255,0.1)" />
-               <Text style={styles.emptyTitle}>¡Eso es todo por hoy!</Text>
-               <Text style={styles.emptyText}>Vuelve más tarde para descubrir nuevas oportunidades en el universo Aptly.</Text>
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+              {loadingJobs ? (
+                  <ActivityIndicator size="large" color="#00A3FF" />
+              ) : (
+                  <>
+                     <Ionicons name="checkmark-circle" size={80} color="#00A3FF" style={{ marginBottom: 20 }} />
+                     <Text style={{ color: '#FFFFFF', fontSize: 24, fontWeight: '900', marginBottom: 10 }}>Has visto todo</Text>
+                     <Text style={{ color: '#94a3b8', textAlign: 'center', paddingHorizontal: 40, lineHeight: 22 }}>
+                        Has deslizado por todas las vacantes por ahora. Las empresas subirán nuevas opciones pronto.
+                     </Text>
+                  </>
+              )}
             </View>
           )}
         </View>

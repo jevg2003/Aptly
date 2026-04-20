@@ -21,6 +21,7 @@ import Animated, {
   runOnJS 
 } from 'react-native-reanimated';
 import { SessionContext } from '../../lib/SessionContext';
+import { supabase } from '../../lib/supabase';
 
 import { ObsidianHeader } from '../../components/ObsidianHeader';
 import { ObsidianSwitcher } from '../../components/ObsidianSwitcher';
@@ -31,6 +32,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
 
 interface CandidateData {
+  applicationId: string;
   id: string;
   name: string;
   age: number;
@@ -80,6 +82,52 @@ export const BusinessHomeScreen = () => {
   const session = React.useContext(SessionContext);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState('Todos');
+  const [candidates, setCandidates] = useState<CandidateData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchCandidates = async () => {
+    if (!session?.user?.id) return;
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('applications')
+        .select(`
+          id,
+          status,
+          jobs!inner(company_id),
+          profiles!applications_candidate_id_fkey(id, full_name, avatar_url)
+        `)
+        .eq('jobs.company_id', session.user.id)
+        .eq('status', 'pending');
+
+      if (error) throw error;
+
+      const mapped: CandidateData[] = (data || []).map(app => {
+         const profile = Array.isArray(app.profiles) ? app.profiles[0] : app.profiles;
+         return {
+            applicationId: app.id,
+            id: profile?.id || Math.random().toString(),
+            name: profile?.full_name || 'Candidato',
+            age: 26,
+            location: 'Colombia',
+            availability: 'Tiempo Completo',
+            role: 'Aplicante General',
+            tags: ['Entusiasta', 'Proactivo'],
+            imageUrl: profile?.avatar_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80'
+         };
+      });
+
+      setCandidates(mapped);
+    } catch (err) {
+      console.error('Error fetching candidates:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCandidates();
+  }, [session?.user?.id]);
 
   // Modal State
   const [modalConfig, setModalConfig] = useState({
@@ -93,8 +141,8 @@ export const BusinessHomeScreen = () => {
   const [detailModalVisible, setDetailModalVisible] = useState(false);
 
   const filteredCandidates = selectedCategory === 'Todos' 
-    ? MOCK_CANDIDATES 
-    : MOCK_CANDIDATES.filter(candidate => candidate.role.includes(selectedCategory) || selectedCategory === 'Tienda' && candidate.role.includes('Aux'));
+    ? candidates 
+    : candidates.filter(candidate => candidate.role.includes(selectedCategory) || selectedCategory === 'Tienda' && candidate.role.includes('Aux'));
 
   useEffect(() => {
     setCurrentIndex(0);
@@ -103,9 +151,17 @@ export const BusinessHomeScreen = () => {
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
 
-  const handleAction = (type: 'reject' | 'match' | 'superlike') => {
+  const handleAction = async (type: 'reject' | 'match' | 'superlike') => {
     const currentCandidate = filteredCandidates[currentIndex];
     if (!currentCandidate) return;
+
+    // Actualizar Base de datos
+    try {
+       const status = (type === 'match' || type === 'superlike') ? 'interview' : 'rejected';
+       await supabase.from('applications').update({ status }).eq('id', currentCandidate.applicationId);
+    } catch (e) {
+       console.error("Error updating application status");
+    }
 
     if (type === 'match') {
       setModalConfig({
