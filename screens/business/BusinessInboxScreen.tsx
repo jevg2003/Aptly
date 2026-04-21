@@ -9,13 +9,11 @@ import { ChatListItem } from '../../components/chat/ChatListItem';
 import { useBusinessChat } from '../../lib/BusinessChatContext';
 
 import { ObsidianHeader } from '../../components/ObsidianHeader';
-import { ObsidianSwitcher } from '../../components/ObsidianSwitcher';
 import { StyleSheet } from 'react-native';
 
 export const BusinessInboxScreen = ({ navigation }: any) => {
   const { conversations } = useBusinessChat();
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState('All');
 
   const filteredConversations = useMemo(() => {
     let result = conversations;
@@ -40,22 +38,12 @@ export const BusinessInboxScreen = ({ navigation }: any) => {
       <ObsidianHeader 
         title="Messages" 
         subtitle="Candidate Chat"
-        rightIcon="filter-outline"
       />
 
       <View style={{ paddingHorizontal: 10, marginTop: 5 }}>
         <SearchBar value={searchQuery} onChangeText={setSearchQuery} />
       </View>
       
-      <View style={{ marginTop: 10, marginBottom: 15 }}>
-        <ObsidianSwitcher 
-           options={['All', 'Unread', 'Matches']}
-           activeOption={activeFilter}
-           onOptionChange={(opt) => setActiveFilter(opt)}
-           accentColor="#FF005C"
-        />
-      </View>
-
       <FlatList
         data={filteredConversations}
         keyExtractor={(item) => item.id}

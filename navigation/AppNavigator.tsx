@@ -1,7 +1,8 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
+import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
 
 import { HomeScreen } from '../screens/HomeScreen';
 import { BusinessHomeScreen } from '../screens/business/BusinessHomeScreen';
@@ -13,10 +14,10 @@ import { BusinessChatDetailScreen } from '../screens/business/BusinessChatDetail
 import { BusinessProfileScreen } from '../screens/business/BusinessProfileScreen';
 import { EditBusinessProfileScreen } from '../screens/business/EditBusinessProfileScreen';
 
-import { MatchesScreen } from '../screens/MatchesScreen';
 import { ChatNavigator } from './ChatNavigator';
 import { ApplicationsNavigator } from './ApplicationsNavigator';
 import { ProfileNavigator } from './ProfileNavigator';
+import { useBusinessChat } from '../lib/BusinessChatContext';
 
 const Tab = createBottomTabNavigator();
 const BusinessStack = createNativeStackNavigator();
@@ -27,6 +28,7 @@ const BusinessVacantesNavigator = () => (
     <BusinessStack.Screen name="VacantesList" component={BusinessVacantesScreen} />
     <BusinessStack.Screen name="CreateVacante" component={CreateVacanteScreen} />
     <BusinessStack.Screen name="JobDetail" component={JobDetailScreen} />
+    <BusinessStack.Screen name="BusinessHome" component={BusinessHomeScreen} />
   </BusinessStack.Navigator>
 );
 
@@ -44,32 +46,145 @@ const BusinessProfileNavigator = () => (
   </BusinessStack.Navigator>
 );
 
-// 2. Tab Navigator para Candidatos
+// Custom TabBar for Candidates
+const CandidateTabBar = ({ state, descriptors, navigation }: any) => {
+  const tabs = [
+    { name: 'Inicio', icon: 'home', iconActive: 'home', label: 'Inicio' },
+    { name: 'Chat', icon: 'chatbubble-outline', iconActive: 'chatbubble', label: 'Chat' },
+    { name: 'Postulaciones', icon: 'briefcase-outline', iconActive: 'briefcase', label: 'Postulaciones' },
+    { name: 'Profile', icon: 'person-outline', iconActive: 'person', label: 'Perfil' },
+  ];
+  return (
+    <View style={tabStyles.bar}>
+      {state.routes.map((route: any, index: number) => {
+        const isFocused = state.index === index;
+        const tab = tabs.find(t => t.name === route.name) || tabs[0];
+        const iconName: any = isFocused ? tab.iconActive : tab.icon;
+        const color = isFocused ? '#00A3FF' : '#475569';
+        return (
+          <TouchableOpacity
+            key={route.key}
+            onPress={() => navigation.navigate(route.name)}
+            style={tabStyles.tabBtn}
+            activeOpacity={0.7}
+          >
+            {isFocused && <View style={[tabStyles.glow, { shadowColor: '#00A3FF' }]} />}
+            <Ionicons name={iconName} size={22} color={color} />
+            <Text style={[tabStyles.label, { color }]}>{tab.label}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+};
+
+// Custom TabBar for Business
+const BusinessTabBar = ({ state, descriptors, navigation }: any) => {
+  const { totalUnreadCount } = useBusinessChat();
+
+  const tabs = [
+    { name: 'Vacantes', icon: 'layers-outline', iconActive: 'layers', label: 'Vacantes' },
+    { name: 'Chat', icon: 'chatbubble-outline', iconActive: 'chatbubble', label: 'Chat', badge: totalUnreadCount },
+    { name: 'Profile', icon: 'business-outline', iconActive: 'business', label: 'Empresa' },
+  ];
+
+  return (
+    <View style={tabStyles.bar}>
+      {state.routes.map((route: any, index: number) => {
+        const isFocused = state.index === index;
+        const tab = tabs.find(t => t.name === route.name) || tabs[0];
+        const iconName: any = isFocused ? tab.iconActive : tab.icon;
+        const color = isFocused ? '#FF005C' : '#475569';
+        
+        return (
+          <TouchableOpacity
+            key={route.key}
+            onPress={() => navigation.navigate(route.name)}
+            style={tabStyles.tabBtn}
+            activeOpacity={0.7}
+          >
+            <View style={tabStyles.iconWrapper}>
+              {isFocused && <View style={[tabStyles.glow, { shadowColor: '#FF005C', backgroundColor: 'rgba(255, 0, 92, 0.08)' }]} />}
+              <Ionicons name={iconName} size={22} color={color} />
+              {(tab as any).badge > 0 && (
+                <View style={tabStyles.badge}>
+                  <Text style={tabStyles.badgeText}>{(tab as any).badge > 99 ? '99+' : (tab as any).badge}</Text>
+                </View>
+              )}
+            </View>
+            <Text style={[tabStyles.label, { color }]}>{tab.label}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+};
+
+const tabStyles = StyleSheet.create({
+  bar: {
+    flexDirection: 'row',
+    backgroundColor: '#0A0A0B',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.06)',
+    height: 75,
+    paddingBottom: 12,
+    paddingTop: 8,
+    paddingHorizontal: 8,
+  },
+  tabBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  iconWrapper: {
+    width: 40,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  glow: {
+    position: 'absolute',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  label: {
+    fontSize: 10,
+    fontWeight: '700',
+    marginTop: 4,
+    letterSpacing: 0.5,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -8,
+    backgroundColor: '#FF005C',
+    borderRadius: 10,
+    minWidth: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 1.5,
+    borderColor: '#0A0A0B',
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 8,
+    fontWeight: '900',
+  }
+});
+
 export const MainTabNavigator = () => {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: '#050505',
-          borderTopColor: 'rgba(255, 255, 255, 0.05)',
-          borderTopWidth: 1,
-          height: 70,
-          paddingBottom: 12,
-          paddingTop: 8,
-          elevation: 0,
-        },
-        tabBarActiveTintColor: '#00A3FF',
-        tabBarInactiveTintColor: '#475569',
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '700', marginBottom: 2 },
-        tabBarIcon: ({ color, size }) => {
-          let iconName: any = 'home';
-          if (route.name === 'Chat') iconName = 'message-square';
-          if (route.name === 'Postulaciones') iconName = 'briefcase';
-          if (route.name === 'Perfil') iconName = 'user';
-          return <Feather name={iconName} size={24} color={color} />;
-        },
-      })}
+      tabBar={(props) => <CandidateTabBar {...props} />}
+      screenOptions={{ headerShown: false }}
     >
       <Tab.Screen name="Inicio" component={HomeScreen} />
       <Tab.Screen name="Chat" component={ChatNavigator} />
@@ -83,33 +198,13 @@ export const MainTabNavigator = () => {
 export const BusinessTabNavigator = () => {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: '#050505',
-          borderTopColor: 'rgba(255, 255, 255, 0.05)',
-          borderTopWidth: 1,
-          height: 70,
-          paddingBottom: 12,
-          paddingTop: 8,
-          elevation: 0,
-        },
-        tabBarActiveTintColor: '#FF005C',
-        tabBarInactiveTintColor: '#475569',
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '700', marginBottom: 2 },
-        tabBarIcon: ({ color, size }) => {
-          let iconName: any = 'home';
-          if (route.name === 'Vacantes') iconName = 'briefcase';
-          if (route.name === 'Chat') iconName = 'message-square';
-          if (route.name === 'Profile') iconName = 'user';
-          return <Feather name={iconName} size={22} color={color} />;
-        },
-      })}
+      tabBar={(props) => <BusinessTabBar {...props} />}
+      screenOptions={{ headerShown: false }}
     >
-      <Tab.Screen name="Panel" component={BusinessHomeScreen} />
-      <Tab.Screen name="Vacantes" component={BusinessVacantesNavigator} /> 
+      <Tab.Screen name="Vacantes" component={BusinessVacantesNavigator} />
       <Tab.Screen name="Chat" component={BusinessChatNavigator} />
       <Tab.Screen name="Profile" component={BusinessProfileNavigator} />
     </Tab.Navigator>
   );
 };
+

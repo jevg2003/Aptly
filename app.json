@@ -17,8 +17,6 @@
     "icon": "./assets/favicon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
       "backgroundColor": "#050505"
     },
     "assetBundlePatterns": [

@@ -10,6 +10,7 @@ import { SessionContext } from '../lib/SessionContext';
 import { MatchProvider } from '../lib/MatchContext';
 import { BusinessChatProvider } from '../lib/BusinessChatContext';
 import { BusinessProfileProvider } from '../lib/BusinessProfileContext';
+import { NotificationBanner } from '../components/common/NotificationBanner';
 
 const Stack = createNativeStackNavigator();
 
@@ -20,6 +21,7 @@ export const RootNavigator = ({ session }: { session: Session | null }) => {
     <SessionContext.Provider value={session}>
       <BusinessProfileProvider>
         <BusinessChatProvider>
+          <NotificationBanner />
           <MatchProvider>
             <Stack.Navigator 
               screenOptions={{ 

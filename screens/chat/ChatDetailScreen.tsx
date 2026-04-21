@@ -1,50 +1,104 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { View, Text, SafeAreaView, TouchableOpacity, KeyboardAvoidingView, Platform, FlatList, TextInput, Image } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
-import { Conversation, Message, currentUser } from './mockData';
+import { Conversation, Message } from './mockData';
+import { supabase } from '../../lib/supabase';
+import { SessionContext } from '../../lib/SessionContext';
 
 export const ChatDetailScreen = ({ route, navigation }: any) => {
-  const { conversation } = route.params as { conversation: Conversation };
-  const { participant } = conversation;
-  const [messages, setMessages] = useState<Message[]>(conversation.messages);
+  const { roomId, oppositeUserId, participant } = route.params;
+  const session = React.useContext(SessionContext);
+  const currentUserId = session?.user?.id;
+
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const flatListRef = useRef<FlatList>(null);
 
-  // Clear unread count when opening the chat
+  // Fetch initial messages and set up subscription
   useEffect(() => {
-    if (conversation.unreadCount > 0) {
-      conversation.unreadCount = 0;
-    }
-  }, [conversation]);
+    if (!roomId || !currentUserId) return;
 
-  const sendMessage = () => {
-    if (!inputText.trim()) return;
-
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      senderId: currentUser.id,
-      text: inputText.trim(),
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      type: 'text'
+    // 1. Fetch histórico
+    const fetchMessages = async () => {
+       const { data, error } = await supabase
+         .from('messages')
+         .select('*')
+         .eq('room_id', roomId)
+         .order('created_at', { ascending: true }); // older first for chat view
+         
+       if (!error && data) {
+          const mapped: Message[] = data.map(m => ({
+             id: m.id,
+             senderId: m.sender_id,
+             text: m.content || '',
+             timestamp: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+             type: 'text'
+          }));
+          setMessages(mapped);
+          
+          // Mark as read
+          await supabase.from('messages').update({ is_read: true }).eq('room_id', roomId).neq('sender_id', currentUserId);
+       }
     };
-
-    // Mutate the global mock object so it persists across navigations
-    conversation.messages.push(newMessage);
-    conversation.lastMessage = newMessage.text || 'Message sent';
-    conversation.timestamp = newMessage.timestamp;
-
-    setMessages([...conversation.messages]);
-    setInputText('');
     
-    // Simulate auto scroll
-    setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
+    fetchMessages();
+
+    // 2. Suscripción en Tiempo Real
+    const channel = supabase
+      .channel(`room_${roomId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` },
+        (payload) => {
+          const newMsg = payload.new;
+          // Avoid duplicating if we sent it
+          setMessages(prev => {
+             // Basic deduplication if id matches
+             if (prev.find(m => m.id === newMsg.id)) return prev;
+             
+             return [...prev, {
+                id: newMsg.id,
+                senderId: newMsg.sender_id,
+                text: newMsg.content || '',
+                timestamp: new Date(newMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                type: 'text'
+             }];
+          });
+          
+          setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+          }, 100);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [roomId, currentUserId]);
+
+  const sendMessage = async () => {
+    if (!inputText.trim() || !currentUserId) return;
+    const textToSend = inputText.trim();
+    setInputText('');
+
+    try {
+       await supabase.from('messages').insert({
+          room_id: roomId,
+          sender_id: currentUserId,
+          content: textToSend,
+          is_read: false
+       });
+       
+       setTimeout(() => {
+         flatListRef.current?.scrollToEnd({ animated: true });
+       }, 100);
+    } catch (e) { console.error('Send error:', e); }
   };
 
   const renderMessage = ({ item, index }: { item: Message, index: number }) => {
-    const isMe = item.senderId === currentUser.id;
-    const showAvatar = !isMe && (index === messages.length - 1 || messages[index + 1]?.senderId === currentUser.id);
+    const isMe = item.senderId === currentUserId;
+    const showAvatar = !isMe && (index === messages.length - 1 || messages[index + 1]?.senderId === currentUserId);
 
     return (
       <View className={`flex-row mb-4 px-4 ${isMe ? 'justify-end' : 'justify-start'}`}>

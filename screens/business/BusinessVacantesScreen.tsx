@@ -1,51 +1,48 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, StatusBar } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SessionContext } from '../../lib/SessionContext';
+import { SearchBar } from '../../components/chat/SearchBar';
 
 import { ObsidianHeader } from '../../components/ObsidianHeader';
 
-const MOCK_BUSINESS_JOBS = [
-  {
-    id: 'm1',
-    title: 'Desarrollador React Native',
-    location: 'Medellín, Colombia',
-    salary: '$5.0M - $7.0M COP',
-    modality: 'Híbrido',
-    created_at: new Date().toISOString(),
-    postulaciones: 12
-  },
-  {
-    id: 'm2',
-    title: 'Diseñador UI/UX Senior',
-    location: 'Bogotá, Colombia (Remoto)',
-    salary: '$4.5M - $5.5M COP',
-    modality: 'Remoto',
-    created_at: new Date().toISOString(),
-    postulaciones: 8
-  }
-];
+const MOCK_BUSINESS_JOBS: any[] = [];
 
 export const BusinessVacantesScreen = ({ navigation }: any) => {
   const session = React.useContext(SessionContext);
   const [jobs, setJobs] = useState<any[]>(MOCK_BUSINESS_JOBS);
   const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchJobs = React.useCallback(async () => {
     if (!session?.user?.id) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase.from('jobs').select('*').eq('company_id', session.user.id).order('created_at', { ascending: false });
-      if (!error && data && data.length > 0) {
-        setJobs(data);
+      const { data: jobsData, error } = await supabase.from('jobs').select('*').eq('company_id', session.user.id).order('created_at', { ascending: false });
+      if (!error && jobsData && jobsData.length > 0) {
+        
+        const jobIds = jobsData.map((j: any) => j.id);
+        const { data: appsData } = await supabase.from('applications').select('id, job_id, status').in('job_id', jobIds);
+        
+        const mappedJobs = jobsData.map((j: any) => {
+            const jobApps = appsData?.filter((a: any) => a.job_id === j.id) || [];
+            return {
+               ...j,
+               postulaciones: jobApps.length,
+               newApplicationsCount: jobApps.filter((a: any) => a.status === 'pending').length
+            };
+        });
+        setJobs(mappedJobs);
+
       } else {
-        setJobs(MOCK_BUSINESS_JOBS);
+        setJobs([]);
       }
     } catch (err) {
-      setJobs(MOCK_BUSINESS_JOBS);
+       // Error silenciado para limpieza de logs, puede añadirse notificación aquí si es necesario
+      setJobs([]);
     } finally {
       setLoading(false);
     }
@@ -57,10 +54,19 @@ export const BusinessVacantesScreen = ({ navigation }: any) => {
     }, [fetchJobs])
   );
 
+  const filteredJobs = React.useMemo(() => {
+    if (!searchQuery.trim()) return jobs;
+    const lowerQuery = searchQuery.toLowerCase();
+    return jobs.filter(job => 
+      job.title.toLowerCase().includes(lowerQuery) || 
+      job.location.toLowerCase().includes(lowerQuery)
+    );
+  }, [searchQuery, jobs]);
+
   const renderJobItem = ({ item }: { item: any }) => (
     <TouchableOpacity 
       activeOpacity={0.8}
-      onPress={() => navigation.navigate('JobDetail', { job: item })}
+      onPress={() => navigation.navigate('BusinessHome', { job: item })}
       style={styles.jobCard}
     >
       <View style={styles.cardHeader}>
@@ -68,8 +74,15 @@ export const BusinessVacantesScreen = ({ navigation }: any) => {
           <Text style={styles.jobTitle}>{item.title}</Text>
           <Text style={styles.jobLocation}>{item.location}</Text>
         </View>
-        <View style={styles.statusBadge}>
-          <Text style={styles.statusLabel}>ACTIVA</Text>
+        <View style={{flexDirection: 'row', alignItems: 'center', gap: 10}}>
+          {item.newApplicationsCount > 0 && (
+             <View style={{ backgroundColor: '#FF005C', width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{color: 'white', fontSize: 10, fontWeight: 'bold'}}>{item.newApplicationsCount}</Text>
+             </View>
+          )}
+          <View style={styles.statusBadge}>
+            <Text style={styles.statusLabel}>ACTIVA</Text>
+          </View>
         </View>
       </View>
       
@@ -92,18 +105,25 @@ export const BusinessVacantesScreen = ({ navigation }: any) => {
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         
         <ObsidianHeader 
-          title="My Vacancies" 
+          title="Mis vacantes" 
           subtitle="Management Console"
-          rightIcon="options-outline"
         />
+
+        <View style={{ paddingHorizontal: 10, marginTop: 5, marginBottom: 10 }}>
+          <SearchBar 
+            value={searchQuery} 
+            onChangeText={setSearchQuery} 
+            placeholder="Buscar por título o ubicación..." 
+          />
+        </View>
 
         {loading ? (
           <View style={styles.centerBox}>
             <ActivityIndicator color="#FF005C" />
           </View>
-        ) : jobs.length > 0 ? (
+        ) : filteredJobs.length > 0 ? (
           <FlatList
-            data={jobs}
+            data={filteredJobs}
             renderItem={renderJobItem}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}

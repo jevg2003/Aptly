@@ -5,15 +5,19 @@ import {
   ScrollView, 
   TouchableOpacity, 
   TextInput, 
-  SafeAreaView, 
   Alert,
   Image,
-  ActivityIndicator
+  StatusBar,
+  ActivityIndicator,
+  StyleSheet
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
 import { SessionContext } from '../../lib/SessionContext';
+import { pickAndOptimizeImage } from '../../lib/imageUtils';
+import { uploadAvatar } from '../../lib/storageUtils';
 
 export const EditProfileScreen = ({ navigation, route }: any) => {
   const session = React.useContext(SessionContext);
@@ -24,6 +28,8 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
   const [title, setTitle] = useState(initialProfile.professional_title || '');
   const [location, setLocation] = useState(initialProfile.location || '');
   const [bio, setBio] = useState(initialProfile.bio || '');
+  const [avatarUrl, setAvatarUrl] = useState(initialProfile.avatar_url || '');
+  const [uploadingImage, setUploadingImage] = useState(false);
   
   // Experience State
   const [experiences, setExperiences] = useState<any[]>([]);
@@ -62,6 +68,30 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
     fetchExperiences();
   }, [fetchExperiences]);
 
+  const handleImageUpload = async () => {
+    if (!session?.user?.id) return;
+    try {
+      setUploadingImage(true);
+      const localUri = await pickAndOptimizeImage();
+      if (!localUri) return;
+
+      const publicUrl = await uploadAvatar(localUri, session.user.id);
+      if (!publicUrl) throw new Error('Error al subir la imagen al servidor.');
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', session.user.id);
+
+      if (error) throw error;
+      setAvatarUrl(publicUrl);
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Problema al actualizar la foto.');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const handleSaveProfile = async () => {
     if (!fullName) {
       Alert.alert('Error', 'El nombre es obligatorio.');
@@ -82,7 +112,7 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
         });
 
       if (error) throw error;
-      Alert.alert('¡Éxito!', 'Perfil actualizado correctamente.');
+      navigation.goBack();
     } catch (error: any) {
       Alert.alert('Error', error.message);
     } finally {
@@ -132,49 +162,50 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#050505]">
-      <View className="flex-row items-center justify-between px-6 py-4 border-b border-white/5 bg-[#050505]">
-        <TouchableOpacity onPress={() => navigation.goBack()} className="p-1">
+    <View style={styles.root}>
+      <StatusBar barStyle="light-content" backgroundColor="#050505" />
+      <SafeAreaView style={styles.safe} edges={['top']}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
           <Feather name="arrow-left" size={24} color="white" />
         </TouchableOpacity>
-        <Text className="text-sm font-black text-white uppercase tracking-widest">Editar Perfil</Text>
+        <Text style={styles.headerTitle}>Editar Perfil</Text>
         <TouchableOpacity onPress={handleSaveProfile} disabled={loading}>
-          {loading ? <ActivityIndicator size="small" color="#00A3FF" /> : <Text className="text-[#00A3FF] font-black uppercase text-xs tracking-wider">Guardar</Text>}
+          {loading ? <ActivityIndicator size="small" color="#00A3FF" /> : <Text style={styles.saveBtn}>Guardar</Text>}
         </TouchableOpacity>
       </View>
 
-      <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
-          {/* Avatar Section */}
-          <View className="items-center mt-12 mb-12">
-            <View className="relative">
-              <View className="w-28 h-28 rounded-[40px] bg-[#121214] overflow-hidden border border-white/5 items-center justify-center">
-                {initialProfile?.avatar_url ? (
-                  <Image source={{ uri: initialProfile.avatar_url }} className="w-full h-full" />
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <View style={styles.avatarSection}>
+            <View style={styles.avatarWrapper}>
+              <View style={styles.avatarCircle}>
+                {avatarUrl ? (
+                  <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
                 ) : (
                   <MaterialCommunityIcons name="account" size={50} color="#334155" />
                 )}
               </View>
-              <TouchableOpacity className="absolute -bottom-2 -right-2 bg-[#00A3FF] w-10 h-10 rounded-full items-center justify-center border-4 border-[#050505]">
-                 <Feather name="edit-2" size={14} color="white" />
+              <TouchableOpacity onPress={handleImageUpload} disabled={uploadingImage} style={styles.avatarEditBtn}>
+                 {uploadingImage ? <ActivityIndicator size="small" color="white" /> : <Feather name="edit-2" size={14} color="white" />}
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Professional Info */}
-          <View className="bg-[#121214] p-8 rounded-[40px] border border-white/5 mb-8">
-            <Text className="text-xs font-black text-slate-500 uppercase tracking-[3px] mb-8">Información Profesional</Text>
+          <View style={styles.card}>
+            <Text style={styles.cardSectionLabel}>Información Profesional</Text>
 
-            <Text className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-3 ml-1">Nombre Completo</Text>
-            <TextInput value={fullName} onChangeText={setFullName} placeholderTextColor="#334155" className="bg-[#050505] p-5 rounded-2xl mb-6 text-white border border-white/5" />
+            <Text style={styles.inputLabel}>Nombre Completo</Text>
+            <TextInput value={fullName} onChangeText={setFullName} placeholderTextColor="#334155" style={styles.input} />
 
-            <Text className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-3 ml-1">Título Profesional</Text>
-            <TextInput value={title} onChangeText={setTitle} placeholderTextColor="#334155" className="bg-[#050505] p-5 rounded-2xl mb-6 text-white border border-white/5" />
+            <Text style={styles.inputLabel}>Título Profesional</Text>
+            <TextInput value={title} onChangeText={setTitle} placeholderTextColor="#334155" style={styles.input} />
 
-            <Text className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-3 ml-1">Ubicación</Text>
-            <TextInput value={location} onChangeText={setLocation} placeholderTextColor="#334155" className="bg-[#050505] p-5 rounded-2xl mb-6 text-white border border-white/5" />
+            <Text style={styles.inputLabel}>Ubicación</Text>
+            <TextInput value={location} onChangeText={setLocation} placeholderTextColor="#334155" style={styles.input} />
 
-            <Text className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-3 ml-1">Resumen / Bio</Text>
-            <TextInput value={bio} onChangeText={setBio} multiline numberOfLines={3} placeholderTextColor="#334155" className="bg-[#050505] p-5 rounded-2xl text-white border border-white/5 min-h-[100px]" />
+            <Text style={styles.inputLabel}>Resumen / Bio</Text>
+            <TextInput value={bio} onChangeText={setBio} multiline numberOfLines={3} placeholderTextColor="#334155" style={[styles.input, styles.inputMultiline]} />
           </View>
 
           {/* Experiences Section */}
@@ -221,10 +252,63 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
             )}
           </View>
 
-          <TouchableOpacity onPress={handleSaveProfile} disabled={loading} className="bg-[#00A3FF] py-5 mb-24 rounded-[28px] items-center shadow-[0_10px_40px_rgba(0,163,255,0.4)]">
-            <Text className="text-white font-black uppercase tracking-widest text-sm">{loading ? "Guardando..." : "Guardar Todo"}</Text>
+          <TouchableOpacity onPress={handleSaveProfile} disabled={loading} style={styles.saveAllBtn}>
+            <Text style={styles.saveAllText}>{loading ? "Guardando..." : "Guardar Todo"}</Text>
           </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: '#050505' },
+  safe: { flex: 1 },
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 24, paddingVertical: 16,
+    borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: '#050505'
+  },
+  headerBtn: { padding: 4 },
+  headerTitle: { fontSize: 13, fontWeight: '900', color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: 3 },
+  saveBtn: { color: '#00A3FF', fontWeight: '900', textTransform: 'uppercase', fontSize: 12, letterSpacing: 1.5 },
+  scroll: { flex: 1 },
+  scrollContent: { paddingHorizontal: 24, paddingBottom: 100 },
+  avatarSection: { alignItems: 'center', marginTop: 48, marginBottom: 48 },
+  avatarWrapper: { position: 'relative' },
+  avatarCircle: {
+    width: 112, height: 112, borderRadius: 40, backgroundColor: '#121214',
+    overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)',
+    alignItems: 'center', justifyContent: 'center'
+  },
+  avatarImage: { width: '100%', height: '100%' },
+  avatarEditBtn: {
+    position: 'absolute', bottom: -8, right: -8,
+    backgroundColor: '#00A3FF', width: 40, height: 40,
+    borderRadius: 20, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 4, borderColor: '#050505'
+  },
+  card: {
+    backgroundColor: '#121214', padding: 32, borderRadius: 40,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', marginBottom: 32
+  },
+  cardSectionLabel: {
+    fontSize: 11, fontWeight: '900', color: '#475569',
+    textTransform: 'uppercase', letterSpacing: 3, marginBottom: 28
+  },
+  inputLabel: {
+    fontSize: 10, fontWeight: '700', color: '#475569',
+    textTransform: 'uppercase', letterSpacing: 2, marginBottom: 10, marginLeft: 4
+  },
+  input: {
+    backgroundColor: '#050505', padding: 18, borderRadius: 16, marginBottom: 24,
+    color: '#FFFFFF', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', fontSize: 15
+  },
+  inputMultiline: { minHeight: 100, textAlignVertical: 'top' },
+  saveAllBtn: {
+    backgroundColor: '#00A3FF', paddingVertical: 20, marginBottom: 40,
+    borderRadius: 28, alignItems: 'center'
+  },
+  saveAllText: { color: '#FFFFFF', fontWeight: '900', textTransform: 'uppercase', letterSpacing: 2, fontSize: 14 }
+});

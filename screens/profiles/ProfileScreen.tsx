@@ -7,11 +7,13 @@ import {
   Image, 
   SafeAreaView, 
   StatusBar,
-  Alert,
   RefreshControl,
-  StyleSheet
+  StyleSheet,
+  ActivityIndicator
 } from 'react-native';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
+import { pickAndOptimizeImage } from '../../lib/imageUtils';
+import { uploadAvatar } from '../../lib/storageUtils';
 import { supabase } from '../../lib/supabase';
 import { SessionContext } from '../../lib/SessionContext';
 import { StatCard } from '../../components/profiles/StatCard';
@@ -31,6 +33,34 @@ export const ProfileScreen = ({ navigation }: any) => {
   const [refreshing, setRefreshing] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [errorConfig, setErrorConfig] = useState({ visible: false, message: '' });
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const handleImageUpload = async () => {
+    if (!session?.user?.id) return;
+    try {
+      setUploadingImage(true);
+      
+      const localUri = await pickAndOptimizeImage();
+      if (!localUri) return;
+
+      const publicUrl = await uploadAvatar(localUri, session.user.id);
+      if (!publicUrl) throw new Error('Error al subir la imagen al servidor.');
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', session.user.id);
+
+      if (error) throw error;
+
+      setProfile((prev: any) => ({ ...prev, avatar_url: publicUrl }));
+      
+    } catch (err: any) {
+      setErrorConfig({ visible: true, message: err.message || 'Hubo un problema actualizando tu foto de perfil.' });
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const fetchProfileData = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -111,8 +141,12 @@ export const ProfileScreen = ({ navigation }: any) => {
                 <MaterialCommunityIcons name="account" size={80} color="#1A1A1C" />
               )}
             </View>
-            <TouchableOpacity style={styles.cameraBtn}>
-               <MaterialCommunityIcons name="camera" size={16} color="white" />
+            <TouchableOpacity style={styles.cameraBtn} onPress={handleImageUpload} disabled={uploadingImage}>
+               {uploadingImage ? (
+                  <ActivityIndicator size="small" color="#050505" />
+               ) : (
+                  <MaterialCommunityIcons name="camera" size={16} color="white" />
+               )}
             </TouchableOpacity>
           </View>
           

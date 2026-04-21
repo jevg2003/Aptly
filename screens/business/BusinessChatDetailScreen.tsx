@@ -17,13 +17,20 @@ import { useBusinessChat } from '../../lib/BusinessChatContext';
 
 export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
   const { conversation: initialConversation } = route.params;
-  const { conversations, sendMessage } = useBusinessChat();
+  const { conversations, sendMessage, markAsRead } = useBusinessChat();
   const [message, setMessage] = useState('');
   const flatListRef = useRef<FlatList>(null);
 
   // Find the live conversation object from context
   const conversation = conversations.find(c => c.id === initialConversation.id) || initialConversation;
   const messages = conversation.messages || [];
+
+  // Marcar como leído al entrar o cuando lleguen nuevos mensajes estando en la pantalla
+  useEffect(() => {
+    if (conversation.id) {
+      markAsRead(conversation.id);
+    }
+  }, [messages.length, conversation.id, markAsRead]);
 
   const handleSend = () => {
     if (!message.trim()) return;

@@ -21,9 +21,9 @@ import Animated, {
   runOnJS 
 } from 'react-native-reanimated';
 import { SessionContext } from '../../lib/SessionContext';
+import { supabase } from '../../lib/supabase';
 
 import { ObsidianHeader } from '../../components/ObsidianHeader';
-import { ObsidianSwitcher } from '../../components/ObsidianSwitcher';
 import { ObsidianModal } from '../../components/ObsidianModal';
 import { ObsidianDetailModal } from '../../components/ObsidianDetailModal';
 
@@ -31,6 +31,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
 
 interface CandidateData {
+  applicationId: string;
   id: string;
   name: string;
   age: number;
@@ -43,6 +44,7 @@ interface CandidateData {
 
 const MOCK_CANDIDATES: CandidateData[] = [
   {
+    applicationId: 'mock-app-1',
     id: '1',
     name: 'Pepito',
     age: 28,
@@ -53,6 +55,7 @@ const MOCK_CANDIDATES: CandidateData[] = [
     imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
   },
   {
+    applicationId: 'mock-app-2',
     id: '2',
     name: 'Maria',
     age: 24,
@@ -63,6 +66,7 @@ const MOCK_CANDIDATES: CandidateData[] = [
     imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&q=80',
   },
   {
+    applicationId: 'mock-app-3',
     id: '3',
     name: 'Juan',
     age: 32,
@@ -76,10 +80,57 @@ const MOCK_CANDIDATES: CandidateData[] = [
 
 const CATEGORIES = ['Todos', 'Programador', 'Vendedor', 'Tienda'];
 
-export const BusinessHomeScreen = () => {
+export const BusinessHomeScreen = ({ route, navigation }: any) => {
   const session = React.useContext(SessionContext);
+  const { job } = route.params || {};
+
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedCategory, setSelectedCategory] = useState('Todos');
+  const [candidates, setCandidates] = useState<CandidateData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchCandidates = async () => {
+    if (!session?.user?.id || !job?.id) return;
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('applications')
+        .select(`
+          id,
+          status,
+          jobs!inner(company_id),
+          profiles!applications_candidate_id_fkey(id, full_name, avatar_url)
+        `)
+        .eq('job_id', job.id)
+        .eq('status', 'pending');
+
+      if (error) throw error;
+
+      const mapped: CandidateData[] = (data || []).map(app => {
+         const profile = Array.isArray(app.profiles) ? app.profiles[0] : app.profiles;
+         return {
+            applicationId: app.id,
+            id: profile?.id || Math.random().toString(),
+            name: profile?.full_name || 'Candidato',
+            age: 26,
+            location: 'Colombia',
+            availability: 'Tiempo Completo',
+            role: 'Aplicante General',
+            tags: ['Entusiasta', 'Proactivo'],
+            imageUrl: profile?.avatar_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80'
+         };
+      });
+
+      setCandidates(mapped);
+    } catch (err) {
+      console.error('Error fetching candidates:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCandidates();
+  }, [session?.user?.id, job?.id]);
 
   // Modal State
   const [modalConfig, setModalConfig] = useState({
@@ -92,20 +143,59 @@ export const BusinessHomeScreen = () => {
  
   const [detailModalVisible, setDetailModalVisible] = useState(false);
 
-  const filteredCandidates = selectedCategory === 'Todos' 
-    ? MOCK_CANDIDATES 
-    : MOCK_CANDIDATES.filter(candidate => candidate.role.includes(selectedCategory) || selectedCategory === 'Tienda' && candidate.role.includes('Aux'));
-
-  useEffect(() => {
-    setCurrentIndex(0);
-  }, [selectedCategory]);
+  // Ya no filtramos localmente, usamos todos los candidatos de la base de datos para este puesto
+  const filteredCandidates = candidates;
 
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
 
-  const handleAction = (type: 'reject' | 'match' | 'superlike') => {
+  const handleAction = async (type: 'reject' | 'match' | 'superlike') => {
     const currentCandidate = filteredCandidates[currentIndex];
-    if (!currentCandidate) return;
+    if (!currentCandidate || !currentCandidate.applicationId) {
+      console.warn("No candidate or applicationId found for index:", currentIndex);
+      return;
+    }
+
+    // Actualizar Base de datos
+    try {
+       const isMatch = type === 'match' || type === 'superlike';
+       const status = isMatch ? 'interview' : 'rejected';
+       
+       const { error: updateError } = await supabase
+         .from('applications')
+         .update({ status })
+         .eq('id', currentCandidate.applicationId);
+
+       if (updateError) {
+         console.error("DB Error updating application status:", updateError);
+         Alert.alert("Error al procesar", "Hubo un problema al actualizar el estado del candidato. Por favor intenta de nuevo.");
+         return; // No avanzar el índice si falló la DB
+       }
+
+       if (isMatch) {
+         // Asegurar que exista sala de chat
+         const { data: existingRoom } = await supabase
+           .from('chat_rooms')
+           .select('id')
+           .eq('application_id', currentCandidate.applicationId)
+           .maybeSingle();
+
+         if (!existingRoom) {
+           const { error: roomError } = await supabase.from('chat_rooms').insert([
+             {
+               application_id: currentCandidate.applicationId,
+               company_id: session?.user?.id,
+               candidate_id: currentCandidate.id
+             }
+           ]);
+           if (roomError) console.error("Error creating chat room:", roomError);
+         }
+       }
+    } catch (e) {
+       console.error("Unexpected error during swipe action:", e);
+       Alert.alert("Error Inesperado", "Algo salió mal. Si el problema persiste, reinicia la aplicación.");
+       return;
+    }
 
     if (type === 'match') {
       setModalConfig({
@@ -221,20 +311,13 @@ export const BusinessHomeScreen = () => {
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         
         <ObsidianHeader 
-          title="Candidates" 
-          subtitle="Match Finder"
-          leftIcon="menu"
-          rightIcon="notifications-outline"
+          title="Vacantes" 
+          subtitle="MATCH FINDER"
+          leftIcon="arrow-back"
+          onLeftPress={() => navigation.goBack()}
+          rightIcon="menu"
+          onRightPress={() => navigation.navigate('JobDetail', { job })}
         />
-
-        <View style={{ marginTop: 5 }}>
-          <ObsidianSwitcher 
-             options={CATEGORIES}
-             activeOption={selectedCategory}
-             onOptionChange={(opt) => setSelectedCategory(opt)}
-             accentColor="#FF005C"
-          />
-        </View>
 
         <View style={styles.cardArea}>
           {currentCandidate ? (
@@ -374,19 +457,22 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   candidateName: {
+    flex: 1, // Allow name to take available space
     fontSize: 28,
     fontWeight: '900',
     color: '#FFFFFF',
+    marginRight: 10,
   },
   infoBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    marginRight: 15, // Pushing it further in so it doesn't look 'salido'
   },
   candidateLocation: {
     flexDirection: 'row',

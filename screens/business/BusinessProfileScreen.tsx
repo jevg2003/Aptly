@@ -29,6 +29,8 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [candidatesCount, setCandidatesCount] = useState(0);
+  const [recentJobs, setRecentJobs] = useState<any[]>([]);
 
   const fetchCompanyProfile = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -37,10 +39,28 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
       if (profile.full_name === 'TechFlow Solutions' && session.user.user_metadata?.full_name) {
           updateProfile({ full_name: session.user.user_metadata.full_name });
       }
-      const { count, error: jobsError } = await supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('company_id', session.user.id);
-      setJobsCount(jobsError ? 2 : count || 0);
+      
+      // Fetch Active Jobs
+      const { data: jobsData, count: jobsCountRes } = await supabase
+         .from('jobs')
+         .select('*', { count: 'exact' })
+         .eq('company_id', session.user.id)
+         .order('created_at', { ascending: false })
+         .limit(3);
+         
+      setJobsCount(jobsCountRes || 0);
+      setRecentJobs(jobsData || []);
+
+      // Fetch Applications (Candidates interested)
+      const { count: appCount } = await supabase
+         .from('applications')
+         .select('jobs!inner(company_id)', { count: 'exact', head: true })
+         .eq('jobs.company_id', session.user.id);
+         
+      setCandidatesCount(appCount || 0);
+
     } catch (error: any) {
-      console.error('Error fetching company jobs count:', error.message);
+      console.error('Error fetching company stats:', error.message);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -131,7 +151,7 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
           {/* Stats Bar */}
           <View style={styles.statsRow}>
              <LocalStatCard label="Vacantes Activas" value={jobsCount.toString()} />
-             <LocalStatCard label="Candidatos" value="85" />
+             <LocalStatCard label="Candidatos" value={candidatesCount.toString()} />
              <LocalStatCard label="Valoración" value="4.8" icon="star" color="#FFCC00" />
           </View>
 
@@ -154,17 +174,27 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
                 </TouchableOpacity>
              </View>
 
-             {/* Job Item 1 */}
-             <TouchableOpacity style={styles.miniJobCard}>
-                <View style={styles.miniJobIcon}>
-                    <MaterialCommunityIcons name="xml" size={24} color="#FF005C" />
-                </View>
-                <View style={styles.miniJobContent}>
-                   <Text style={styles.miniJobTitle} numberOfLines={1}>Senior UX Designer</Text>
-                   <Text style={styles.miniJobMeta}>HQ • Medellín • Remote</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={18} color="#1A1A1C" />
-             </TouchableOpacity>
+             {/* Dynamic Jobs */}
+             {recentJobs.length > 0 ? recentJobs.map(job => (
+               <TouchableOpacity 
+                 key={job.id} 
+                 style={styles.miniJobCard}
+                 onPress={() => navigation.navigate('JobDetail', { job })}
+               >
+                  <View style={styles.miniJobIcon}>
+                      <MaterialCommunityIcons name="briefcase-outline" size={24} color="#FF005C" />
+                  </View>
+                  <View style={styles.miniJobContent}>
+                     <Text style={styles.miniJobTitle} numberOfLines={1}>{job.title}</Text>
+                     <Text style={styles.miniJobMeta}>{job.location} • {job.modality || 'Presencial'}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color="#1A1A1C" />
+               </TouchableOpacity>
+             )) : (
+               <View style={{ padding: 20, alignItems: 'center' }}>
+                  <Text style={{ color: '#475569', fontSize: 12 }}>No tienes ofertas recientes.</Text>
+               </View>
+             )}
 
              {/* Add New CTA */}
              <TouchableOpacity 
