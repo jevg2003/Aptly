@@ -13,9 +13,10 @@ import {
   ActivityIndicator,
   TextInput
 } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { pickAndOptimizeImage } from '../../lib/imageUtils';
-import { uploadAvatar } from '../../lib/storageUtils';
+import { uploadAvatar, uploadDocument } from '../../lib/storageUtils';
 import { supabase } from '../../lib/supabase';
 import { SessionContext } from '../../lib/SessionContext';
 import { StatCard } from '../../components/profiles/StatCard';
@@ -45,6 +46,7 @@ export const ProfileScreen = ({ navigation }: any) => {
   const [isAddingExp, setIsAddingExp] = useState(false);
   const [newExp, setNewExp] = useState({ title: '', company: '', description: '' });
   const [savingExp, setSavingExp] = useState(false);
+  const [uploadingResume, setUploadingResume] = useState(false);
 
   const handleImageUpload = async () => {
     if (!session?.user?.id) return;
@@ -142,6 +144,42 @@ export const ProfileScreen = ({ navigation }: any) => {
   const onRefresh = () => {
     setRefreshing(true);
     fetchProfileData();
+  };
+
+  const handleResumeUpload = async () => {
+    if (!session?.user?.id) return;
+    
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+        copyToCacheDirectory: true
+      });
+
+      if (result.canceled) return;
+
+      setUploadingResume(true);
+      const asset = result.assets[0];
+      
+      const publicUrl = await uploadDocument(asset.uri, session.user.id, asset.name);
+      
+      if (!publicUrl) throw new Error('No se pudo subir el archivo.');
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ resume_url: publicUrl })
+        .eq('id', session.user.id);
+
+      if (error) throw error;
+      
+      // Update local state
+      setProfile({ ...profile, resume_url: publicUrl });
+      Alert.alert('Éxito', 'Tu CV se ha subido correctamente.');
+      
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Hubo un problema al subir tu CV.');
+    } finally {
+      setUploadingResume(false);
+    }
   };
 
   const handleLogout = () => {
@@ -293,10 +331,17 @@ export const ProfileScreen = ({ navigation }: any) => {
 
         {/* Resume Section */}
         <View style={styles.section}>
-            <ResumeSection 
-              resumeUrl={profile?.resume_url} 
-              onUpload={() => navigation.navigate('EditProfile')}
-            />
+            {uploadingResume ? (
+              <View style={[styles.emptyExperience, { borderStyle: 'solid' }]}>
+                <ActivityIndicator color="#00A3FF" size="large" />
+                <Text style={[styles.emptyText, { marginTop: 15 }]}>Subiendo currículum...</Text>
+              </View>
+            ) : (
+              <ResumeSection 
+                resumeUrl={profile?.resume_url} 
+                onUpload={handleResumeUpload}
+              />
+            )}
         </View>
 
         {/* Recent Applications Section */}
