@@ -18,6 +18,7 @@ import { supabase } from '../../lib/supabase';
 import { SessionContext } from '../../lib/SessionContext';
 import { pickAndOptimizeImage } from '../../lib/imageUtils';
 import { uploadAvatar } from '../../lib/storageUtils';
+import { ObsidianModal } from '../../components/ObsidianModal';
 
 export const EditProfileScreen = ({ navigation, route }: any) => {
   const session = React.useContext(SessionContext);
@@ -34,7 +35,8 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
   // Experience State
   const [experiences, setExperiences] = useState<any[]>([]);
   const [isAddingExp, setIsAddingExp] = useState(false);
-  const [newExp, setNewExp] = useState({ title: '', company: '', startDate: '' });
+  const [newExp, setNewExp] = useState({ title: '', company: '', description: '' });
+  const [savingExp, setSavingExp] = useState(false);
   
   const [loading, setLoading] = useState(false);
   const [fetchingExp, setFetchingExp] = useState(false);
@@ -126,6 +128,7 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
       return;
     }
 
+    setSavingExp(true);
     try {
       const { data, error } = await supabase
         .from('experiences')
@@ -133,17 +136,20 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
           profile_id: session?.user?.id,
           title: newExp.title,
           company: newExp.company,
-          start_date: newExp.startDate || null,
+          description: newExp.description,
+          start_date: new Date().toISOString(),
         })
         .select();
 
       if (error) throw error;
       
       setExperiences([data[0], ...experiences]);
-      setNewExp({ title: '', company: '', startDate: '' });
+      setNewExp({ title: '', company: '', description: '' });
       setIsAddingExp(false);
     } catch (err: any) {
       Alert.alert('Error', err.message);
+    } finally {
+      setSavingExp(false);
     }
   };
 
@@ -169,7 +175,7 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
           <Feather name="arrow-left" size={24} color="white" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Editar Perfil</Text>
+        <Text style={styles.headerTitle}>Gestionar Información</Text>
         <TouchableOpacity onPress={handleSaveProfile} disabled={loading}>
           {loading ? <ActivityIndicator size="small" color="#00A3FF" /> : <Text style={styles.saveBtn}>Guardar</Text>}
         </TouchableOpacity>
@@ -220,15 +226,8 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
               </TouchableOpacity>
             </View>
 
-            {isAddingExp && (
-              <View className="bg-[#121214] p-6 rounded-[32px] mb-8 border border-[#00A3FF]/30">
-                <TextInput placeholder="Cargo (ej. Designer)" placeholderTextColor="#475569" value={newExp.title} onChangeText={t => setNewExp({...newExp, title: t})} className="bg-[#050505] p-4 rounded-xl mb-4 text-white text-sm border border-white/5" />
-                <TextInput placeholder="Empresa" placeholderTextColor="#475569" value={newExp.company} onChangeText={t => setNewExp({...newExp, company: t})} className="bg-[#050505] p-4 rounded-xl mb-6 text-white text-sm border border-white/5" />
-                <TouchableOpacity onPress={handleAddExperience} className="bg-[#00A3FF] py-4 rounded-xl items-center shadow-[0_4px_20px_rgba(0,163,255,0.3)]">
-                  <Text className="text-white font-black uppercase tracking-widest text-xs">Guardar Experiencia</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+
+            {/* The inline form was removed in favor of the ObsidianModal */}
 
             {fetchingExp ? (
               <ActivityIndicator color="#00A3FF" />
@@ -257,6 +256,48 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
           </TouchableOpacity>
       </ScrollView>
       </SafeAreaView>
+
+      <ObsidianModal
+        isVisible={isAddingExp}
+        onClose={() => setIsAddingExp(false)}
+        title="Nueva Experiencia"
+        message=""
+        iconName="briefcase"
+        confirmText={savingExp ? "Guardando..." : "Guardar"}
+        cancelText="Descartar"
+        onConfirm={handleAddExperience}
+        loading={savingExp}
+      >
+        <View style={styles.modalForm}>
+           <Text style={styles.modalInputLabel}>1. Cargo o Posición</Text>
+           <TextInput 
+             style={styles.modalInput} 
+             placeholder="Ej: Senior Frontend" 
+             placeholderTextColor="#475569"
+             value={newExp.title}
+             onChangeText={(val) => setNewExp({...newExp, title: val})}
+           />
+
+           <Text style={styles.modalInputLabel}>2. Empresa</Text>
+           <TextInput 
+             style={styles.modalInput} 
+             placeholder="Ej: Google" 
+             placeholderTextColor="#475569"
+             value={newExp.company}
+             onChangeText={(val) => setNewExp({...newExp, company: val})}
+           />
+
+           <Text style={styles.modalInputLabel}>3. Descripción / Periodo</Text>
+           <TextInput 
+             style={[styles.modalInput, { height: 80, textAlignVertical: 'top' }]} 
+             placeholder="Ej: 2022 - 2024. Desarrollo de UI..." 
+             placeholderTextColor="#475569"
+             multiline
+             value={newExp.description}
+             onChangeText={(val) => setNewExp({...newExp, description: val})}
+           />
+        </View>
+      </ObsidianModal>
     </View>
   );
 };
@@ -310,5 +351,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#00A3FF', paddingVertical: 20, marginBottom: 40,
     borderRadius: 28, alignItems: 'center'
   },
-  saveAllText: { color: '#FFFFFF', fontWeight: '900', textTransform: 'uppercase', letterSpacing: 2, fontSize: 14 }
+  saveAllText: { color: '#FFFFFF', fontWeight: '900', textTransform: 'uppercase', letterSpacing: 2, fontSize: 14 },
+  modalForm: { width: '100%', marginTop: 20 },
+  modalInputLabel: { color: '#00A3FF', fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, marginLeft: 4 },
+  modalInput: { backgroundColor: '#050505', borderRadius: 16, padding: 16, color: 'white', fontSize: 14, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)', marginBottom: 20 }
 });

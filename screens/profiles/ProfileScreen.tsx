@@ -9,7 +9,8 @@ import {
   StatusBar,
   RefreshControl,
   StyleSheet,
-  ActivityIndicator
+  ActivityIndicator,
+  TextInput
 } from 'react-native';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { pickAndOptimizeImage } from '../../lib/imageUtils';
@@ -34,6 +35,15 @@ export const ProfileScreen = ({ navigation }: any) => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [errorConfig, setErrorConfig] = useState({ visible: false, message: '' });
   const [uploadingImage, setUploadingImage] = useState(false);
+  
+  // Real data state
+  const [appCount, setAppCount] = useState(0);
+  const [recentApps, setRecentApps] = useState<any[]>([]);
+
+  // Experience Modal state
+  const [isAddingExp, setIsAddingExp] = useState(false);
+  const [newExp, setNewExp] = useState({ title: '', company: '', description: '' });
+  const [savingExp, setSavingExp] = useState(false);
 
   const handleImageUpload = async () => {
     if (!session?.user?.id) return;
@@ -73,6 +83,47 @@ export const ProfileScreen = ({ navigation }: any) => {
       const { data: expData, error: expError } = await supabase.from('experiences').select('*').eq('profile_id', session.user.id).order('start_date', { ascending: false });
       if (expError) throw expError;
       setExperiences(expData || []);
+
+      // Fetch Real Applications Count
+      const { count, error: countErr } = await supabase
+        .from('applications')
+        .select('*', { count: 'exact', head: true })
+        .eq('candidate_id', session.user.id);
+      
+      if (!countErr) setAppCount(count || 0);
+
+      // Fetch Recent Applications Preview
+      const { data: appsData, error: appsErr } = await supabase
+        .from('applications')
+        .select(`
+          id, 
+          status,
+          created_at,
+          jobs (
+            title,
+            profiles(full_name, avatar_url)
+          )
+        `)
+        .eq('candidate_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      if (!appsErr && appsData) {
+        const mapped = appsData.map(app => {
+          const job = Array.isArray(app.jobs) ? app.jobs[0] : app.jobs;
+          const company = job?.profiles ? (Array.isArray(job.profiles) ? job.profiles[0] : job.profiles) : null;
+          return {
+            id: app.id,
+            jobTitle: job?.title || 'Vacante',
+            companyName: company?.full_name || 'Empresa',
+            companyLogo: company?.avatar_url,
+            status: app.status === 'pending' ? 'Recibida' : 
+                    app.status === 'reviewed' ? 'En revisión' :
+                    app.status === 'accepted' ? 'Seleccionado' : 'Procesando'
+          };
+        });
+        setRecentApps(mapped);
+      }
     } catch (error: any) {
       console.error('Error fetching profile:', error.message);
     } finally {
@@ -102,6 +153,36 @@ export const ProfileScreen = ({ navigation }: any) => {
     setIsBusiness(false);
     const { error } = await supabase.auth.signOut();
     if (error) setErrorConfig({ visible: true, message: error.message });
+  };
+
+  const handleAddExperience = async () => {
+    if (!newExp.title || !newExp.company) {
+      setErrorConfig({ visible: true, message: 'Por favor completa al menos el cargo y la empresa.' });
+      return;
+    }
+    
+    setSavingExp(true);
+    try {
+      const { error } = await supabase
+        .from('experiences')
+        .insert({
+          profile_id: session?.user?.id,
+          title: newExp.title,
+          company: newExp.company,
+          description: newExp.description,
+          start_date: new Date().toISOString() // Fallback literal
+        });
+
+      if (error) throw error;
+      
+      setNewExp({ title: '', company: '', description: '' });
+      setIsAddingExp(false);
+      fetchProfileData(); // Refresh list
+    } catch (err: any) {
+      setErrorConfig({ visible: true, message: err.message });
+    } finally {
+      setSavingExp(false);
+    }
   };
 
   if (loading && !refreshing) {
@@ -169,24 +250,29 @@ export const ProfileScreen = ({ navigation }: any) => {
             style={styles.editBtn}
           >
             <Feather name="edit-3" size={18} color="#00A3FF" />
-            <Text style={styles.editBtnText}>Editar Perfil</Text>
+            <Text style={styles.editBtnText}>Gestionar Información</Text>
           </TouchableOpacity>
         </View>
 
         {/* Stats Row */}
         <View style={styles.statsRow}>
-            <StatCard label="Profile Complete" value={`${profileCompletePercent}%`} sublabel="Añadir experiencia" />
-            <StatCard label="Applications" value="12" />
-            <StatCard label="Profile Views" value="34" />
+            <StatCard label="Progreso" value={`${profileCompletePercent}%`} sublabel="Añadir experiencia" />
+            <StatCard label="Postulaciones" value={appCount} />
+            <StatCard label="Vistas" value="0" />
         </View>
 
         {/* Experience Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Mi Experiencia</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAllText}>Ver Todo</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 15 }}>
+              <TouchableOpacity onPress={() => setIsAddingExp(true)}>
+                <Text style={styles.seeAllText}>+ Añadir</Text>
+              </TouchableOpacity>
+              <TouchableOpacity>
+                <Text style={styles.seeAllText}>Ver Todo</Text>
+              </TouchableOpacity>
+            </View>
           </View>
           
           {experiences.length > 0 ? (
@@ -196,7 +282,7 @@ export const ProfileScreen = ({ navigation }: any) => {
           ) : (
             <TouchableOpacity 
               style={styles.emptyExperience}
-              onPress={() => navigation.navigate('EditProfile')}
+              onPress={() => setIsAddingExp(true)}
             >
               <Text style={styles.emptyText}>Aún no has añadido experiencias</Text>
               <Text style={styles.addText}>+ Añadir</Text>
@@ -210,6 +296,46 @@ export const ProfileScreen = ({ navigation }: any) => {
               resumeUrl={profile?.resume_url} 
               onUpload={() => navigation.navigate('EditProfile')}
             />
+        </View>
+
+        {/* Recent Applications Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Postulaciones Recientes</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Postulaciones')}>
+              <Text style={styles.seeAllText}>Ver Todas</Text>
+            </TouchableOpacity>
+          </View>
+
+          {recentApps.length > 0 ? (
+            recentApps.map(app => (
+              <TouchableOpacity 
+                key={app.id} 
+                style={styles.miniAppCard}
+                onPress={() => navigation.navigate('Postulaciones')}
+              >
+                <View style={styles.miniAppLogo}>
+                  {app.companyLogo ? (
+                    <Image source={{ uri: app.companyLogo }} style={{ width: '100%', height: '100%' }} />
+                  ) : (
+                    <MaterialCommunityIcons name="office-building" size={20} color="#475569" />
+                  )}
+                </View>
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={styles.miniAppTitle}>{app.jobTitle}</Text>
+                  <Text style={styles.miniAppCompany}>{app.companyName}</Text>
+                </View>
+                <View style={styles.miniAppStatus}>
+                  <Text style={styles.miniAppStatusText}>{app.status}</Text>
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={styles.emptyRecentApps}>
+               <Feather name="layers" size={24} color="rgba(255,255,255,0.1)" />
+               <Text style={styles.emptyText}>Aún no te has postulado a ninguna vacante.</Text>
+            </View>
+          )}
         </View>
 
         {/* Action Buttons */}
@@ -252,6 +378,49 @@ export const ProfileScreen = ({ navigation }: any) => {
         type="destructive"
         confirmText="Entendido"
       />
+
+      {/* Add Experience Modal */}
+      <ObsidianModal
+        isVisible={isAddingExp}
+        onClose={() => setIsAddingExp(false)}
+        title="Nueva Experiencia"
+        message=""
+        iconName="briefcase"
+        confirmText={savingExp ? "Guardando..." : "Guardar"}
+        cancelText="Descartar"
+        onConfirm={handleAddExperience}
+        loading={savingExp}
+      >
+        <View style={styles.modalForm}>
+           <Text style={styles.modalInputLabel}>1. Cargo o Posición</Text>
+           <TextInput 
+             style={styles.modalInput} 
+             placeholder="Ej: Senior UI Designer" 
+             placeholderTextColor="#475569"
+             value={newExp.title}
+             onChangeText={(val) => setNewExp({...newExp, title: val})}
+           />
+
+           <Text style={styles.modalInputLabel}>2. Empresa / Organización</Text>
+           <TextInput 
+             style={styles.modalInput} 
+             placeholder="Ej: Obsidian Tech" 
+             placeholderTextColor="#475569"
+             value={newExp.company}
+             onChangeText={(val) => setNewExp({...newExp, company: val})}
+           />
+
+           <Text style={styles.modalInputLabel}>3. Periodo o Descripción</Text>
+           <TextInput 
+             style={[styles.modalInput, { height: 80, textAlignVertical: 'top' }]} 
+             placeholder="Ej: 2021 - Actualidad. Liderando equipos..." 
+             placeholderTextColor="#475569"
+             multiline
+             value={newExp.description}
+             onChangeText={(val) => setNewExp({...newExp, description: val})}
+           />
+        </View>
+      </ObsidianModal>
     </SafeAreaView>
   );
 };
@@ -410,5 +579,77 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     textTransform: 'uppercase',
     letterSpacing: 2,
+  },
+  miniAppCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    padding: 12,
+    borderRadius: 18,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  miniAppLogo: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#1A1A1C',
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  miniAppTitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  miniAppCompany: {
+    color: '#475569',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  miniAppStatus: {
+    backgroundColor: 'rgba(0, 163, 255, 0.1)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  miniAppStatusText: {
+    color: '#00A3FF',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  emptyRecentApps: {
+    padding: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.01)',
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.03)',
+  },
+  modalForm: {
+    width: '100%',
+    marginTop: 20,
+  },
+  modalInputLabel: {
+    color: '#00A3FF',
+    fontSize: 10,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  modalInput: {
+    backgroundColor: '#050505',
+    borderRadius: 16,
+    padding: 16,
+    color: 'white',
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    marginBottom: 20,
   }
 });
