@@ -65,19 +65,21 @@ export const InboxScreen = ({ navigation }: any) => {
 
         return {
            id: room.id,
-           roomId: room.id, // we can use id directly
+           roomId: room.id,
+           companyId: room.company_id,
            participant: {
               id: oppositeUserId,
               name: oppositeProfile?.full_name || (isCompany ? 'Candidato' : 'Empresa'),
               avatar: oppositeProfile?.avatar_url,
               isOnline: false,
-              isVerified: true
+              isVerified: true,
+              type: isCompany ? 'candidate' : 'company'
            },
            lastMessage: lastMsg?.content || 'Inicia la conversación',
            timestamp,
            unreadCount,
            isArchived: false,
-           messages: [] // Will fetch inside detail screen
+           messages: []
         };
       });
 

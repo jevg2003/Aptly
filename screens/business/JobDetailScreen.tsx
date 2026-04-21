@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StatusBar, ScrollView, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StatusBar, ScrollView, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
@@ -8,8 +8,24 @@ export const JobDetailScreen = ({ route, navigation }: any) => {
   const { job } = route.params || {};
   const [applications, setApplications] = useState<any[]>([]);
 
+  const [currentJob, setCurrentJob] = useState(job);
+
+  const fetchJobDetails = async () => {
+    if (!job?.id) return;
+    const { data, error } = await supabase
+      .from('jobs')
+      .select('*')
+      .eq('id', job.id)
+      .single();
+    
+    if (data && !error) {
+      setCurrentJob(data);
+    }
+  };
+
   useEffect(() => {
      if (job?.id) {
+       fetchJobDetails();
        supabase.from('applications')
          .select('id, status, profiles!applications_candidate_id_fkey(full_name, avatar_url)')
          .eq('job_id', job.id)
@@ -17,23 +33,35 @@ export const JobDetailScreen = ({ route, navigation }: any) => {
      }
   }, [job?.id]);
 
-  console.log('DEBUG: JobDetailScreen received job:', !!job);
-
-  if (!job) {
-    console.error('CRITICAL: JobDetailScreen missing job data in route.params');
-    return (
-      <View className="flex-1 bg-white items-center justify-center p-10">
-        <Ionicons name="warning-outline" size={60} color="#f59e0b" />
-        <Text className="text-xl font-bold text-slate-900 mt-4 text-center">Error al cargar datos</Text>
-        <Text className="text-slate-500 text-center mt-2">No se recibió la información de la vacante.</Text>
-        <TouchableOpacity 
-          onPress={() => navigation.goBack()}
-          className="bg-blue-600 px-8 py-3 rounded-xl mt-6"
-        >
-          <Text className="text-white font-bold">Regresar</Text>
-        </TouchableOpacity>
-      </View>
+  const handleCloseVacancy = () => {
+    Alert.alert(
+      "Confirmar Cierre",
+      "¿Estás seguro de que deseas cerrar esta vacante? Ya no será visible para nuevos candidatos.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { 
+          text: "Cerrar Vacante", 
+          style: "destructive",
+          onPress: async () => {
+            const { error } = await supabase
+              .from('jobs')
+              .update({ status: 'closed' })
+              .eq('id', job.id);
+            
+            if (error) {
+              Alert.alert("Error", "No se pudo cerrar la vacante: " + error.message);
+            } else {
+              Alert.alert("Éxito", "La vacante ha sido cerrada.");
+              navigation.goBack();
+            }
+          }
+        }
+      ]
     );
+  };
+
+  if (!currentJob) {
+    // ... error UI
   }
 
   const DetailSection = ({ icon, label, value, color }: any) => (
@@ -58,7 +86,10 @@ export const JobDetailScreen = ({ route, navigation }: any) => {
             <Ionicons name="arrow-back" size={20} color="white" />
           </TouchableOpacity>
           <Text className="text-lg font-black text-white">Detalle de Vacante</Text>
-          <TouchableOpacity className="w-10 h-10 items-center justify-center bg-[#1a1a1c] rounded-full">
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('CreateVacante', { job: currentJob })}
+            className="w-10 h-10 items-center justify-center bg-[#1a1a1c] rounded-full"
+          >
             <Ionicons name="create-outline" size={20} color="#FF005C" />
           </TouchableOpacity>
         </View>
@@ -67,10 +98,10 @@ export const JobDetailScreen = ({ route, navigation }: any) => {
           {/* Main Info Card */}
           <View className="p-6 bg-[#121214] border-b border-[#1e1e1e] mb-8 rounded-b-[40px] shadow-lg shadow-black/50">
             <View className="bg-white/20 self-start px-3 py-1 rounded-full mb-3">
-              <Text className="text-white text-[10px] font-black uppercase">Activa</Text>
+              <Text className="text-white text-[10px] font-black uppercase">{currentJob.status === 'active' ? 'Activa' : 'Cerrada'}</Text>
             </View>
-            <Text className="text-white text-3xl font-black mb-1">{job.title}</Text>
-            <Text className="text-[#FF005C] text-sm font-medium opacity-80">{job.location}</Text>
+            <Text className="text-white text-3xl font-black mb-1">{currentJob.title}</Text>
+            <Text className="text-[#FF005C] text-sm font-medium opacity-80">{currentJob.location}</Text>
             
             <View className="flex-row mt-6 pt-6 border-t border-[#1e1e1e]">
               <View className="flex-row items-center bg-[#1A1A1C] px-4 py-2 rounded-2xl">
@@ -81,14 +112,14 @@ export const JobDetailScreen = ({ route, navigation }: any) => {
           </View>
 
           <View className="px-6">
-            <DetailSection icon="cash" label="Presupuesto / Salario" value={job.salary} color="bg-green-500" />
-            <DetailSection icon="briefcase" label="Tipo de Contrato" value={job.type || 'Término Indefinido'} color="bg-purple-500" />
-            <DetailSection icon="home" label="Modalidad" value={job.modality || 'Presencial'} color="bg-orange-500" />
+            <DetailSection icon="cash" label="Presupuesto / Salario" value={currentJob.salary} color="bg-green-500" />
+            <DetailSection icon="briefcase" label="Tipo de Contrato" value={currentJob.type || 'Término Indefinido'} color="bg-purple-500" />
+            <DetailSection icon="home" label="Modalidad" value={currentJob.modality || 'Presencial'} color="bg-orange-500" />
 
             <View className="mb-8 p-6 bg-[#121214] rounded-[35px] border border-[#1e1e1e]">
               <Text className="text-white font-black text-lg mb-4">Descripción del Cargo</Text>
               <Text className="text-slate-400 leading-6 text-sm">
-                {job.description || 'Estamos buscando a un profesional proactivo con excelente actitud para unirse a nuestro equipo líder en el sector. Experiencia demostrable y ganas de crecer.'}
+                {currentJob.description || 'Sin descripción disponible.'}
               </Text>
             </View>
 
@@ -128,9 +159,14 @@ export const JobDetailScreen = ({ route, navigation }: any) => {
               </View>
             )}
 
-            <TouchableOpacity className="bg-[#2a0d15] p-5 rounded-[30px] items-center mb-10 border border-[#4d1323]">
-              <Text className="text-[#ff3b30] font-bold">Cerrar esta vacante</Text>
-            </TouchableOpacity>
+            {currentJob.status === 'active' && (
+              <TouchableOpacity 
+                onPress={handleCloseVacancy}
+                className="bg-[#2a0d15] p-5 rounded-[30px] items-center mb-10 border border-[#4d1323]"
+              >
+                <Text className="text-[#ff3b30] font-bold">Cerrar esta vacante</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </ScrollView>
       </SafeAreaView>

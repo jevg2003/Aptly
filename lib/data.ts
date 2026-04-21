@@ -36,7 +36,7 @@ export interface MessageData {
 export interface ConversationData {
   id: string;
   companyId: string; // Linked to a Company
-  participant: Company;
+  participant: BaseUser; // Can be Company or Candidate
   lastMessage: string;
   timestamp: string;
   unreadCount: number;
@@ -54,11 +54,12 @@ export interface TimelineStepData {
   status: TimelineStatus;
 }
 
-export type ApplicationStatus = 'En revisión' | 'Entrevista' | 'Finalizado' | 'Recibida';
+export type ApplicationStatus = 'En revisión' | 'Entrevista' | 'Finalizado' | 'Recibida' | 'Rechazado' | 'Aceptado';
 
 export interface ApplicationData {
   id: string;
   companyId: string; // Linked to a Company
+  jobId?: string; // Optional job reference
   companyName: string;
   jobTitle: string;
   appliedDate: string;

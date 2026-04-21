@@ -24,7 +24,6 @@ import { SessionContext } from '../../lib/SessionContext';
 import { supabase } from '../../lib/supabase';
 
 import { ObsidianHeader } from '../../components/ObsidianHeader';
-import { ObsidianSwitcher } from '../../components/ObsidianSwitcher';
 import { ObsidianModal } from '../../components/ObsidianModal';
 import { ObsidianDetailModal } from '../../components/ObsidianDetailModal';
 
@@ -45,6 +44,7 @@ interface CandidateData {
 
 const MOCK_CANDIDATES: CandidateData[] = [
   {
+    applicationId: 'mock-app-1',
     id: '1',
     name: 'Pepito',
     age: 28,
@@ -55,6 +55,7 @@ const MOCK_CANDIDATES: CandidateData[] = [
     imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
   },
   {
+    applicationId: 'mock-app-2',
     id: '2',
     name: 'Maria',
     age: 24,
@@ -65,6 +66,7 @@ const MOCK_CANDIDATES: CandidateData[] = [
     imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&q=80',
   },
   {
+    applicationId: 'mock-app-3',
     id: '3',
     name: 'Juan',
     age: 32,
@@ -78,15 +80,16 @@ const MOCK_CANDIDATES: CandidateData[] = [
 
 const CATEGORIES = ['Todos', 'Programador', 'Vendedor', 'Tienda'];
 
-export const BusinessHomeScreen = () => {
+export const BusinessHomeScreen = ({ route, navigation }: any) => {
   const session = React.useContext(SessionContext);
+  const { job } = route.params || {};
+
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [candidates, setCandidates] = useState<CandidateData[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchCandidates = async () => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id || !job?.id) return;
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -97,7 +100,7 @@ export const BusinessHomeScreen = () => {
           jobs!inner(company_id),
           profiles!applications_candidate_id_fkey(id, full_name, avatar_url)
         `)
-        .eq('jobs.company_id', session.user.id)
+        .eq('job_id', job.id)
         .eq('status', 'pending');
 
       if (error) throw error;
@@ -127,7 +130,7 @@ export const BusinessHomeScreen = () => {
 
   useEffect(() => {
     fetchCandidates();
-  }, [session?.user?.id]);
+  }, [session?.user?.id, job?.id]);
 
   // Modal State
   const [modalConfig, setModalConfig] = useState({
@@ -140,13 +143,8 @@ export const BusinessHomeScreen = () => {
  
   const [detailModalVisible, setDetailModalVisible] = useState(false);
 
-  const filteredCandidates = selectedCategory === 'Todos' 
-    ? candidates 
-    : candidates.filter(candidate => candidate.role.includes(selectedCategory) || selectedCategory === 'Tienda' && candidate.role.includes('Aux'));
-
-  useEffect(() => {
-    setCurrentIndex(0);
-  }, [selectedCategory]);
+  // Ya no filtramos localmente, usamos todos los candidatos de la base de datos para este puesto
+  const filteredCandidates = candidates;
 
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -277,20 +275,13 @@ export const BusinessHomeScreen = () => {
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         
         <ObsidianHeader 
-          title="Candidates" 
-          subtitle="Match Finder"
-          leftIcon="menu"
-          rightIcon="notifications-outline"
+          title="Vacantes" 
+          subtitle="MATCH FINDER"
+          leftIcon="arrow-back"
+          onLeftPress={() => navigation.goBack()}
+          rightIcon="menu"
+          onRightPress={() => navigation.navigate('JobDetail', { job })}
         />
-
-        <View style={{ marginTop: 5 }}>
-          <ObsidianSwitcher 
-             options={CATEGORIES}
-             activeOption={selectedCategory}
-             onOptionChange={(opt) => setSelectedCategory(opt)}
-             accentColor="#FF005C"
-          />
-        </View>
 
         <View style={styles.cardArea}>
           {currentCandidate ? (
@@ -430,19 +421,22 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   candidateName: {
+    flex: 1, // Allow name to take available space
     fontSize: 28,
     fontWeight: '900',
     color: '#FFFFFF',
+    marginRight: 10,
   },
   infoBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    marginRight: 15, // Pushing it further in so it doesn't look 'salido'
   },
   candidateLocation: {
     flexDirection: 'row',

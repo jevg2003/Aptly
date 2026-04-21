@@ -7,19 +7,21 @@ import { CustomButton } from '../../components/CustomButton';
 import { supabase } from '../../lib/supabase';
 import { SessionContext } from '../../lib/SessionContext';
 
-export const CreateVacanteScreen = ({ navigation }: any) => {
+export const CreateVacanteScreen = ({ route, navigation }: any) => {
+  const { job } = route.params || {};
+  const isEditing = !!job;
   const session = React.useContext(SessionContext);
   const [loading, setLoading] = useState(false);
 
   // Form states
-  const [title, setTitle] = useState('');
-  const [location, setLocation] = useState('');
-  const [salary, setSalary] = useState('');
-  const [description, setDescription] = useState('');
-  const [requirements, setRequirements] = useState('');
-  const [benefits, setBenefits] = useState('');
-  const [modality, setModality] = useState('Presencial'); // Presencial, Remoto, Híbrido
-  const [contractType, setContractType] = useState('Término Indefinido');
+  const [title, setTitle] = useState(job?.title || '');
+  const [location, setLocation] = useState(job?.location || '');
+  const [salary, setSalary] = useState(job?.salary || '');
+  const [description, setDescription] = useState(job?.description || '');
+  const [requirements, setRequirements] = useState(job?.requirements || '');
+  const [benefits, setBenefits] = useState(job?.benefits || '');
+  const [modality, setModality] = useState(job?.modality || 'Presencial'); 
+  const [contractType, setContractType] = useState(job?.type || 'Indefinido');
 
   const handleCreate = async () => {
     if (!title || !description || !salary || !location) {
@@ -29,33 +31,50 @@ export const CreateVacanteScreen = ({ navigation }: any) => {
 
     setLoading(true);
     try {
-      const { error } = await supabase.from('jobs').insert([
-        {
-          title,
-          description,
-          requirements,
-          benefits,
-          salary,
-          location,
-          type: contractType,
-          modality,
-          company_id: session?.user?.id,
-          created_at: new Date().toISOString(),
-          status: 'active'
-        }
-      ]);
+      if (isEditing) {
+        const { error } = await supabase
+          .from('jobs')
+          .update({
+            title,
+            description,
+            requirements,
+            benefits,
+            salary,
+            location,
+            type: contractType,
+            modality,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', job.id);
 
-      if (error) {
-        console.error('Supabase Insert Error:', error.message);
-        Alert.alert('Error', 'No se pudo publicar la vacante: ' + error.message);
-        return;
-      } 
+        if (error) throw error;
+        Alert.alert('¡Actualizada! ✅', 'Los cambios se han guardado correctamente.');
+      } else {
+        const { error } = await supabase.from('jobs').insert([
+          {
+            title,
+            description,
+            requirements,
+            benefits,
+            salary,
+            location,
+            type: contractType,
+            modality,
+            company_id: session?.user?.id,
+            created_at: new Date().toISOString(),
+            status: 'active'
+          }
+        ]);
+
+        if (error) throw error;
+        Alert.alert('¡Publicada! 🚀', 'La vacante está ahora disponible para postulaciones.');
+      }
       
-      Alert.alert('¡Publicada! 🚀', 'La vacante está ahora disponible para postulaciones.');
       navigation.goBack();
       
-    } catch (err) {
-      Alert.alert('Error', 'Hubo un problema de conexión al guardar la oferta.');
+    } catch (err: any) {
+      console.error('Supabase Error:', err.message);
+      Alert.alert('Error', 'Hubo un problema al guardar la oferta: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -87,7 +106,7 @@ export const CreateVacanteScreen = ({ navigation }: any) => {
           <TouchableOpacity onPress={() => navigation.goBack()} className="w-10 h-10 items-center justify-center bg-[#1a1a1c] rounded-full mr-3">
             <Ionicons name="arrow-back" size={20} color="white" />
           </TouchableOpacity>
-          <Text className="text-xl font-black text-white">Nueva Oferta</Text>
+          <Text className="text-xl font-black text-white">{isEditing ? 'Editar Oferta' : 'Nueva Oferta'}</Text>
         </View>
 
         <ScrollView 
@@ -184,7 +203,7 @@ export const CreateVacanteScreen = ({ navigation }: any) => {
           </View>
 
           <CustomButton
-            title={loading ? "Publicando..." : "Publicar Vacante"}
+            title={loading ? "Guardando..." : (isEditing ? "Guardar Cambios" : "Publicar Vacante")}
             onPress={handleCreate}
             variant="primary"
             className="mb-10 shadow-xl shadow-blue-400"

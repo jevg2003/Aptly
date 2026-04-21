@@ -59,7 +59,6 @@ export const ApplicationsScreen = ({ navigation }: any) => {
         if (app.status === 'rejected') statusString = 'Rechazado';
         if (app.status === 'accepted') statusString = 'Aceptado';
         
-        // Timeline estandarizado para pruebas UI
         const baseTimeline = [
             { id: 't1', title: 'Aplicación recibida', date: new Date(app.created_at).toLocaleDateString(), completed: true },
             { id: 't2', title: 'En revisión', date: 'Pendiente', completed: app.status !== 'pending' },
@@ -74,10 +73,15 @@ export const ApplicationsScreen = ({ navigation }: any) => {
           companyId: role === 'company' ? app.candidate_id : (job?.company_id || ''), 
           companyName: role === 'company' ? (candProf?.full_name || 'Candidato') : (compProf?.full_name || 'Empresa'),
           logoUri: role === 'company' ? candProf?.avatar_url : compProf?.avatar_url,
+          imageUri: role === 'company' ? (candProf?.avatar_url || '') : (compProf?.avatar_url || ''),
           status: statusString,
+          statusColor: '',
+          subtitle: '',
+          buttonVariant: 'outline',
+          buttonText: 'Ver detalles',
           appliedDate: new Date(app.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
           timeline: baseTimeline
-        } as Application;
+        } as unknown as Application;
       });
 
       setApplications(mapped);

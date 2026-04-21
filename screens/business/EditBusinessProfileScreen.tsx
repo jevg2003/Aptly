@@ -39,9 +39,8 @@ export const EditBusinessProfileScreen = ({ route, navigation }: any) => {
 
     setTimeout(() => {
       setLoading(false);
-      Alert.alert('Éxito', 'Perfil actualizado correctamente');
       navigation.goBack();
-    }, 1000);
+    }, 600);
   };
 
   const handleEditTeamName = (id: string, currentName: string) => {
@@ -83,9 +82,9 @@ export const EditBusinessProfileScreen = ({ route, navigation }: any) => {
   );
 
   return (
-    <View className="flex-1 bg-[#050505]">
-      <StatusBar barStyle="light-content" />
-      <SafeAreaView className="flex-1" edges={['top']}>
+    <View style={{ flex: 1, backgroundColor: '#050505' }}>
+      <StatusBar barStyle="light-content" backgroundColor="#050505" />
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         
         {/* Navigation Header */}
         <View className="px-6 py-4 flex-row justify-between items-center border-b border-[#1A1A1C]">
