@@ -6,7 +6,8 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   Dimensions, 
-  Platform 
+  Platform,
+  ActivityIndicator
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -24,6 +25,8 @@ interface ObsidianModalProps {
   cancelText?: string;
   onConfirm?: () => void;
   type?: 'info' | 'destructive' | 'success';
+  children?: React.ReactNode;
+  loading?: boolean;
 }
 
 export const ObsidianModal: React.FC<ObsidianModalProps> = ({
@@ -37,6 +40,8 @@ export const ObsidianModal: React.FC<ObsidianModalProps> = ({
   cancelText,
   onConfirm,
   type = 'info',
+  children,
+  loading = false,
 }) => {
   const isDestructive = type === 'destructive';
   const finalIconColor = isDestructive ? '#FF3B30' : iconColor;
@@ -68,7 +73,8 @@ export const ObsidianModal: React.FC<ObsidianModalProps> = ({
 
             <View style={styles.content}>
               <Text style={styles.title}>{title}</Text>
-              <Text style={styles.message}>{message}</Text>
+              {message ? <Text style={styles.message}>{message}</Text> : null}
+              {children}
             </View>
 
             {/* Actions */}
@@ -91,8 +97,13 @@ export const ObsidianModal: React.FC<ObsidianModalProps> = ({
                   !cancelText && { width: '100%' }
                 ]}
                 activeOpacity={0.8}
+                disabled={loading}
               >
-                <Text style={styles.confirmText}>{confirmText}</Text>
+                {loading ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <Text style={styles.confirmText}>{confirmText}</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
