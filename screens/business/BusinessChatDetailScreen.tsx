@@ -470,6 +470,8 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
               experiences={experiences}
               onClose={() => setResumeVisible(false)}
               isVisible={resumeVisible}
+              fromChat={true}
+              conversationId={conversation.id}
             />
           )}
         </SafeAreaView>

@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { SessionContext } from '../../lib/SessionContext';
 import { useNavigation } from '@react-navigation/native';
 
-export const CandidateResumePreview = ({ profile, experiences = [], onClose, isVisible = false }: any) => {
+export const CandidateResumePreview = ({ profile, experiences = [], onClose, isVisible = false, fromChat = false, conversationId = null }: any) => {
   const session = React.useContext(SessionContext);
   const navigation = useNavigation<any>();
   const [applications, setApplications] = React.useState<any[]>([]);
@@ -133,7 +133,12 @@ export const CandidateResumePreview = ({ profile, experiences = [], onClose, isV
                       // Navegar entre tabs al stack de Procesos
                       navigation.navigate('Procesos', { 
                         screen: 'CandidatePipeline', 
-                        params: { application: app, job: app.job } 
+                        params: { 
+                           application: app, 
+                           job: app.job,
+                           fromChat,
+                           conversationId
+                         } 
                       });
                    }}
                  >

@@ -22,7 +22,7 @@ import { SessionContext } from '../../../lib/SessionContext';
 import { Modal } from 'react-native';
 
 export const CandidatePipelineScreen = ({ route, navigation }: any) => {
-  const { application, job } = route.params;
+  const { application, job, fromChat, conversationId } = route.params;
   const session = React.useContext(SessionContext);
   
   const [loading, setLoading] = React.useState(true);
@@ -341,10 +341,19 @@ export const CandidatePipelineScreen = ({ route, navigation }: any) => {
     <View style={styles.container}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         <ObsidianHeader 
-          title="Pipeline" 
+          title="Procesos" 
           subtitle="GUÍA DE CONTRATACIÓN"
           leftIcon="arrow-back"
-          onLeftPress={() => navigation.goBack()}
+          onLeftPress={() => {
+            if (fromChat && conversationId) {
+              navigation.navigate('Chat', { 
+                screen: 'BusinessChatDetail', 
+                params: { conversationId } 
+              });
+            } else {
+              navigation.goBack();
+            }
+          }}
         />
 
         <ScrollView contentContainerStyle={styles.scroll}>
