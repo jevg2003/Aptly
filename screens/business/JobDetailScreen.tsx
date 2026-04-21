@@ -3,10 +3,12 @@ import { View, Text, TouchableOpacity, StatusBar, ScrollView, Image, Alert } fro
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
+import { useBusinessChat } from '../../lib/BusinessChatContext';
 
 export const JobDetailScreen = ({ route, navigation }: any) => {
   const { job } = route.params || {};
   const [applications, setApplications] = useState<any[]>([]);
+  const { conversations } = useBusinessChat();
 
   const [currentJob, setCurrentJob] = useState(job);
 
@@ -58,6 +60,23 @@ export const JobDetailScreen = ({ route, navigation }: any) => {
         }
       ]
     );
+  };
+
+  const handleCandidateChat = (app: any) => {
+    // Buscar la conversación que corresponda a esta aplicación
+    const conversation = conversations.find(c => c.applicationId === app.id);
+    
+    if (conversation) {
+      // Usar navegación anidada para saltar al Tab de Chat
+      navigation.navigate('Chat', { 
+        screen: 'BusinessChatDetail', 
+        params: { conversation } 
+      });
+    } else if (app.status === 'interview') {
+       Alert.alert("Chat no iniciado", "Estamos sincronizando la sala de chat. Intenta de nuevo en unos segundos.");
+    } else {
+       Alert.alert("Sin Chat", "Debes preseleccionar (dar match) a este candidato primero para habilitar el chat.");
+    }
   };
 
   if (!currentJob) {
@@ -151,10 +170,15 @@ export const JobDetailScreen = ({ route, navigation }: any) => {
               <View className="mb-8 p-6 bg-[#121214] rounded-[35px] border border-[#1e1e1e]">
                 <Text className="text-white font-black text-lg mb-4">Candidatos Aplicados</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
-                   {applications.map((app) => {
+                    {applications.map((app) => {
                       const profile = Array.isArray(app.profiles) ? app.profiles[0] : app.profiles;
                       return (
-                        <View key={app.id} className="items-center mr-4">
+                        <TouchableOpacity 
+                          key={app.id} 
+                          className="items-center mr-4"
+                          onPress={() => handleCandidateChat(app)}
+                          activeOpacity={0.7}
+                        >
                            <View className="w-14 h-14 rounded-full border-2 border-[#1A1A1C] overflow-hidden mb-2 bg-[#2a2a2c]">
                               {profile?.avatar_url ? (
                                 <Image source={{uri: profile.avatar_url}} className="w-full h-full" />
@@ -162,9 +186,9 @@ export const JobDetailScreen = ({ route, navigation }: any) => {
                                 <View className="w-full h-full justify-center items-center"><Text className="text-white font-bold">{profile?.full_name?.charAt(0) || 'C'}</Text></View>
                               )}
                            </View>
-                           <Text className="text-slate-400 text-xs text-center w-16" numberOfLines={1}>{profile?.full_name?.split(' ')[0]}</Text>
+                           <Text className="text-slate-400 text-xs text-center w-16" numberOfLines={1}>{profile?.full_name?.split(' ')[0] || 'Candidato'}</Text>
                            {app.status === 'interview' && <View className="w-2 h-2 rounded-full bg-green-500 absolute top-0 right-0" />}
-                        </View>
+                        </TouchableOpacity>
                       )
                    })}
                 </ScrollView>

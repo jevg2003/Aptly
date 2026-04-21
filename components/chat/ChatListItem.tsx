@@ -50,7 +50,7 @@ export const ChatListItem = ({ conversation, onPress }: ChatListItemProps) => {
         
         <View className="flex-row justify-between items-center pr-1">
            <Text 
-             className={`text-sm flex-1 mr-2 ${unreadCount > 0 ? 'text-slate-200 font-semibold' : 'text-slate-500'}`}
+             className={`text-sm flex-1 mr-2 ${unreadCount > 0 ? 'text-white font-black' : 'text-slate-500'}`}
              numberOfLines={1}
            >
               {lastMessage}

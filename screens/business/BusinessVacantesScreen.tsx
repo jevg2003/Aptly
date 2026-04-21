@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SessionContext } from '../../lib/SessionContext';
+import { SearchBar } from '../../components/chat/SearchBar';
 
 import { ObsidianHeader } from '../../components/ObsidianHeader';
 
@@ -14,6 +15,7 @@ export const BusinessVacantesScreen = ({ navigation }: any) => {
   const session = React.useContext(SessionContext);
   const [jobs, setJobs] = useState<any[]>(MOCK_BUSINESS_JOBS);
   const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchJobs = React.useCallback(async () => {
     if (!session?.user?.id) return;
@@ -50,6 +52,15 @@ export const BusinessVacantesScreen = ({ navigation }: any) => {
       fetchJobs();
     }, [fetchJobs])
   );
+
+  const filteredJobs = React.useMemo(() => {
+    if (!searchQuery.trim()) return jobs;
+    const lowerQuery = searchQuery.toLowerCase();
+    return jobs.filter(job => 
+      job.title.toLowerCase().includes(lowerQuery) || 
+      job.location.toLowerCase().includes(lowerQuery)
+    );
+  }, [searchQuery, jobs]);
 
   const renderJobItem = ({ item }: { item: any }) => (
     <TouchableOpacity 
@@ -93,18 +104,25 @@ export const BusinessVacantesScreen = ({ navigation }: any) => {
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         
         <ObsidianHeader 
-          title="My Vacancies" 
+          title="Mis vacantes" 
           subtitle="Management Console"
-          rightIcon="options-outline"
         />
+
+        <View style={{ paddingHorizontal: 10, marginTop: 5, marginBottom: 10 }}>
+          <SearchBar 
+            value={searchQuery} 
+            onChangeText={setSearchQuery} 
+            placeholder="Buscar por título o ubicación..." 
+          />
+        </View>
 
         {loading ? (
           <View style={styles.centerBox}>
             <ActivityIndicator color="#FF005C" />
           </View>
-        ) : jobs.length > 0 ? (
+        ) : filteredJobs.length > 0 ? (
           <FlatList
-            data={jobs}
+            data={filteredJobs}
             renderItem={renderJobItem}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}

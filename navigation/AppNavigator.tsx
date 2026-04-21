@@ -78,13 +78,20 @@ const CandidateTabBar = ({ state, descriptors, navigation }: any) => {
   );
 };
 
+import { BusinessChatProvider, useBusinessChat } from '../lib/BusinessChatContext';
+
+// ... (other navigators)
+
 // Custom TabBar for Business
 const BusinessTabBar = ({ state, descriptors, navigation }: any) => {
+  const { totalUnreadCount } = useBusinessChat();
+
   const tabs = [
     { name: 'Vacantes', icon: 'layers-outline', iconActive: 'layers', label: 'Vacantes' },
-    { name: 'Chat', icon: 'chatbubble-outline', iconActive: 'chatbubble', label: 'Chat' },
+    { name: 'Chat', icon: 'chatbubble-outline', iconActive: 'chatbubble', label: 'Chat', badge: totalUnreadCount },
     { name: 'Profile', icon: 'business-outline', iconActive: 'business', label: 'Empresa' },
   ];
+
   return (
     <View style={tabStyles.bar}>
       {state.routes.map((route: any, index: number) => {
@@ -92,6 +99,7 @@ const BusinessTabBar = ({ state, descriptors, navigation }: any) => {
         const tab = tabs.find(t => t.name === route.name) || tabs[0];
         const iconName: any = isFocused ? tab.iconActive : tab.icon;
         const color = isFocused ? '#FF005C' : '#475569';
+        
         return (
           <TouchableOpacity
             key={route.key}
@@ -100,7 +108,14 @@ const BusinessTabBar = ({ state, descriptors, navigation }: any) => {
             activeOpacity={0.7}
           >
             {isFocused && <View style={[tabStyles.glow, { shadowColor: '#FF005C' }]} />}
-            <Ionicons name={iconName} size={22} color={color} />
+            <View>
+              <Ionicons name={iconName} size={22} color={color} />
+              {tab.badge > 0 && (
+                <View style={tabStyles.badge}>
+                  <Text style={tabStyles.badgeText}>{tab.badge > 99 ? '99+' : tab.badge}</Text>
+                </View>
+              )}
+            </View>
             <Text style={[tabStyles.label, { color }]}>{tab.label}</Text>
           </TouchableOpacity>
         );
@@ -143,6 +158,25 @@ const tabStyles = StyleSheet.create({
     fontWeight: '700',
     marginTop: 4,
     letterSpacing: 0.5,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -8,
+    backgroundColor: '#FF005C',
+    borderRadius: 10,
+    minWidth: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 1.5,
+    borderColor: '#0A0A0B',
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 8,
+    fontWeight: '900',
   }
 });
 

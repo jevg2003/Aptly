@@ -151,14 +151,50 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
 
   const handleAction = async (type: 'reject' | 'match' | 'superlike') => {
     const currentCandidate = filteredCandidates[currentIndex];
-    if (!currentCandidate) return;
+    if (!currentCandidate || !currentCandidate.applicationId) {
+      console.warn("No candidate or applicationId found for index:", currentIndex);
+      return;
+    }
 
     // Actualizar Base de datos
     try {
-       const status = (type === 'match' || type === 'superlike') ? 'interview' : 'rejected';
-       await supabase.from('applications').update({ status }).eq('id', currentCandidate.applicationId);
+       const isMatch = type === 'match' || type === 'superlike';
+       const status = isMatch ? 'interview' : 'rejected';
+       
+       const { error: updateError } = await supabase
+         .from('applications')
+         .update({ status })
+         .eq('id', currentCandidate.applicationId);
+
+       if (updateError) {
+         console.error("DB Error updating application status:", updateError);
+         Alert.alert("Error al procesar", "Hubo un problema al actualizar el estado del candidato. Por favor intenta de nuevo.");
+         return; // No avanzar el índice si falló la DB
+       }
+
+       if (isMatch) {
+         // Asegurar que exista sala de chat
+         const { data: existingRoom } = await supabase
+           .from('chat_rooms')
+           .select('id')
+           .eq('application_id', currentCandidate.applicationId)
+           .maybeSingle();
+
+         if (!existingRoom) {
+           const { error: roomError } = await supabase.from('chat_rooms').insert([
+             {
+               application_id: currentCandidate.applicationId,
+               company_id: session?.user?.id,
+               candidate_id: currentCandidate.id
+             }
+           ]);
+           if (roomError) console.error("Error creating chat room:", roomError);
+         }
+       }
     } catch (e) {
-       console.error("Error updating application status");
+       console.error("Unexpected error during swipe action:", e);
+       Alert.alert("Error Inesperado", "Algo salió mal. Si el problema persiste, reinicia la aplicación.");
+       return;
     }
 
     if (type === 'match') {

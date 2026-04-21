@@ -80,11 +80,17 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onPress, onInfoPress }) =
 
           {/* Tags with Obsidian bordering */}
           <View style={styles.tagsRow}>
-             {(job.tags || ['Figma', 'Prototyping', 'User Research']).map((tag, index) => (
-                 <View key={index} style={styles.tag}>
-                     <Text style={styles.tagText}>{tag}</Text>
-                 </View>
-             ))}
+             {job.tags && job.tags.length > 0 ? (
+               job.tags.map((tag, index) => (
+                   <View key={index} style={styles.tag}>
+                       <Text style={styles.tagText}>{tag}</Text>
+                   </View>
+               ))
+             ) : (
+               <View style={[styles.tag, { borderColor: 'transparent' }]}>
+                 <Text style={[styles.tagText, { fontStyle: 'italic', opacity: 0.5 }]}>Sin etiquetas específicas</Text>
+               </View>
+             )}
           </View>
 
           {/* Futuristic Salary Display */}
