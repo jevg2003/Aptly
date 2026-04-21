@@ -11,6 +11,7 @@ import { MatchProvider } from '../lib/MatchContext';
 import { BusinessChatProvider } from '../lib/BusinessChatContext';
 import { BusinessProfileProvider } from '../lib/BusinessProfileContext';
 import { NotificationBanner } from '../components/common/NotificationBanner';
+import { ObsidianToast } from '../components/common/ObsidianToast';
 
 const Stack = createNativeStackNavigator();
 
@@ -22,6 +23,7 @@ export const RootNavigator = ({ session }: { session: Session | null }) => {
       <BusinessProfileProvider>
         <BusinessChatProvider>
           <NotificationBanner />
+          <ObsidianToast />
           <MatchProvider>
             <Stack.Navigator 
               screenOptions={{ 

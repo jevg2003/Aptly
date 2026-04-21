@@ -17,6 +17,12 @@ export interface BusinessConversation {
     text: string;
     senderId: string;
     timestamp: string;
+    type?: 'text' | 'image' | 'file' | 'system';
+    metadata?: any;
+    replyToId?: string;
+    deletedAt?: string;
+    isSystem?: boolean;
+    isRead?: boolean;
   }[];
   lastMessage: string;
   timestamp: string;
@@ -25,8 +31,9 @@ export interface BusinessConversation {
 
 interface BusinessChatContextType {
   conversations: BusinessConversation[];
-  sendMessage: (convId: string, text: string) => Promise<void>;
+  sendMessage: (convId: string, text: string, options?: { type?: string, metadata?: any, replyToId?: string }) => Promise<void>;
   markAsRead: (convId: string) => Promise<void>;
+  deleteMessage: (messageId: string, forEveryone: boolean) => Promise<void>;
   loading: boolean;
   totalUnreadCount: number;
   notification: { visible: boolean; title: string; body: string } | null;
@@ -64,7 +71,7 @@ export const BusinessChatProvider = ({ children }: { children: ReactNode }) => {
       const mappedRooms = await Promise.all((rooms || []).map(async (room) => {
         const { data: messages } = await supabase
           .from('messages')
-          .select('id, content, sender_id, created_at, is_read')
+          .select('id, content, sender_id, created_at, is_read, type, metadata, reply_to_id, deleted_at, is_system')
           .eq('room_id', room.id)
           .order('created_at', { ascending: true });
 
@@ -87,11 +94,17 @@ export const BusinessChatProvider = ({ children }: { children: ReactNode }) => {
           },
           messages: (messages || []).map(m => ({
             id: m.id,
-            text: m.content,
+            text: m.deleted_at ? 'Este mensaje fue eliminado' : m.content,
             senderId: m.sender_id === session.user.id ? 'me' : m.sender_id,
-            timestamp: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            timestamp: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            type: m.type as any,
+            metadata: m.metadata,
+            replyToId: m.reply_to_id,
+            deletedAt: m.deleted_at,
+            isSystem: m.is_system,
+            isRead: m.is_read
           })),
-          lastMessage: lastMsg?.content || 'Sin mensajes aún',
+          lastMessage: lastMsg?.deleted_at ? 'Mensaje eliminado' : lastMsg?.content || 'Sin mensajes aún',
           timestamp: lastMsg ? new Date(lastMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Ahora',
           unreadCount: unreadCount
         };
@@ -108,20 +121,19 @@ export const BusinessChatProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     fetchConversations();
     
-    // Suscripción en tiempo real a nuevos mensajes
+    // Suscripción en tiempo real a mensajes (INSERT y UPDATE para borrados)
     const subscription = supabase
       .channel('public:messages')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
-        const newMsg = payload.new;
-        // Solo notificar si el mensaje NO es mío
-        if (newMsg.sender_id !== session?.user?.id) {
-           // Disparar banner si no estoy en la pantalla de ese chat
-           // (Nota: El componente que use setNotification decidirá si mostrarlo)
-           setNotification({
-             visible: true,
-             title: 'Nuevo Mensaje',
-             body: newMsg.content.substring(0, 50) + (newMsg.content.length > 50 ? '...' : '')
-           });
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          const newMsg = payload.new;
+          if (newMsg.sender_id !== session?.user?.id) {
+             setNotification({
+               visible: true,
+               title: 'Nuevo Mensaje',
+               body: newMsg.content.substring(0, 50) + (newMsg.content.length > 50 ? '...' : '')
+             });
+          }
         }
         fetchConversations();
       })
@@ -132,8 +144,10 @@ export const BusinessChatProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [session?.user?.id, fetchConversations]);
 
-  const sendMessage = async (convId: string, text: string) => {
+  const sendMessage = async (convId: string, text: string, options?: { type?: string, metadata?: any, replyToId?: string }) => {
     if (!session?.user?.id) return;
+
+    const { type = 'text', metadata = {}, replyToId = null } = options || {};
 
     // Optimistic Update
     const tempId = Date.now().toString();
@@ -145,12 +159,15 @@ export const BusinessChatProvider = ({ children }: { children: ReactNode }) => {
           id: tempId,
           text: text,
           senderId: 'me',
-          timestamp: timestamp
+          timestamp: timestamp,
+          type: type as any,
+          metadata: metadata,
+          replyToId: replyToId as any
         };
         return {
           ...conv,
           messages: [...conv.messages, newMessage],
-          lastMessage: text,
+          lastMessage: type === 'text' ? text : `[${type.toUpperCase()}]`,
           timestamp: timestamp
         };
       }
@@ -162,7 +179,10 @@ export const BusinessChatProvider = ({ children }: { children: ReactNode }) => {
         {
           room_id: convId,
           content: text,
-          sender_id: session.user.id
+          sender_id: session.user.id,
+          type,
+          metadata,
+          reply_to_id: replyToId
         }
       ]);
 
@@ -170,6 +190,30 @@ export const BusinessChatProvider = ({ children }: { children: ReactNode }) => {
     } catch (err) {
       console.error('Error sending message:', err);
       fetchConversations();
+    }
+  };
+
+  const deleteMessage = async (messageId: string, forEveryone: boolean) => {
+    if (!session?.user?.id) return;
+
+    try {
+      if (forEveryone) {
+        const { error } = await supabase
+          .from('messages')
+          .update({ 
+            deleted_at: new Date().toISOString(),
+            content: 'Este mensaje fue eliminado' 
+          })
+          .eq('id', messageId);
+        if (error) throw error;
+      } else {
+        // En una app real usaríamos una tabla 'message_visibility'
+        // Para este MVP, solo lo marcamos localmente o ignoramos
+        console.log('Borrado local no implementado en DB para simplificar');
+      }
+      fetchConversations();
+    } catch (err) {
+      console.error('Error deleting message:', err);
     }
   };
 
@@ -201,6 +245,7 @@ export const BusinessChatProvider = ({ children }: { children: ReactNode }) => {
       conversations, 
       sendMessage, 
       markAsRead,
+      deleteMessage,
       loading, 
       totalUnreadCount,
       notification,

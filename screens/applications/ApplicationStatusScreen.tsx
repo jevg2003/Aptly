@@ -5,11 +5,60 @@ import { Application } from './mockData';
 import { TimelineStep } from '../../components/applications/TimelineStep';
 import { supabase } from '../../lib/supabase';
 import { SessionContext } from '../../lib/SessionContext';
-import { Alert } from 'react-native';
+import { Alert, ActivityIndicator } from 'react-native';
 
 export const ApplicationStatusScreen = ({ route, navigation }: any) => {
   const { application, userRole } = route.params as { application: Application, userRole: string };
   const session = React.useContext(SessionContext);
+
+  const [loading, setLoading] = React.useState(true);
+  const [pipeline, setPipeline] = React.useState<any[]>([]);
+
+  const fetchApplicationProgress = async () => {
+    try {
+      setLoading(true);
+      
+      // 1. Obtener stages definidos para esta vacante
+      const { data: jobStages, error: stagesError } = await supabase
+        .from('job_pipeline_stages')
+        .select('*')
+        .eq('job_id', application.jobId)
+        .order('order_index', { ascending: true });
+
+      if (stagesError) throw stagesError;
+
+      // 2. Obtener mi progreso en esas etapas
+      const { data: progress } = await supabase
+        .from('application_stages')
+        .select('*')
+        .eq('application_id', application.id);
+
+      // 3. Mapear al formato de TimelineStep
+      const steps = (jobStages || []).map((js: any, index: number) => {
+        const prog = progress?.find(p => p.stage_id === js.id);
+        const isCompleted = prog?.status === 'completed';
+        
+        return {
+          id: js.id,
+          title: js.name,
+          description: isCompleted ? 'Completado con éxito' : 'Pendiente de realizar',
+          date: prog?.completed_at ? new Date(prog.completed_at).toLocaleDateString() : (index === 0 ? 'En curso' : 'Próximamente'),
+          status: isCompleted ? 'completed' : (progress?.filter(p => p.status === 'completed').length === index ? 'current' : 'upcoming'),
+          icon: js.action_type === 'chat' ? 'message-circle' : 'activity'
+        };
+      });
+
+      setPipeline(steps);
+    } catch (err) {
+      console.error('Error fetching application progress:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchApplicationProgress();
+  }, [application.id]);
 
   const handleContactRecruiter = async () => {
      if (userRole === 'candidate') {
@@ -93,20 +142,24 @@ export const ApplicationStatusScreen = ({ route, navigation }: any) => {
             </View>
          </View>
 
-         {/* Timeline Section */}
-         <View className="px-6 mt-2">
-            <Text className="text-xs font-black text-slate-500 uppercase tracking-[3px] mb-8">Progreso de la Aplicación</Text>
+          {/* Timeline Section */}
+          <View className="px-6 mt-2">
+            <Text className="text-xs font-black text-slate-500 uppercase tracking-[3px] mb-8">Progreso de tu Selección</Text>
             
-            <View>
-               {application.timeline.map((step, index) => (
-                  <TimelineStep 
-                    key={step.id} 
-                    step={step} 
-                    isLast={index === application.timeline.length - 1} 
-                  />
-               ))}
-            </View>
-         </View>
+            {loading ? (
+               <ActivityIndicator color="#00A3FF" />
+            ) : (
+               <View>
+                  {pipeline.map((step, index) => (
+                     <TimelineStep 
+                       key={step.id} 
+                       step={step} 
+                       isLast={index === pipeline.length - 1} 
+                     />
+                  ))}
+               </View>
+            )}
+          </View>
 
          {/* Contact Recruiter Button */}
          <TouchableOpacity 

@@ -14,6 +14,11 @@ import { BusinessChatDetailScreen } from '../screens/business/BusinessChatDetail
 import { BusinessProfileScreen } from '../screens/business/BusinessProfileScreen';
 import { EditBusinessProfileScreen } from '../screens/business/EditBusinessProfileScreen';
 
+// Nuevas pantallas de Procesos (ATS)
+import { BusinessProcesosScreen } from '../screens/business/processes/BusinessProcesosScreen';
+import { JobProcessDetailScreen } from '../screens/business/processes/JobProcessDetailScreen';
+import { CandidatePipelineScreen } from '../screens/business/processes/CandidatePipelineScreen';
+
 import { ChatNavigator } from './ChatNavigator';
 import { ApplicationsNavigator } from './ApplicationsNavigator';
 import { ProfileNavigator } from './ProfileNavigator';
@@ -36,6 +41,14 @@ const BusinessChatNavigator = () => (
   <BusinessStack.Navigator screenOptions={{ headerShown: false }}>
     <BusinessStack.Screen name="BusinessInbox" component={BusinessInboxScreen} />
     <BusinessStack.Screen name="BusinessChatDetail" component={BusinessChatDetailScreen} />
+  </BusinessStack.Navigator>
+);
+
+const BusinessProcessNavigator = () => (
+  <BusinessStack.Navigator screenOptions={{ headerShown: false }}>
+    <BusinessStack.Screen name="ProcesosList" component={BusinessProcesosScreen} />
+    <BusinessStack.Screen name="JobProcessDetail" component={JobProcessDetailScreen} />
+    <BusinessStack.Screen name="CandidatePipeline" component={CandidatePipelineScreen} />
   </BusinessStack.Navigator>
 );
 
@@ -84,6 +97,7 @@ const BusinessTabBar = ({ state, descriptors, navigation }: any) => {
 
   const tabs = [
     { name: 'Vacantes', icon: 'layers-outline', iconActive: 'layers', label: 'Vacantes' },
+    { name: 'Procesos', icon: 'git-network-outline', iconActive: 'git-network', label: 'Procesos' },
     { name: 'Chat', icon: 'chatbubble-outline', iconActive: 'chatbubble', label: 'Chat', badge: totalUnreadCount },
     { name: 'Profile', icon: 'business-outline', iconActive: 'business', label: 'Empresa' },
   ];
@@ -202,6 +216,7 @@ export const BusinessTabNavigator = () => {
       screenOptions={{ headerShown: false }}
     >
       <Tab.Screen name="Vacantes" component={BusinessVacantesNavigator} />
+      <Tab.Screen name="Procesos" component={BusinessProcessNavigator} />
       <Tab.Screen name="Chat" component={BusinessChatNavigator} />
       <Tab.Screen name="Profile" component={BusinessProfileNavigator} />
     </Tab.Navigator>
