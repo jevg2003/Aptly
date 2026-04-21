@@ -11,12 +11,13 @@ import {
   StatusBar,
   StyleSheet,
   Dimensions,
-  ActivityIndicator
+  ActivityIndicator,
+  Vibration,
+  LayoutAnimation
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import * as DocumentPicker from 'expo-document-picker';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { 
   useSharedValue, 
@@ -44,7 +45,6 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [confirmData, setConfirmData] = useState<any>(null);
   const [resumeVisible, setResumeVisible] = useState(false);
-  const [experiences, setExperiences] = useState<any[]>([]);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuData, setMenuData] = useState<{ message: any, x: number, y: number } | null>(null);
   const flatListRef = useRef<FlatList>(null);
@@ -71,33 +71,13 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
     if (autoMessage && conversation?.id && messages.length === 0) {
       sendMessage(conversation.id, autoMessage);
     }
-  }, [autoMessage, conversation?.id]);
+  }, [autoMessage, conversation?.id, messages.length, sendMessage]);
 
   useEffect(() => {
     if (conversation?.id) {
       markAsRead(conversation.id);
     }
   }, [messages.length, conversation?.id, markAsRead]);
-
-  const fetchExperiences = async () => {
-    if (!conversation?.participant.id) return;
-    try {
-      const { data } = await supabase
-        .from('experiences')
-        .select('*')
-        .eq('profile_id', conversation.participant.id)
-        .order('start_date', { ascending: false });
-      setExperiences(data || []);
-    } catch (err) {
-      console.error('Error fetching experiences:', err);
-    }
-  };
-
-  useEffect(() => {
-    if (resumeVisible) {
-      fetchExperiences();
-    }
-  }, [resumeVisible]);
 
   const handleSend = async () => {
     if (!messageText.trim()) return;
@@ -125,16 +105,6 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
     }
   };
 
-  const pickDocument = async () => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: 'application/pdf',
-      copyToCacheDirectory: true,
-    });
-
-    if (result.assets) {
-      uploadFile(result.assets[0].uri, 'file', result.assets[0].name);
-    }
-  };
 
   const uploadFile = async (uri: string, type: 'image' | 'file', name?: string) => {
     try {
@@ -149,7 +119,7 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
         type: type === 'image' ? 'image/jpeg' : 'application/pdf',
       } as any);
 
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('chat-attachments')
         .upload(path, formData);
 
@@ -193,6 +163,7 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
       })
       .onEnd((event) => {
         if (translateX.value > 60) {
+          runOnJS(Vibration.vibrate)(15);
           runOnJS(setReplyingTo)(item);
         }
         translateX.value = withSpring(0, { damping: 20, stiffness: 300 });
@@ -218,7 +189,7 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
       runOnJS(setMenuData)({ message: item, x: menuX, y: menuY });
       runOnJS(setMenuVisible)(true);
     };
-    const parentMessage = item.replyToId ? messages.find(m => m.id === item.replyToId) : null;
+    const parentMessage = item.replyToId ? messages.find((m: any) => m.id === item.replyToId) : null;
 
     return (
       <View style={styles.msgWrapper}>
@@ -355,33 +326,42 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
             )}
 
             {/* Footer Input */}
-            <View style={styles.footer}>
-              <View style={styles.inputContainer}>
-                <TouchableOpacity style={styles.attachmentBtn} onPress={() => {
-                  // Simplified for brevity, could use a custom bottom sheet
-                  pickImage();
-                }}>
-                  <Ionicons name="add" size={24} color="#FF005C" />
-                </TouchableOpacity>
-                
-                <TextInput
-                  placeholder="Escribe un mensaje..."
-                  placeholderTextColor="#64748b"
-                  style={styles.input}
-                  value={messageText}
-                  onChangeText={setMessageText}
-                  multiline
-                />
-                
-                <TouchableOpacity 
-                  onPress={handleSend}
-                  disabled={!messageText.trim() && !uploading}
-                  style={[styles.sendBtn, { backgroundColor: messageText.trim() ? '#FF005C' : '#333' }]}
-                >
-                  {uploading ? <ActivityIndicator size="small" color="white" /> : <Ionicons name="send" size={18} color="white" />}
-                </TouchableOpacity>
+            {conversation?.participant?.deletedAt ? (
+              <View style={[styles.footer, { justifyContent: 'center', alignItems: 'center', paddingVertical: 20 }]}>
+                <Ionicons name="information-circle-outline" size={20} color="#64748b" style={{ marginBottom: 4 }} />
+                <Text style={{ color: '#64748b', fontSize: 13, textAlign: 'center' }}>
+                  No puedes responder a esta conversación porque la cuenta del usuario fue eliminada.
+                </Text>
               </View>
-            </View>
+            ) : (
+              <View style={styles.footer}>
+                <View style={styles.inputContainer}>
+                  <TouchableOpacity style={styles.attachmentBtn} onPress={() => {
+                    // Simplified for brevity, could use a custom bottom sheet
+                    pickImage();
+                  }}>
+                    <Ionicons name="add" size={24} color="#FF005C" />
+                  </TouchableOpacity>
+                  
+                  <TextInput
+                    placeholder="Escribe un mensaje..."
+                    placeholderTextColor="#64748b"
+                    style={styles.input}
+                    value={messageText}
+                    onChangeText={setMessageText}
+                    multiline
+                  />
+                  
+                  <TouchableOpacity 
+                    onPress={handleSend}
+                    disabled={!messageText.trim() && !uploading}
+                    style={[styles.sendBtn, { backgroundColor: messageText.trim() ? '#FF005C' : '#333' }]}
+                  >
+                    {uploading ? <ActivityIndicator size="small" color="white" /> : <Ionicons name="send" size={18} color="white" />}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
           </KeyboardAvoidingView>
 
           <ObsidianConfirm 
@@ -409,6 +389,7 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
                   <TouchableOpacity 
                     style={styles.menuOption} 
                     onPress={() => {
+                      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                       setReplyingTo(menuData.message);
                       setMenuVisible(false);
                     }}
@@ -467,7 +448,6 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
                 avatar_url: conversation.participant.avatar,
                 professional_title: conversation.participant.role
               }}
-              experiences={experiences}
               onClose={() => setResumeVisible(false)}
               isVisible={resumeVisible}
               fromChat={true}
@@ -495,7 +475,7 @@ const styles = StyleSheet.create({
   avatarContainer: { position: 'relative' },
   headerAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#334155' },
   avatarInitial: { color: '#94a3b8', fontWeight: 'bold' },
-  onlineDot: { position: 'absolute', bottom: 0, right: 0, width: 12, height: 12, backgroundColor: '#22c55e', borderRadius: 6, borderSize: 2, borderColor: '#1A1A1C' },
+  onlineDot: { position: 'absolute', bottom: 0, right: 0, width: 12, height: 12, backgroundColor: '#22c55e', borderRadius: 6, borderWidth: 2, borderColor: '#1A1A1C' },
   participantName: { color: 'white', fontWeight: 'bold', fontSize: 16 },
   participantRole: { color: '#FF005C', fontSize: 10, fontWeight: '900', textTransform: 'uppercase' },
   moreBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },

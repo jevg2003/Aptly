@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { 
   View, 
   Text, 
@@ -9,58 +9,60 @@ import {
   TextInput,
   Platform,
   Alert,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Ionicons, Feather } from '@expo/vector-icons';
+import { useBusinessProfile } from '../../lib/BusinessProfileContext';
+import { SessionContext } from '../../lib/SessionContext';
+import { pickAndOptimizeImage } from '../../lib/imageUtils';
+import { uploadAvatar } from '../../lib/storageUtils';
 import { CustomInput } from '../../components/CustomInput';
 
-import { useBusinessProfile } from '../../lib/BusinessProfileContext';
-
-export const EditBusinessProfileScreen = ({ route, navigation }: any) => {
-  const { profile, updateProfile, updateTeamMember } = useBusinessProfile();
+export const EditBusinessProfileScreen = ({ navigation }: any) => {
+  const session = useContext(SessionContext);
+  const { profile, updateProfile } = useBusinessProfile();
   
-  const [name, setName] = useState(profile.full_name);
-  const [website, setWebsite] = useState(profile.website);
-  const [location, setLocation] = useState(profile.location);
-  const [culture, setCulture] = useState(profile.culture);
+  const [name, setName] = useState(profile.full_name || '');
+  const [website, setWebsite] = useState(profile.website || '');
+  const [location, setLocation] = useState(profile.location || '');
+  const [culture, setCulture] = useState(profile.culture || '');
   
   const [loading, setLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setLoading(true);
     
-    updateProfile({
+    await updateProfile({
       full_name: name,
       website,
       location,
       culture
     });
 
-    setTimeout(() => {
-      setLoading(false);
-      navigation.goBack();
-    }, 600);
+    setLoading(false);
+    navigation.goBack();
   };
 
-  const handleEditTeamName = (id: string, currentName: string) => {
-    if (Platform.OS === 'ios') {
-      Alert.prompt(
-        'Editar Nombre',
-        'Ingresa el nuevo nombre para el miembro del equipo',
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          { 
-            text: 'Guardar', 
-            onPress: (newName: string | undefined) => updateTeamMember(id, newName || currentName) 
-          }
-        ],
-        'plain-text',
-        currentName
-      );
-    } else {
-      // Basic fallback for Android if prompt is not supported in some Expo versions
-      Alert.alert('Funcionalidad', 'Usa el sistema de edición para cambiar nombres (Simulado en web/Android)');
+  const handleImageUpload = async () => {
+    if (!session?.user?.id) return;
+    try {
+      setUploadingImage(true);
+      
+      const localUri = await pickAndOptimizeImage();
+      if (!localUri) return;
+
+      const publicUrl = await uploadAvatar(localUri, session.user.id);
+      if (!publicUrl) throw new Error('Error al subir la imagen al servidor.');
+
+      await updateProfile({ avatar_url: publicUrl });
+      
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Hubo un problema actualizando el logo.');
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -91,7 +93,7 @@ export const EditBusinessProfileScreen = ({ route, navigation }: any) => {
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
-          <Text className="text-lg font-bold text-white">Editar Perfil de Empresa</Text>
+          <Text className="text-lg font-bold text-white">Editar Perfil</Text>
           <TouchableOpacity onPress={handleSave} disabled={loading}>
             <Text className={`text-[#FF005C] font-bold text-base ${loading ? 'opacity-50' : ''}`}>
               {loading ? '...' : 'Guardar'}
@@ -112,29 +114,34 @@ export const EditBusinessProfileScreen = ({ route, navigation }: any) => {
             <View className="mt-6 items-center">
               <View className="w-full h-32 bg-[#121214] rounded-[30px] overflow-hidden relative border border-[#1e1e1e]">
                 <View className="flex-1 items-center justify-center">
-                   <Text className="text-slate-500 font-serif italic text-xl">Sede Principal</Text>
+                   <Text className="text-slate-500 font-serif italic text-xl">{location || 'Sede Principal'}</Text>
                 </View>
-                <TouchableOpacity className="absolute bottom-3 right-3 bg-[#1A1A1C]/80 p-2 rounded-full border border-[#333]">
-                   <Feather name="camera" size={16} color="#94a3b8" />
-                </TouchableOpacity>
               </View>
 
               <View className="relative -mt-12">
-                <View className="w-28 h-28 rounded-full bg-[#121214] border-4 border-[#050505] items-center justify-center shadow-lg">
-                   {/* Logo Placeholder */}
-                   <View className="items-center justify-center">
-                      <MaterialCommunityIcons name="office-building" size={40} color="#FF005C" />
-                      <Text className="text-[6px] text-slate-400 font-bold mt-2">LOGO EMPRESA</Text>
-                   </View>
+                <View className="w-28 h-28 rounded-full bg-[#1A1A1C] border-4 border-[#050505] items-center justify-center shadow-lg overflow-hidden">
+                   {profile.avatar_url ? (
+                     <Image source={{ uri: profile.avatar_url }} style={{ width: '100%', height: '100%' }} />
+                   ) : (
+                     <MaterialCommunityIcons name="office-building" size={40} color="#FF005C" />
+                   )}
                 </View>
-                <TouchableOpacity className="absolute bottom-0 right-0 bg-[#FF005C] w-8 h-8 rounded-full items-center justify-center border-4 border-[#050505] shadow-sm">
-                   <MaterialCommunityIcons name="pencil" size={14} color="white" />
+                <TouchableOpacity 
+                   onPress={handleImageUpload} 
+                   disabled={uploadingImage}
+                   className="absolute bottom-0 right-0 bg-[#FF005C] w-8 h-8 rounded-full items-center justify-center border-4 border-[#050505] shadow-sm"
+                >
+                   {uploadingImage ? (
+                     <ActivityIndicator size="small" color="white" />
+                   ) : (
+                     <MaterialCommunityIcons name="camera" size={14} color="white" />
+                   )}
                 </TouchableOpacity>
               </View>
 
-              <Text className="text-2xl font-black text-white mt-4">{name}</Text>
+              <Text className="text-2xl font-black text-white mt-4">{name || 'Sin Nombre'}</Text>
               <View className="bg-[#1a1a1c] px-3 py-1 rounded-full mt-1 border border-[#333]">
-                 <Text className="text-[#FF005C] font-bold text-[10px] uppercase">Empresa de Tecnología</Text>
+                 <Text className="text-[#FF005C] font-bold text-[10px] uppercase">{profile.category || 'Empresa'}</Text>
               </View>
             </View>
 
@@ -194,7 +201,7 @@ export const EditBusinessProfileScreen = ({ route, navigation }: any) => {
             <SectionHeader icon="account-group-outline" title="Equipo" showAdd={true} />
             
              <View className="space-y-3">
-               {profile.team.map((member, i) => (
+               {(profile.team || []).map((member: any, i: number) => (
                  <View key={member.id} className="bg-[#121214] p-4 rounded-3xl flex-row items-center border border-[#1e1e1e] shadow-lg shadow-black/30">
                     <View className={`w-12 h-12 rounded-full ${member.color} items-center justify-center overflow-hidden`}>
                        <Text className="text-white font-bold text-lg">{member.name.charAt(0)}</Text>

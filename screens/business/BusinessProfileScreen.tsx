@@ -6,10 +6,10 @@ import {
   TouchableOpacity, 
   Image, 
   StatusBar,
-  Alert,
   RefreshControl,
   StyleSheet,
-  ActivityIndicator
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Ionicons, Feather } from '@expo/vector-icons';
@@ -20,22 +20,56 @@ import { useBusinessProfile } from '../../lib/BusinessProfileContext';
 import { useApp } from '../../lib/AppContext';
 import { ObsidianHeader } from '../../components/ObsidianHeader';
 import { ObsidianModal } from '../../components/ObsidianModal';
+import { pickAndOptimizeImage } from '../../lib/imageUtils';
+import { uploadAvatar } from '../../lib/storageUtils';
+import { handleAccountSoftDelete } from '../../lib/accountUtils';
 
 export const BusinessProfileScreen = ({ navigation }: any) => {
   const session = React.useContext(SessionContext);
   const { setCurrentScreen, setIsBusiness } = useApp();
   const { profile, updateProfile } = useBusinessProfile();
   const [jobsCount, setJobsCount] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [candidatesCount, setCandidatesCount] = useState(0);
   const [recentJobs, setRecentJobs] = useState<any[]>([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const confirmDelete = async () => {
+    try {
+      setShowDeleteModal(false);
+      if (!session?.user?.id) return;
+      await handleAccountSoftDelete(session.user.id);
+      setCurrentScreen('login');
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'No se pudo eliminar la cuenta');
+    }
+  };
+
+  const handleImageUpload = async () => {
+    if (!session?.user?.id) return;
+    try {
+      setUploadingImage(true);
+      
+      const localUri = await pickAndOptimizeImage();
+      if (!localUri) return;
+
+      const publicUrl = await uploadAvatar(localUri, session.user.id);
+      if (!publicUrl) throw new Error('Error al subir la imagen al servidor.');
+
+      await updateProfile({ avatar_url: publicUrl });
+      
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Hubo un problema actualizando el logo.');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const fetchCompanyProfile = useCallback(async () => {
     if (!session?.user?.id) return;
     try {
-      setLoading(true);
       if (profile.full_name === 'TechFlow Solutions' && session.user.user_metadata?.full_name) {
           updateProfile({ full_name: session.user.user_metadata.full_name });
       }
@@ -62,7 +96,6 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
     } catch (error: any) {
       console.error('Error fetching company stats:', error.message);
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
   }, [session, profile.full_name, updateProfile]);
@@ -118,11 +151,23 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
           {/* Logo Section */}
           <View style={styles.profileHeader}>
             <View style={styles.logoWrapper}>
-              <View style={styles.logoCircle}>
-                 <MaterialCommunityIcons name="office-building" size={60} color="white" />
+              <View style={[styles.logoCircle, { overflow: 'hidden' }]}>
+                 {profile?.avatar_url ? (
+                    <Image source={{ uri: profile.avatar_url }} style={{ width: '100%', height: '100%' }} />
+                 ) : (
+                    <MaterialCommunityIcons name="office-building" size={60} color="white" />
+                 )}
               </View>
-              <TouchableOpacity style={styles.logoEditBtn}>
-                 <Feather name="camera" size={16} color="white" />
+              <TouchableOpacity 
+                style={styles.logoEditBtn}
+                onPress={handleImageUpload}
+                disabled={uploadingImage}
+              >
+                 {uploadingImage ? (
+                   <ActivityIndicator size="small" color="white" />
+                 ) : (
+                   <Feather name="camera" size={16} color="white" />
+                 )}
               </TouchableOpacity>
             </View>
             
@@ -216,8 +261,11 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
                <Text style={styles.logoutText}>Cerrar Sesión</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.deleteCta}>
-               <Text style={styles.deleteText}>Enterprise Account Options</Text>
+            <TouchableOpacity 
+              onPress={() => setShowDeleteModal(true)}
+              style={styles.deleteCta}
+            >
+               <Text style={styles.deleteText}>Eliminar Cuenta Permanente</Text>
             </TouchableOpacity>
           </View>
 
@@ -234,6 +282,19 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
           confirmText="Cerrar Sesión"
           cancelText="Cancelar"
           onConfirm={confirmLogout}
+        />
+
+        {/* Delete Account Confirmation Modal */}
+        <ObsidianModal
+          isVisible={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          title="Eliminar Cuenta"
+          message="Tu cuenta será desactivada y no será visible. Tienes 30 días para recuperarla antes de que tus datos sean eliminados permanentemente. ¿Continuar con la eliminación?"
+          iconName="alert-triangle"
+          type="destructive"
+          confirmText="Eliminar Cuenta"
+          cancelText="Cancelar"
+          onConfirm={confirmDelete}
         />
       </SafeAreaView>
     </View>

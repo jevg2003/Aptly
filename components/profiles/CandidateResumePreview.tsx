@@ -1,21 +1,24 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Modal, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
 import { SessionContext } from '../../lib/SessionContext';
 import { useNavigation } from '@react-navigation/native';
 
-export const CandidateResumePreview = ({ profile, experiences = [], onClose, isVisible = false, fromChat = false, conversationId = null }: any) => {
+export const CandidateResumePreview = ({ profile, onClose, isVisible = false, fromChat = false, conversationId = null }: any) => {
   const session = React.useContext(SessionContext);
   const navigation = useNavigation<any>();
   const [applications, setApplications] = React.useState<any[]>([]);
-  const [loadingApps, setLoadingApps] = React.useState(false);
+  const [experiences, setExperiences] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(false);
 
-  const fetchProcesses = async () => {
+  const fetchData = useCallback(async () => {
     if (!profile?.id || !session?.user?.id) return;
     try {
-      setLoadingApps(true);
-      const { data, error } = await supabase
+      setLoading(true);
+      
+      // 1. Fetch Processes with this company
+      const { data: apps, error: appError } = await supabase
         .from('applications')
         .select(`
           id,
@@ -27,20 +30,31 @@ export const CandidateResumePreview = ({ profile, experiences = [], onClose, isV
         .eq('candidate_id', profile.id)
         .eq('jobs.company_id', session.user.id);
 
-      if (error) throw error;
-      setApplications(data || []);
+      if (appError) throw appError;
+      setApplications(apps || []);
+
+      // 2. Fetch Experiences (The missing piece for consistency!)
+      const { data: exps, error: expError } = await supabase
+        .from('experiences')
+        .select('*')
+        .eq('profile_id', profile.id)
+        .order('start_date', { ascending: false });
+
+      if (expError) throw expError;
+      setExperiences(exps || []);
+
     } catch (err) {
-      console.error('Error fetching applications for profile:', err);
+      console.error('Error fetching profile data:', err);
     } finally {
-      setLoadingApps(false);
+      setLoading(false);
     }
-  };
+  }, [profile?.id, session?.user?.id]);
 
   React.useEffect(() => {
     if (isVisible) {
-      fetchProcesses();
+      fetchData();
     }
-  }, [isVisible]);
+  }, [isVisible, fetchData]);
 
   return (
     <Modal visible={isVisible} animationType="slide" transparent={false}>
@@ -60,8 +74,8 @@ export const CandidateResumePreview = ({ profile, experiences = [], onClose, isV
               source={{ uri: profile?.avatar_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80' }} 
               style={styles.avatar} 
             />
-            <Text style={styles.name}>{profile?.full_name}</Text>
-            <Text style={styles.role}>{profile?.professional_title || 'Candidato Aptly'}</Text>
+            <Text style={styles.profileName}>{profile?.full_name}</Text>
+            <Text style={styles.profileRole}>{profile?.professional_title || 'Candidato'}</Text>
             
             <View style={styles.locationRow}>
               <Ionicons name="location-outline" size={14} color="#64748b" />
@@ -121,7 +135,7 @@ export const CandidateResumePreview = ({ profile, experiences = [], onClose, isV
                 <Text style={styles.sectionTitle}>PROCESOS CON TU EMPRESA</Text>
              </View>
 
-             {loadingApps ? (
+             {loading ? (
                <ActivityIndicator color="#FF005C" style={{ marginVertical: 10 }} />
              ) : applications.length > 0 ? (
                applications.map((app: any) => (
@@ -183,8 +197,8 @@ const styles = StyleSheet.create({
   scroll: { paddingBottom: 40 },
   profileSection: { alignItems: 'center', padding: 24, backgroundColor: '#121214' },
   avatar: { width: 120, height: 120, borderRadius: 60, borderWidth: 3, borderColor: '#FF005C', marginBottom: 16 },
-  name: { color: 'white', fontSize: 24, fontWeight: '900' },
-  role: { color: '#FF005C', fontSize: 14, fontWeight: '800', marginTop: 4, letterSpacing: 0.5 },
+  profileName: { color: 'white', fontSize: 24, fontWeight: '900' },
+  profileRole: { color: '#FF005C', fontSize: 14, fontWeight: '800', marginTop: 4, letterSpacing: 0.5 },
   locationRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 4 },
   locationText: { color: '#64748b', fontSize: 12, fontWeight: '600' },
   bioContainer: { width: '100%', marginTop: 24, backgroundColor: 'rgba(255,255,255,0.03)', padding: 16, borderRadius: 20 },

@@ -103,10 +103,11 @@ export const BusinessChatProvider = ({ children }: { children: ReactNode }) => {
           jobId: jobId,
           participant: {
             id: profile?.id || room.candidate_id,
-            name: profile?.full_name || 'Candidato',
-            avatar: profile?.avatar_url || null,
+            name: (profile as any)?.deleted_at ? 'Usuario Eliminado' : (profile?.full_name || 'Candidato'),
+            avatar: (profile as any)?.deleted_at ? null : (profile?.avatar_url || null),
             isOnline: true,
-            role: 'Candidato'
+            role: 'Candidato',
+            deletedAt: (profile as any)?.deleted_at || null
           },
           messages: (messages || []).map(m => ({
             id: m.id,

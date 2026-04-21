@@ -33,14 +33,22 @@ export const CandidatePipelineScreen = ({ route, navigation }: any) => {
   const [savingNote, setSavingNote] = React.useState(false);
   
   const [resumeVisible, setResumeVisible] = React.useState(false);
-  const [experiences, setExperiences] = React.useState<any[]>([]);
 
   // States for custom confirm
   const [confirmVisible, setConfirmVisible] = React.useState(false);
   const [confirmData, setConfirmData] = React.useState<any>(null);
   const [currentApp, setCurrentApp] = React.useState(application);
 
-  const profile = Array.isArray(application.profiles) ? application.profiles[0] : application.profiles;
+  const rawProfile = Array.isArray(application.profiles) ? application.profiles[0] : application.profiles;
+  const isDeletedUser = !!rawProfile?.deleted_at;
+  
+  const profile = isDeletedUser ? {
+    ...rawProfile,
+    full_name: 'Usuario Eliminado',
+    avatar_url: null,
+    resume_url: null,
+    bio: 'Esta cuenta ha sido desactivada.',
+  } : rawProfile;
 
   const fetchData = async () => {
     try {
@@ -113,15 +121,6 @@ export const CandidatePipelineScreen = ({ route, navigation }: any) => {
       });
 
       setStages(enrichedStages);
-
-      // 4. Obtener experiencias para el resume
-      const { data: exps } = await supabase
-        .from('experiences')
-        .select('*')
-        .eq('profile_id', profile.id)
-        .order('start_date', { ascending: false });
-      
-      setExperiences(exps || []);
 
       // Determinar etapa actual (la primera no completada)
       const currentIdx = enrichedStages.findIndex(s => s.status === 'pending');
@@ -354,7 +353,7 @@ export const CandidatePipelineScreen = ({ route, navigation }: any) => {
               navigation.goBack();
             }
           }}
-        />
+       />
 
         <ScrollView contentContainerStyle={styles.scroll}>
           {/* Header del Candidato */}
@@ -440,14 +439,16 @@ export const CandidatePipelineScreen = ({ route, navigation }: any) => {
                       <View style={styles.currentActions}>
                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                            <Text style={styles.actionPrompt}>Acciones para esta etapa:</Text>
-                           <TouchableOpacity onPress={() => toggleStage(index)} style={styles.toggleBtn}>
-                              <Text style={styles.toggleBtnText}>{isCompleted ? 'Marcar Pendiente' : 'Marcar Completada'}</Text>
-                           </TouchableOpacity>
+                           {!isDeletedUser && (
+                             <TouchableOpacity onPress={() => toggleStage(index)} style={styles.toggleBtn}>
+                                <Text style={styles.toggleBtnText}>{isCompleted ? 'Marcar Pendiente' : 'Marcar Completada'}</Text>
+                             </TouchableOpacity>
+                           )}
                          </View>
                          <View style={styles.actionRow}>
                             <TouchableOpacity style={styles.actionBtn} onPress={() => handleQuickAction('chat')}>
-                               <Ionicons name="videocam-outline" size={16} color="#FF005C" />
-                               <Text style={styles.actionBtnText}>Entrevista</Text>
+                               <Ionicons name="chatbubbles-outline" size={16} color="#FF005C" />
+                               <Text style={styles.actionBtnText}>Conversar</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.actionBtn} onPress={() => handleQuickAction('cv')}>
                                <Ionicons name="document-text-outline" size={16} color="#FF005C" />
@@ -480,17 +481,19 @@ export const CandidatePipelineScreen = ({ route, navigation }: any) => {
             />
             
             <TouchableOpacity 
-              style={[styles.saveBtn, internalNotes.length === 0 ? styles.saveBtnDisabled : null]}
-              onPress={saveNote}
-              disabled={savingNote || internalNotes.length === 0}
-            >
-               {savingNote ? <ActivityIndicator size="small" color="white" /> : <Text style={styles.saveBtnText}>Guardar Observación</Text>}
-            </TouchableOpacity>
+               disabled={savingNote || isDeletedUser} 
+               style={[styles.saveBtn, (savingNote || isDeletedUser) && { opacity: 0.5 }]} 
+               onPress={saveNote}
+             >
+                <Text style={styles.saveBtnText}>{savingNote ? 'Guardando...' : 'Guardar Bitácora'}</Text>
+             </TouchableOpacity>
           </View>
           
           {/* Botones de Finalización */}
           <View style={styles.footerActions}>
-             <TouchableOpacity style={styles.rejectBtn} onPress={() => {
+             <TouchableOpacity 
+               style={[styles.rejectBtn, isDeletedUser && {opacity: 0.3}]} 
+               onPress={() => {
                 setConfirmData({
                   title: 'DESCARTAR CANDIDATO',
                   message: `¿Estás seguro de cerrar el proceso para ${profile.full_name}? Se le notificará automáticamente que la posición ha sido ocupada.`,
@@ -498,7 +501,9 @@ export const CandidatePipelineScreen = ({ route, navigation }: any) => {
                   type: 'danger'
                 });
                 setConfirmVisible(true);
-             }}>
+             }}
+               disabled={isDeletedUser}
+             >
                 <Text style={styles.rejectBtnText}>Descartar Candidato</Text>
              </TouchableOpacity>
              <TouchableOpacity style={styles.hireBtn} onPress={() => Alert.alert('¡Felicidades!', 'Vas a marcar a este candidato como contratado.')}>
@@ -512,7 +517,6 @@ export const CandidatePipelineScreen = ({ route, navigation }: any) => {
 
         <CandidateResumePreview 
           profile={profile}
-          experiences={experiences}
           onClose={() => setResumeVisible(false)}
           isVisible={resumeVisible}
         />

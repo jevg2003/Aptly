@@ -40,7 +40,7 @@ export const BusinessVacantesScreen = ({ navigation }: any) => {
       } else {
         setJobs([]);
       }
-    } catch (err) {
+    } catch {
        // Error silenciado para limpieza de logs, puede añadirse notificación aquí si es necesario
       setJobs([]);
     } finally {
