@@ -44,3 +44,39 @@ export const uploadAvatar = async (localUri: string, userId: string): Promise<st
     return null;
   }
 };
+
+/**
+ * Sube un documento (PDF, DOCX) al bucket 'resumes'
+ * @param localUri URI del archivo local
+ * @param userId ID del usuario
+ * @param fileName Nombre original del archivo (opcional)
+ */
+export const uploadDocument = async (localUri: string, userId: string, originalName?: string): Promise<string | null> => {
+  try {
+    const base64Str = await FileSystem.readAsStringAsync(localUri, { 
+      encoding: 'base64'
+    });
+    
+    const fileExt = originalName ? originalName.split('.').pop() : 'pdf';
+    const filePath = `resumes/${userId}_${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('documents') // Usaremos un bucket genérico 'documents'
+      .upload(filePath, decode(base64Str), {
+        contentType: fileExt === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        upsert: true
+      });
+
+    if (uploadError) {
+      console.error('Error subiendo documento:', uploadError.message);
+      return null;
+    }
+
+    const { data } = supabase.storage.from('documents').getPublicUrl(filePath);
+    return data.publicUrl;
+
+  } catch (error) {
+    console.error('Error procesando subida de documento:', error);
+    return null;
+  }
+};
