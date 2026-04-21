@@ -1,27 +1,57 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StatusBar, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StatusBar, ScrollView, Alert, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { CustomInput } from '../../components/CustomInput';
 import { CustomButton } from '../../components/CustomButton';
 import { supabase } from '../../lib/supabase';
 import { SessionContext } from '../../lib/SessionContext';
+import { ListInput } from '../../components/ListInput';
 
 export const CreateVacanteScreen = ({ route, navigation }: any) => {
   const { job } = route.params || {};
   const isEditing = !!job;
   const session = React.useContext(SessionContext);
   const [loading, setLoading] = useState(false);
-
   // Form states
   const [title, setTitle] = useState(job?.title || '');
   const [location, setLocation] = useState(job?.location || '');
   const [salary, setSalary] = useState(job?.salary || '');
   const [description, setDescription] = useState(job?.description || '');
-  const [requirements, setRequirements] = useState(job?.requirements || '');
+  const [requirements, setRequirements] = useState<string[]>(Array.isArray(job?.requirements) ? job?.requirements : []);
   const [benefits, setBenefits] = useState(job?.benefits || '');
+  const [tags, setTags] = useState<string[]>(Array.isArray(job?.tags) ? job?.tags : []);
   const [modality, setModality] = useState(job?.modality || 'Presencial'); 
   const [contractType, setContractType] = useState(job?.type || 'Indefinido');
+
+  // Tag suggestion states
+  const [tagQuery, setTagQuery] = useState('');
+  const [suggestedTags, setSuggestedTags] = useState<any[]>([]);
+
+  const fetchTagSuggestions = async (query: string) => {
+    setTagQuery(query);
+    if (query.length < 2) {
+      setSuggestedTags([]);
+      return;
+    }
+
+    const { data } = await supabase
+      .from('job_tags')
+      .select('name')
+      .ilike('name', `%${query}%`)
+      .limit(5);
+    
+    setSuggestedTags(data || []);
+  };
+
+  const addTag = (tagName: string) => {
+    const cleanTag = tagName.trim();
+    if (cleanTag && !tags.includes(cleanTag)) {
+      setTags([...tags, cleanTag]);
+    }
+    setTagQuery('');
+    setSuggestedTags([]);
+  };
 
   const handleCreate = async () => {
     if (!title || !description || !salary || !location) {
@@ -31,20 +61,29 @@ export const CreateVacanteScreen = ({ route, navigation }: any) => {
 
     setLoading(true);
     try {
+      // 1. Upsert unique tags to global directory
+      if (tags.length > 0) {
+        const tagObjects = tags.map(name => ({ name }));
+        await supabase.from('job_tags').upsert(tagObjects, { onConflict: 'name' });
+      }
+
+      const jobData = {
+        title,
+        description,
+        requirements,
+        benefits,
+        salary,
+        location,
+        type: contractType,
+        modality,
+        tags,
+        updated_at: new Date().toISOString(),
+      };
+
       if (isEditing) {
         const { error } = await supabase
           .from('jobs')
-          .update({
-            title,
-            description,
-            requirements,
-            benefits,
-            salary,
-            location,
-            type: contractType,
-            modality,
-            updated_at: new Date().toISOString(),
-          })
+          .update(jobData)
           .eq('id', job.id);
 
         if (error) throw error;
@@ -52,14 +91,7 @@ export const CreateVacanteScreen = ({ route, navigation }: any) => {
       } else {
         const { error } = await supabase.from('jobs').insert([
           {
-            title,
-            description,
-            requirements,
-            benefits,
-            salary,
-            location,
-            type: contractType,
-            modality,
+            ...jobData,
             company_id: session?.user?.id,
             created_at: new Date().toISOString(),
             status: 'active'
@@ -178,16 +210,59 @@ export const CreateVacanteScreen = ({ route, navigation }: any) => {
             />
           </View>
 
+          <ListInput 
+            label="Requisitos / Perfil"
+            items={requirements}
+            setItems={setRequirements}
+            placeholder="Ej: 3 años de experiencia en React..."
+            iconName="checkmark-circle-outline"
+          />
+
           <View className="mb-6">
-            <Text className="text-slate-700 dark:text-slate-200 font-bold mb-2 ml-1">Requisitos / Perfil</Text>
-            <CustomInput
-              placeholder="Ej: 3 años de experiencia, Inglés B2..."
-              value={requirements}
-              onChangeText={setRequirements}
-              iconName="format-list-bulleted"
-              multiline
-              numberOfLines={3}
-            />
+            <Text className="text-white font-bold mb-3 ml-1">Etiquetas / Skills</Text>
+            <View className="flex-row items-center bg-[#121214] rounded-2xl border border-white/5 px-4 h-14">
+              <Ionicons name="pricetag-outline" size={20} color="#64748b" style={{ marginRight: 12 }} />
+              <TextInput
+                className="flex-1 text-white text-sm"
+                placeholder="Busca o añade etiquetas (ej: Node.js)"
+                placeholderTextColor="#64748b"
+                value={tagQuery}
+                onChangeText={fetchTagSuggestions}
+                onSubmitEditing={() => addTag(tagQuery)}
+              />
+              <TouchableOpacity 
+                onPress={() => addTag(tagQuery)}
+                className="w-8 h-8 rounded-full bg-[#FF005C] items-center justify-center"
+              >
+                <Ionicons name="add" size={20} color="white" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Suggestions list */}
+            {suggestedTags.length > 0 && (
+              <View className="bg-[#1A1A1C] mt-2 rounded-2xl border border-white/5 overflow-hidden">
+                {suggestedTags.map((tag) => (
+                  <TouchableOpacity 
+                    key={tag.name}
+                    onPress={() => addTag(tag.name)}
+                    className="px-4 py-3 border-b border-white/5"
+                  >
+                    <Text className="text-slate-300 text-sm">{tag.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            <View className="flex-row flex-wrap gap-2 mt-4">
+              {tags.map((tag, index) => (
+                <View key={index} className="flex-row items-center bg-[#1A1A1C] px-3 py-2 rounded-xl border border-[#FF005C]/30">
+                  <Text className="text-[#FF005C] text-xs font-bold mr-2 uppercase tracking-tighter">{tag}</Text>
+                  <TouchableOpacity onPress={() => setTags(tags.filter((_, i) => i !== index))}>
+                    <Ionicons name="close-circle" size={16} color="#FF005C" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
           </View>
 
           <View className="mb-10">
@@ -206,7 +281,7 @@ export const CreateVacanteScreen = ({ route, navigation }: any) => {
             title={loading ? "Guardando..." : (isEditing ? "Guardar Cambios" : "Publicar Vacante")}
             onPress={handleCreate}
             variant="primary"
-            className="mb-10 shadow-xl shadow-blue-400"
+            className="mb-10"
           />
         </ScrollView>
       </SafeAreaView>

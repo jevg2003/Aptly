@@ -125,15 +125,27 @@ export const JobDetailScreen = ({ route, navigation }: any) => {
 
             <View className="mb-8 p-6 bg-[#121214] rounded-[35px] border border-[#1e1e1e]">
               <Text className="text-white font-black text-lg mb-4">Requisitos</Text>
-              <View className="flex-row items-start mb-2">
-                <Ionicons name="checkmark-circle" size={18} color="#FF005C" />
-                <Text className="text-slate-400 text-xs ml-2 flex-1">Mínimo 2 años de experiencia relacionada.</Text>
-              </View>
-              <View className="flex-row items-start">
-                <Ionicons name="checkmark-circle" size={18} color="#FF005C" />
-                <Text className="text-slate-400 text-xs ml-2 flex-1">Proactividad y trabajo en equipo.</Text>
-              </View>
+              {currentJob.requirements && Array.isArray(currentJob.requirements) && currentJob.requirements.length > 0 ? (
+                currentJob.requirements.map((req: string, index: number) => (
+                  <View key={index} className="flex-row items-start mb-3">
+                    <Ionicons name="checkmark-circle" size={18} color="#FF005C" />
+                    <Text className="text-slate-400 text-sm ml-2 flex-1">{req}</Text>
+                  </View>
+                ))
+              ) : (
+                <Text className="text-slate-500 text-xs italic">No hay requisitos específicos listados.</Text>
+              )}
             </View>
+
+            {currentJob.tags && currentJob.tags.length > 0 && (
+              <View className="mb-8 flex-row flex-wrap gap-2">
+                {currentJob.tags.map((tag: string, index: number) => (
+                  <View key={index} className="bg-[#1A1A1C] border border-[#FF005C]/30 px-4 py-2 rounded-full">
+                    <Text className="text-[#FF005C] text-[10px] font-black uppercase tracking-tight">{tag}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
 
             {applications.length > 0 && (
               <View className="mb-8 p-6 bg-[#121214] rounded-[35px] border border-[#1e1e1e]">
