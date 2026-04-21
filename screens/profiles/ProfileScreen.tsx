@@ -7,7 +7,6 @@ import {
   Image, 
   SafeAreaView, 
   StatusBar,
-  Alert,
   RefreshControl,
   StyleSheet,
   ActivityIndicator

@@ -1,8 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, StatusBar } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SessionContext } from '../../lib/SessionContext';
 import { SearchBar } from '../../components/chat/SearchBar';
@@ -41,6 +41,7 @@ export const BusinessVacantesScreen = ({ navigation }: any) => {
         setJobs([]);
       }
     } catch (err) {
+       // Error silenciado para limpieza de logs, puede añadirse notificación aquí si es necesario
       setJobs([]);
     } finally {
       setLoading(false);

@@ -14,10 +14,10 @@ import { BusinessChatDetailScreen } from '../screens/business/BusinessChatDetail
 import { BusinessProfileScreen } from '../screens/business/BusinessProfileScreen';
 import { EditBusinessProfileScreen } from '../screens/business/EditBusinessProfileScreen';
 
-import { MatchesScreen } from '../screens/MatchesScreen';
 import { ChatNavigator } from './ChatNavigator';
 import { ApplicationsNavigator } from './ApplicationsNavigator';
 import { ProfileNavigator } from './ProfileNavigator';
+import { useBusinessChat } from '../lib/BusinessChatContext';
 
 const Tab = createBottomTabNavigator();
 const BusinessStack = createNativeStackNavigator();
@@ -78,10 +78,6 @@ const CandidateTabBar = ({ state, descriptors, navigation }: any) => {
   );
 };
 
-import { BusinessChatProvider, useBusinessChat } from '../lib/BusinessChatContext';
-
-// ... (other navigators)
-
 // Custom TabBar for Business
 const BusinessTabBar = ({ state, descriptors, navigation }: any) => {
   const { totalUnreadCount } = useBusinessChat();
@@ -107,12 +103,12 @@ const BusinessTabBar = ({ state, descriptors, navigation }: any) => {
             style={tabStyles.tabBtn}
             activeOpacity={0.7}
           >
-            {isFocused && <View style={[tabStyles.glow, { shadowColor: '#FF005C' }]} />}
-            <View>
+            <View style={tabStyles.iconWrapper}>
+              {isFocused && <View style={[tabStyles.glow, { shadowColor: '#FF005C', backgroundColor: 'rgba(255, 0, 92, 0.08)' }]} />}
               <Ionicons name={iconName} size={22} color={color} />
-              {tab.badge > 0 && (
+              {(tab as any).badge > 0 && (
                 <View style={tabStyles.badge}>
-                  <Text style={tabStyles.badgeText}>{tab.badge > 99 ? '99+' : tab.badge}</Text>
+                  <Text style={tabStyles.badgeText}>{(tab as any).badge > 99 ? '99+' : (tab as any).badge}</Text>
                 </View>
               )}
             </View>
@@ -140,18 +136,22 @@ const tabStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    borderRadius: 16,
-    paddingVertical: 4,
+  },
+  iconWrapper: {
+    width: 40,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
   },
   glow: {
     position: 'absolute',
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 6,
-    backgroundColor: 'transparent',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    elevation: 10,
   },
   label: {
     fontSize: 10,
