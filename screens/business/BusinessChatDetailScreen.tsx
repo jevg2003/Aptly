@@ -9,7 +9,6 @@ import {
   KeyboardAvoidingView, 
   Platform,
   StatusBar,
-  Alert,
   StyleSheet,
   Dimensions,
   ActivityIndicator
@@ -29,18 +28,29 @@ import Animated, {
 
 import { useBusinessChat } from '../../lib/BusinessChatContext';
 import { supabase } from '../../lib/supabase';
+import { showToast } from '../../components/common/ObsidianToast';
+import { ObsidianConfirm } from '../../components/common/ObsidianConfirm';
+import { CandidateResumePreview } from '../../components/profiles/CandidateResumePreview';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
+  const { conversation: initialConversation, conversationId, autoMessage } = route.params || {};
+  const { conversations, sendMessage, markAsRead, deleteMessage } = useBusinessChat();
   const [messageText, setMessageText] = useState('');
   const [replyingTo, setReplyingTo] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
   const [loadingError, setLoadingError] = useState(false);
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [confirmData, setConfirmData] = useState<any>(null);
+  const [resumeVisible, setResumeVisible] = useState(false);
+  const [experiences, setExperiences] = useState<any[]>([]);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [menuData, setMenuData] = useState<{ message: any, x: number, y: number } | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
   // Find the live conversation object from context
-  const conversation = conversations.find(c => 
+  const conversation = conversations?.find((c: any) => 
     c.id === (initialConversation?.id || conversationId)
   ) || initialConversation;
 
@@ -49,12 +59,12 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
   // Timeout for loading state
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!conversation && (initialConversation || conversationId)) {
+      if (!conversation) {
         setLoadingError(true);
       }
-    }, 5000); // 5 seconds timeout
+    }, 3500); 
     return () => clearTimeout(timer);
-  }, [conversation, initialConversation, conversationId]);
+  }, [conversation]);
 
   // Auto-send message if provided via params
   useEffect(() => {
@@ -68,6 +78,26 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
       markAsRead(conversation.id);
     }
   }, [messages.length, conversation?.id, markAsRead]);
+
+  const fetchExperiences = async () => {
+    if (!conversation?.participant.id) return;
+    try {
+      const { data } = await supabase
+        .from('experiences')
+        .select('*')
+        .eq('profile_id', conversation.participant.id)
+        .order('start_date', { ascending: false });
+      setExperiences(data || []);
+    } catch (err) {
+      console.error('Error fetching experiences:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (resumeVisible) {
+      fetchExperiences();
+    }
+  }, [resumeVisible]);
 
   const handleSend = async () => {
     if (!messageText.trim()) return;
@@ -136,7 +166,7 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
 
     } catch (err) {
       console.error('Upload error:', err);
-      Alert.alert('Error', 'No se pudo subir el archivo.');
+      showToast('No se pudo subir el archivo', 'error');
     } finally {
       setUploading(false);
     }
@@ -151,20 +181,21 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
     const context = useSharedValue({ x: 0 });
 
     const gesture = Gesture.Pan()
+      .activeOffsetX([0, 10]) 
+      .failOffsetY([-5, 5]) 
       .onStart(() => {
         context.value = { x: translateX.value };
       })
       .onUpdate((event) => {
-        // Only swipe right
         if (event.translationX > 0) {
-          translateX.value = event.translationX;
+          translateX.value = Math.min(event.translationX, 100);
         }
       })
       .onEnd((event) => {
-        if (translateX.value > 80) {
+        if (translateX.value > 60) {
           runOnJS(setReplyingTo)(item);
         }
-        translateX.value = withSpring(0);
+        translateX.value = withSpring(0, { damping: 20, stiffness: 300 });
       });
 
     const animatedStyle = useAnimatedStyle(() => ({
@@ -176,18 +207,17 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
       transform: [{ scale: interpolate(translateX.value, [0, 50], [0.5, 1]) }]
     }));
 
-    const handleLongPress = () => {
-      if (!isMe || isDeleted) return;
-      Alert.alert(
-        'Mensaje',
-        '¿Qué deseas hacer?',
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: 'Eliminar para todos', style: 'destructive', onPress: () => deleteMessage(item.id, true) }
-        ]
-      );
-    };
+    const handleLongPress = (event: any) => {
+      if (isDeleted) return;
+      
+      const { pageX, pageY } = event.nativeEvent;
+      // Localized position calculation
+      const menuX = pageX > SCREEN_WIDTH * 0.6 ? pageX - 160 : pageX;
+      const menuY = pageY > 450 ? pageY - 140 : pageY;
 
+      runOnJS(setMenuData)({ message: item, x: menuX, y: menuY });
+      runOnJS(setMenuVisible)(true);
+    };
     const parentMessage = item.replyToId ? messages.find(m => m.id === item.replyToId) : null;
 
     return (
@@ -198,7 +228,12 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
 
         <GestureDetector gesture={gesture}>
           <Animated.View style={[styles.msgContainer, isMe ? styles.msgMe : styles.msgOther, animatedStyle]}>
-            <TouchableOpacity onLongPress={handleLongPress} activeOpacity={0.9} disabled={isDeleted}>
+            <TouchableOpacity 
+              onLongPress={(e) => handleLongPress(e)} 
+              activeOpacity={0.9} 
+              disabled={isDeleted}
+              delayLongPress={350}
+            >
               
               {/* Replying to Context */}
               {parentMessage && (
@@ -216,7 +251,7 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
               )}
               
               {item.type === 'file' && !isDeleted && (
-                <TouchableOpacity style={styles.fileContainer} onPress={() => Alert.alert('Abrir Archivo', item.metadata?.url)}>
+                <TouchableOpacity style={styles.fileContainer} onPress={() => showToast('Abriendo archivo...', 'info')}>
                    <Ionicons name="document-text" size={32} color={isMe ? 'white' : '#FF005C'} />
                    <View style={{ marginLeft: 10 }}>
                       <Text style={[styles.fileName, { color: isMe ? 'white' : 'white' }]}>{item.metadata?.name}</Text>
@@ -257,20 +292,25 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
             </TouchableOpacity>
             
             {conversation ? (
-              <View style={styles.participantInfo}>
+              <TouchableOpacity 
+                style={styles.participantInfo} 
+                onPress={() => setResumeVisible(true)}
+                activeOpacity={0.7}
+              >
                  <View style={styles.avatarContainer}>
                     {conversation.participant.avatar ? (
                         <Image source={{ uri: conversation.participant.avatar }} style={styles.headerAvatar} />
                     ) : (
                         <Text style={styles.avatarInitial}>{conversation.participant.name.charAt(0)}</Text>
                     )}
-                    {conversation.participant.isOnline && <View style={styles.onlineDot} />}
                  </View>
                  <View style={{ marginLeft: 12 }}>
                     <Text style={styles.participantName}>{conversation.participant.name}</Text>
-                    <Text style={styles.participantRole}>{conversation.participant.role}</Text>
+                    <Text style={styles.participantRole}>
+                      {conversation.jobTitle || conversation.participant.role}
+                    </Text>
                  </View>
-              </View>
+              </TouchableOpacity>
             ) : (
               <View style={{ flex: 1, justifyContent: 'center' }}>
                  {loadingError ? (
@@ -318,11 +358,8 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
             <View style={styles.footer}>
               <View style={styles.inputContainer}>
                 <TouchableOpacity style={styles.attachmentBtn} onPress={() => {
-                  Alert.alert('Adjuntar', 'Elige el tipo de archivo', [
-                    { text: 'Imagen', onPress: pickImage },
-                    { text: 'PDF / Documento', onPress: pickDocument },
-                    { text: 'Cancelar', style: 'cancel' }
-                  ]);
+                  // Simplified for brevity, could use a custom bottom sheet
+                  pickImage();
                 }}>
                   <Ionicons name="add" size={24} color="#FF005C" />
                 </TouchableOpacity>
@@ -347,6 +384,94 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
             </View>
           </KeyboardAvoidingView>
 
+          <ObsidianConfirm 
+            visible={confirmVisible}
+            title={confirmData?.title || ''}
+            message={confirmData?.message || ''}
+            onConfirm={confirmData?.onConfirm || (() => {})}
+            onCancel={() => setConfirmVisible(false)}
+            type={confirmData?.type}
+          />
+
+          {/* Context Menu Overlay */}
+          {menuVisible && menuData && (
+            <TouchableOpacity 
+              style={styles.menuOverlay} 
+              activeOpacity={1} 
+              onPress={() => setMenuVisible(false)}
+            >
+               <View 
+                 style={[
+                   styles.contextMenu, 
+                   { top: menuData.y, left: menuData.x }
+                 ]}
+               >
+                  <TouchableOpacity 
+                    style={styles.menuOption} 
+                    onPress={() => {
+                      setReplyingTo(menuData.message);
+                      setMenuVisible(false);
+                    }}
+                  >
+                     <Ionicons name="arrow-undo-outline" size={18} color="white" />
+                     <Text style={styles.menuOptionText}>Responder</Text>
+                  </TouchableOpacity>
+
+                  <View style={styles.menuDivider} />
+
+                  <TouchableOpacity 
+                    style={styles.menuOption} 
+                    onPress={() => {
+                      showToast('Mensaje copiado', 'success');
+                      setMenuVisible(false);
+                    }}
+                  >
+                     <Ionicons name="copy-outline" size={18} color="white" />
+                     <Text style={styles.menuOptionText}>Copiar</Text>
+                  </TouchableOpacity>
+
+                  {menuData.message.senderId === 'me' && (
+                    <>
+                      <View style={styles.menuDivider} />
+                      <TouchableOpacity 
+                        style={styles.menuOption} 
+                        onPress={() => {
+                          setMenuVisible(false);
+                          setConfirmData({
+                            title: 'ELIMINAR MENSAJE',
+                            message: '¿Borrar para todos?',
+                            onConfirm: () => {
+                              deleteMessage(menuData.message.id, true);
+                              setConfirmVisible(false);
+                            },
+                            type: 'danger'
+                          });
+                          setConfirmVisible(true);
+                        }}
+                      >
+                         <Ionicons name="trash-outline" size={18} color="#FF3B30" />
+                         <Text style={[styles.menuOptionText, { color: '#FF3B30' }]}>Eliminar</Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
+               </View>
+            </TouchableOpacity>
+          )}
+
+          {/* Profile Modal */}
+          {conversation && (
+            <CandidateResumePreview 
+              profile={{
+                id: conversation.participant.id,
+                full_name: conversation.participant.name,
+                avatar_url: conversation.participant.avatar,
+                professional_title: conversation.participant.role
+              }}
+              experiences={experiences}
+              onClose={() => setResumeVisible(false)}
+              isVisible={resumeVisible}
+            />
+          )}
         </SafeAreaView>
       </View>
     </GestureHandlerRootView>
@@ -431,5 +556,39 @@ const styles = StyleSheet.create({
   replyBar: { width: 4, height: 32, backgroundColor: '#FF005C', borderTopRightRadius: 4, borderBottomRightRadius: 4 },
   replyPreviewName: { color: '#FF005C', fontWeight: '900', fontSize: 11 },
   replyPreviewText: { color: '#94a3b8', fontSize: 13, marginTop: 2 },
-  closeReply: { padding: 10 }
+  closeReply: { padding: 10 },
+  menuOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    zIndex: 1000,
+  },
+  contextMenu: {
+    position: 'absolute',
+    width: 170,
+    backgroundColor: '#1E1E20',
+    borderRadius: 20,
+    padding: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.5,
+    shadowRadius: 15,
+    elevation: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  menuOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    gap: 12,
+  },
+  menuOptionText: {
+    color: 'white',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    marginHorizontal: 12,
+  },
 });

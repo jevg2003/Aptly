@@ -25,27 +25,31 @@ export const ChatListItem = ({ conversation, onPress }: ChatListItemProps) => {
       className="flex-row items-center bg-[#121214] mx-4 my-1.5 p-4 rounded-[24px] border border-white/5"
       activeOpacity={0.7}
     >
-      <View className="relative">
-        <View className="w-14 h-14 rounded-full bg-slate-800 items-center justify-center overflow-hidden border border-white/5">
-          {participant.avatar ? (
-             <Image source={{ uri: participant.avatar }} className="w-full h-full" />
-          ) : (
-            <Text className="text-slate-400 font-bold text-lg">{initials}</Text>
-          )}
-        </View>
-        {participant.isOnline && (
-          <View className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-[#121214]" />
+      <View className="w-14 h-14 rounded-full bg-slate-800 items-center justify-center overflow-hidden border border-white/5">
+        {participant.avatar ? (
+           <Image source={{ uri: participant.avatar }} className="w-full h-full" />
+        ) : (
+          <Text className="text-slate-400 font-bold text-lg">{initials}</Text>
         )}
       </View>
       
       <View className="flex-1 ml-4 justify-center">
-        <View className="flex-row justify-between mb-1">
-          <Text className="text-white font-bold text-base" numberOfLines={1}>
-            {participant.name}
-          </Text>
-          <Text className="text-slate-500 text-xs">
-            {timestamp}
-          </Text>
+        <View className="flex-row justify-between items-start mb-0.5">
+          <View className="flex-1 mr-2">
+            <Text className="text-white font-bold text-base" numberOfLines={1}>
+              {participant.name}
+            </Text>
+            {(conversation as BusinessConversation).jobTitle && (
+              <Text className="text-[#FF005C] text-[10px] font-black uppercase tracking-widest mt-0.5" numberOfLines={1}>
+                {(conversation as BusinessConversation).jobTitle}
+              </Text>
+            )}
+          </View>
+          <View className="items-end">
+            <Text className="text-slate-500 text-[11px] mt-1">
+              {timestamp}
+            </Text>
+          </View>
         </View>
         
         <View className="flex-row justify-between items-center pr-1">

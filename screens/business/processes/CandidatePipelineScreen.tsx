@@ -38,6 +38,7 @@ export const CandidatePipelineScreen = ({ route, navigation }: any) => {
   // States for custom confirm
   const [confirmVisible, setConfirmVisible] = React.useState(false);
   const [confirmData, setConfirmData] = React.useState<any>(null);
+  const [currentApp, setCurrentApp] = React.useState(application);
 
   const profile = Array.isArray(application.profiles) ? application.profiles[0] : application.profiles;
 
@@ -45,6 +46,15 @@ export const CandidatePipelineScreen = ({ route, navigation }: any) => {
     try {
       setLoading(true);
       
+      // 0. Refrescar datos de la aplicación (especialmente chat_rooms)
+      const { data: appData } = await supabase
+        .from('applications')
+        .select('*, chat_rooms(id)')
+        .eq('id', application.id)
+        .single();
+      
+      if (appData) setCurrentApp(appData);
+
       // 1. Obtener stages definidos para esta vacante
       let { data: jobStages, error: stagesError } = await supabase
         .from('job_pipeline_stages')
@@ -209,28 +219,61 @@ export const CandidatePipelineScreen = ({ route, navigation }: any) => {
     }
   };
 
+  const getOrCreateRoomId = async () => {
+    try {
+      // 1. Verificar si ya existe en el estado actual
+      let roomId = currentApp.chat_rooms?.[0]?.id;
+      if (roomId) return roomId;
+
+      // 2. Intentar buscar en DB por si acaso
+      const { data: room } = await supabase
+        .from('chat_rooms')
+        .select('id')
+        .eq('application_id', currentApp.id)
+        .maybeSingle();
+      
+      if (room?.id) return room.id;
+
+      // 3. Crear nueva sala
+      const { data: newRoom, error: createError } = await supabase
+        .from('chat_rooms')
+        .insert([{
+          application_id: currentApp.id,
+          candidate_id: currentApp.candidate_id,
+          company_id: session?.user?.id,
+          status: 'active'
+        }])
+        .select()
+        .single();
+      
+      if (createError) throw createError;
+      return newRoom.id;
+    } catch (err) {
+      console.error('Error in getOrCreateRoomId:', err);
+      return null;
+    }
+  };
+
   const discardCandidate = async () => {
     try {
+      setConfirmVisible(false);
+      setLoading(true);
       // 1. Marcar la aplicación como rechazada
       const { error } = await supabase
         .from('applications')
         .update({ status: 'rejected' })
-        .eq('id', application.id);
+        .eq('id', currentApp.id);
       
       if (error) throw error;
 
-      // 2. Enviar mensaje automático de cierre de proceso
-      const rejectionMsg = `Hola ${profile.full_name}, la empresa ${session?.user?.id ? 'empleadora' : 'Aptly'} ha decidido cerrar tu proceso de selección para la vacante de ${job.title}. ¡Gracias por tu interés y éxito en tus próximas postulaciones!`;
+      // 2. Enviar mensaje automático
+      const rejectionMsg = `Hola ${profile.full_name}, la empresa ha decidido cerrar tu proceso para ${job.title}. ¡Mucho éxito en tus próximas postulaciones!`;
       
-      const { data: rooms } = await supabase
-        .from('chat_rooms')
-        .select('id')
-        .eq('application_id', application.id)
-        .maybeSingle();
+      const roomId = await getOrCreateRoomId();
 
-      if (rooms?.id) {
+      if (roomId) {
         await supabase.from('messages').insert([{
-          room_id: rooms.id,
+          room_id: roomId,
           content: rejectionMsg,
           sender_id: session?.user?.id,
           is_system: true,
@@ -238,18 +281,26 @@ export const CandidatePipelineScreen = ({ route, navigation }: any) => {
         }]);
       }
 
-      Alert.alert('Candidato Descartado', 'Se ha cerrado el proceso y notificado al candidato.');
+      showToast('Candidato descartado correctamente', 'info');
       navigation.goBack();
     } catch (err) {
       console.error('Error discarding candidate:', err);
-      Alert.alert('Error', 'No se pudo descartar al candidato.');
+      showToast('Error al descartar candidato', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleQuickAction = (action: string) => {
+  const handleQuickAction = async (action: string) => {
     if (action === 'chat') {
-      const roomId = application.chat_rooms?.[0]?.id;
+      showToast('Iniciando conversación...', 'info', 1500);
+      const roomId = await getOrCreateRoomId();
       
+      if (!roomId) {
+        showToast('No se pudo abrir el chat', 'error');
+        return;
+      }
+
       navigation.navigate('Chat', { 
         screen: 'BusinessChatDetail', 
         params: { 
@@ -258,8 +309,23 @@ export const CandidatePipelineScreen = ({ route, navigation }: any) => {
         } 
       });
     } else if (action === 'cv') {
-      Alert.alert('Solicitar CV', `Se enviará un mensaje automático a ${profile.full_name} solicitando su Hoja de Vida en PDF.`);
-      // Aquí iría el insert en messages
+       setConfirmData({
+         title: 'SOLICITAR CV',
+         message: `¿Deseas enviar un mensaje automático a ${profile.full_name} solicitando su Hoja de Vida en PDF?`,
+         onConfirm: async () => {
+            setConfirmVisible(false);
+            const roomId = await getOrCreateRoomId();
+            if (roomId) {
+               await supabase.from('messages').insert([{
+                 room_id: roomId,
+                 content: `Hola ${profile.full_name}, para avanzar con tu perfil nos gustaría revisarlo mas a fondo. ¿Podrías enviarnos tu Hoja de Vida en PDF por este medio?`,
+                 sender_id: session?.user?.id
+               }]);
+               showToast('Solicitud enviada correctamente');
+            }
+         }
+       });
+       setConfirmVisible(true);
     }
   };
 
@@ -435,17 +501,12 @@ export const CandidatePipelineScreen = ({ route, navigation }: any) => {
           <View style={{ height: 40 }} />
         </ScrollView>
 
-        <Modal
-          visible={resumeVisible}
-          animationType="slide"
-          onRequestClose={() => setResumeVisible(false)}
-        >
         <CandidateResumePreview 
           profile={profile}
           experiences={experiences}
           onClose={() => setResumeVisible(false)}
+          isVisible={resumeVisible}
         />
-      </Modal>
 
       <ObsidianConfirm 
         visible={confirmVisible}

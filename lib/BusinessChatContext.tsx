@@ -5,6 +5,8 @@ import { SessionContext } from './SessionContext';
 export interface BusinessConversation {
   id: string;
   applicationId?: string;
+  jobTitle?: string;
+  jobId?: string;
   participant: {
     id: string;
     name: string;
@@ -61,6 +63,10 @@ export const BusinessChatProvider = ({ children }: { children: ReactNode }) => {
           id,
           candidate_id,
           application_id,
+          application:applications(
+            id,
+            job:jobs(id, title)
+          ),
           candidate:profiles!chat_rooms_candidate_id_fkey(id, full_name, avatar_url)
         `)
         .eq('company_id', session.user.id);
@@ -77,6 +83,14 @@ export const BusinessChatProvider = ({ children }: { children: ReactNode }) => {
 
         const profileData = room.candidate;
         const profile = Array.isArray(profileData) ? profileData[0] : profileData;
+        
+        // Handle nested application/job data
+        const appData: any = room.application;
+        const application = Array.isArray(appData) ? appData[0] : appData;
+        const job = application?.job;
+        const jobTitle = Array.isArray(job) ? job[0]?.title : job?.title;
+        const jobId = Array.isArray(job) ? job[0]?.id : job?.id;
+
         const lastMsg = messages && messages.length > 0 ? messages[messages.length - 1] : null;
 
         // Calcular mensajes no leídos (mensajes del candidato donde is_read es falso)
@@ -85,6 +99,8 @@ export const BusinessChatProvider = ({ children }: { children: ReactNode }) => {
         return {
           id: room.id,
           applicationId: room.application_id,
+          jobTitle: jobTitle || 'Ninguna vacante',
+          jobId: jobId,
           participant: {
             id: profile?.id || room.candidate_id,
             name: profile?.full_name || 'Candidato',

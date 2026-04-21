@@ -3,60 +3,65 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ObsidianHeader } from '../../../components/ObsidianHeader';
+import { ObsidianConfirm } from '../../../components/common/ObsidianConfirm';
+import { showToast } from '../../../components/common/ObsidianToast';
 import { supabase } from '../../../lib/supabase';
 
 export const JobProcessDetailScreen = ({ route, navigation }: any) => {
   const { job } = route.params;
   const [candidates, setCandidates] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [confirmVisible, setConfirmVisible] = React.useState(false);
+  const [confirmData, setConfirmData] = React.useState<any>(null);
 
-  const closeVacancy = async () => {
+  const closeVacancyActual = async () => {
     try {
-      Alert.alert(
-        'Confirmar Cierre',
-        '¿Estás seguro de cerrar esta vacante? Se notificará automáticamente a todos los candidatos en proceso que la posición ya no está disponible.',
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          { 
-            text: 'CERRAR VACANTE', 
-            style: 'destructive', 
-            onPress: async () => {
-              setLoading(true);
-              // 1. Cerrar el Job
-              await supabase.from('jobs').update({ status: 'closed' }).eq('id', job.id);
-              
-              // 2. Notificar a los candidatos
-              const companyName = job.company_name || 'La empresa';
-              for (const cand of candidates) {
-                const rejectionMsg = `Hola, ${companyName} ha cerrado el proceso para la vacante de ${job.title}. Agradecemos tu participación y te deseamos lo mejor en tus futuras búsquedas.`;
-                
-                // Buscar room
-                const { data: room } = await supabase
-                  .from('chat_rooms')
-                  .select('id')
-                  .eq('application_id', cand.id)
-                  .maybeSingle();
+      setConfirmVisible(false);
+      setLoading(true);
+      // 1. Cerrar el Job
+      await supabase.from('jobs').update({ status: 'closed' }).eq('id', job.id);
+      
+      // 2. Notificar a los candidatos
+      const companyName = job.company_name || 'La empresa';
+      for (const cand of candidates) {
+        const rejectionMsg = `Hola, ${companyName} ha cerrado el proceso para la vacante de ${job.title}. Agradecemos tu participación y te deseo lo mejor en tus futuras búsquedas.`;
+        
+        // Buscar room
+        const { data: room } = await supabase
+          .from('chat_rooms')
+          .select('id')
+          .eq('application_id', cand.id)
+          .maybeSingle();
 
-                if (room) {
-                  await supabase.from('messages').insert({
-                    room_id: room.id,
-                    content: rejectionMsg,
-                    sender_id: job.company_id,
-                    type: 'system',
-                    is_system: true
-                  });
-                }
-              }
+        if (room) {
+          await supabase.from('messages').insert({
+            room_id: room.id,
+            content: rejectionMsg,
+            sender_id: job.company_id,
+            type: 'system',
+            is_system: true
+          });
+        }
+      }
 
-              Alert.alert('Vacante Cerrada', 'Hemos cerrado el puesto y enviado las notificaciones correspondientes.');
-              navigation.goBack();
-            }
-          }
-        ]
-      );
+      showToast('Vacante cerrada correctamente');
+      navigation.goBack();
     } catch (err) {
       console.error('Error closing vacancy:', err);
+      showToast('Error al cerrar la vacante', 'error');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const closeVacancy = () => {
+    setConfirmData({
+      title: 'CERRAR VACANTE',
+      message: '¿Estás seguro de cerrar esta vacante? Se notificará automáticamente a todos los candidatos en proceso.',
+      onConfirm: closeVacancyActual,
+      type: 'danger'
+    });
+    setConfirmVisible(true);
   };
 
   const fetchCandidates = async () => {
@@ -151,6 +156,15 @@ export const JobProcessDetailScreen = ({ route, navigation }: any) => {
             }
           />
         )}
+
+        <ObsidianConfirm 
+          visible={confirmVisible}
+          title={confirmData?.title || ''}
+          message={confirmData?.message || ''}
+          onConfirm={confirmData?.onConfirm || (() => {})}
+          onCancel={() => setConfirmVisible(false)}
+          type={confirmData?.type}
+        />
       </SafeAreaView>
     </View>
   );
