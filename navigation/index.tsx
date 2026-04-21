@@ -11,10 +11,13 @@ import { MatchProvider } from '../lib/MatchContext';
 import { BusinessChatProvider } from '../lib/BusinessChatContext';
 import { BusinessProfileProvider } from '../lib/BusinessProfileContext';
 import { NotificationBanner } from '../components/common/NotificationBanner';
+import { ObsidianToast } from '../components/common/ObsidianToast';
+
+import { RestoreAccountScreen } from '../screens/auth/RestoreAccountScreen';
 
 const Stack = createNativeStackNavigator();
 
-export const RootNavigator = ({ session }: { session: Session | null }) => {
+export const RootNavigator = ({ session, isDeleted }: { session: Session | null, isDeleted?: boolean }) => {
   const role = session?.user?.user_metadata?.role || 'candidate';
 
   return (
@@ -22,6 +25,7 @@ export const RootNavigator = ({ session }: { session: Session | null }) => {
       <BusinessProfileProvider>
         <BusinessChatProvider>
           <NotificationBanner />
+          <ObsidianToast />
           <MatchProvider>
             <Stack.Navigator 
               screenOptions={{ 
@@ -38,6 +42,8 @@ export const RootNavigator = ({ session }: { session: Session | null }) => {
                   <Stack.Screen name="Login" component={LoginScreen} />
                   <Stack.Screen name="Register" component={RegisterScreen} />
                 </>
+              ) : isDeleted ? (
+                <Stack.Screen name="RestoreAccount" component={RestoreAccountScreen} />
               ) : (
                 <Stack.Screen name="Main">
                   {() => role === 'company' ? <BusinessTabNavigator /> : <MainTabNavigator />}

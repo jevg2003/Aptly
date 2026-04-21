@@ -1,11 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-
-export interface TeamMember {
-  id: string;
-  name: string;
-  role: string;
-  color: string;
-}
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from './supabase';
+import { SessionContext } from './SessionContext';
 
 export interface BusinessProfile {
   full_name: string;
@@ -13,13 +8,14 @@ export interface BusinessProfile {
   location: string;
   website: string;
   culture: string;
-  team: TeamMember[];
+  avatar_url?: string;
+  team?: any[]; // Keep for future use
 }
 
 interface BusinessProfileContextType {
   profile: BusinessProfile;
-  updateProfile: (updates: Partial<BusinessProfile>) => void;
-  updateTeamMember: (id: string, name: string) => void;
+  updateProfile: (updates: Partial<BusinessProfile>) => Promise<void>;
+  loading: boolean;
 }
 
 const INITIAL_PROFILE: BusinessProfile = {
@@ -27,33 +23,77 @@ const INITIAL_PROFILE: BusinessProfile = {
   category: 'Software & Tecnología',
   location: 'Ciudad de México, México',
   website: 'https://techflow.io',
-  culture: 'Somos una empresa impulsada por la innovación y la colaboración. Valoramos la transparencia, el aprendizaje continuo y el equilibrio vida-trabajo.',
-  team: [
-    { id: '1', name: 'Ana Garcia', role: 'Head of People', color: 'bg-slate-800' },
-    { id: '2', name: 'Carlos Ruiz', role: 'Tech Recruiter', color: 'bg-green-900' }
-  ]
+  culture: 'Somos una empresa impulsada por la innovación y la colaboración.',
+  team: []
 };
 
 const BusinessProfileContext = createContext<BusinessProfileContextType | undefined>(undefined);
 
 export const BusinessProfileProvider = ({ children }: { children: ReactNode }) => {
+  const session = useContext(SessionContext);
   const [profile, setProfile] = useState<BusinessProfile>(INITIAL_PROFILE);
+  const [loading, setLoading] = useState(true);
 
-  const updateProfile = (updates: Partial<BusinessProfile>) => {
+  useEffect(() => {
+    let mounted = true;
+    const fetchProfile = async () => {
+      if (!session?.user?.id) return;
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (error && error.code !== 'PGRST116') throw error;
+        
+        if (data && mounted) {
+           setProfile(prev => ({
+             ...prev,
+             full_name: data.full_name || '',
+             category: data.professional_title || '',
+             location: data.location || '',
+             website: data.resume_url || '', // Abusing resume_url for website
+             culture: data.bio || '',
+             avatar_url: data.avatar_url || '',
+             team: prev.team || []
+           }));
+        }
+      } catch (err) {
+        console.error('Error loading business profile:', err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    fetchProfile();
+    return () => { mounted = false; };
+  }, [session?.user?.id]);
+
+  const updateProfile = async (updates: Partial<BusinessProfile>) => {
     setProfile(prev => ({ ...prev, ...updates }));
-  };
+    
+    if (!session?.user?.id) return;
+    
+    // Map to DB columns
+    const dbUpdate: any = {};
+    if (updates.full_name !== undefined) dbUpdate.full_name = updates.full_name;
+    if (updates.category !== undefined) dbUpdate.professional_title = updates.category;
+    if (updates.location !== undefined) dbUpdate.location = updates.location;
+    if (updates.website !== undefined) dbUpdate.resume_url = updates.website;
+    if (updates.culture !== undefined) dbUpdate.bio = updates.culture;
+    if (updates.avatar_url !== undefined) dbUpdate.avatar_url = updates.avatar_url;
 
-  const updateTeamMember = (id: string, name: string) => {
-    setProfile(prev => ({
-      ...prev,
-      team: prev.team.map(member => 
-        member.id === id ? { ...member, name } : member
-      )
-    }));
+    const { error } = await supabase
+      .from('profiles')
+      .update(dbUpdate)
+      .eq('id', session.user.id);
+      
+    if (error) console.error('Failed to sync profile to DB:', error);
   };
 
   return (
-    <BusinessProfileContext.Provider value={{ profile, updateProfile, updateTeamMember }}>
+    <BusinessProfileContext.Provider value={{ profile, updateProfile, loading }}>
       {children}
     </BusinessProfileContext.Provider>
   );

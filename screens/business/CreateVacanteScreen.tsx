@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StatusBar, ScrollView, Alert, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, StatusBar, ScrollView, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { CustomInput } from '../../components/CustomInput';
@@ -7,6 +7,8 @@ import { CustomButton } from '../../components/CustomButton';
 import { supabase } from '../../lib/supabase';
 import { SessionContext } from '../../lib/SessionContext';
 import { ListInput } from '../../components/ListInput';
+import { showToast } from '../../components/common/ObsidianToast';
+import { ObsidianConfirm } from '../../components/common/ObsidianConfirm';
 
 export const CreateVacanteScreen = ({ route, navigation }: any) => {
   const { job } = route.params || {};
@@ -27,6 +29,10 @@ export const CreateVacanteScreen = ({ route, navigation }: any) => {
   // Tag suggestion states
   const [tagQuery, setTagQuery] = useState('');
   const [suggestedTags, setSuggestedTags] = useState<any[]>([]);
+
+  // Confirm state
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [confirmData, setConfirmData] = useState<any>(null);
 
   const fetchTagSuggestions = async (query: string) => {
     setTagQuery(query);
@@ -55,7 +61,7 @@ export const CreateVacanteScreen = ({ route, navigation }: any) => {
 
   const handleCreate = async () => {
     if (!title || !description || !salary || !location) {
-      Alert.alert('Datos incompletos', 'Por favor completa al menos los campos obligatorios (*)');
+      showToast('Por favor completa todos los campos obligatorios', 'error');
       return;
     }
 
@@ -87,7 +93,7 @@ export const CreateVacanteScreen = ({ route, navigation }: any) => {
           .eq('id', job.id);
 
         if (error) throw error;
-        Alert.alert('¡Actualizada! ✅', 'Los cambios se han guardado correctamente.');
+        showToast('¡Actualizada! Los cambios se han guardado.');
       } else {
         const { error } = await supabase.from('jobs').insert([
           {
@@ -99,14 +105,14 @@ export const CreateVacanteScreen = ({ route, navigation }: any) => {
         ]);
 
         if (error) throw error;
-        Alert.alert('¡Publicada! 🚀', 'La vacante está ahora disponible para postulaciones.');
+        showToast('¡Publicada! Tu vacante ya está activa.');
       }
       
       navigation.goBack();
       
     } catch (err: any) {
       console.error('Supabase Error:', err.message);
-      Alert.alert('Error', 'Hubo un problema al guardar la oferta: ' + err.message);
+      showToast('Error al guardar: ' + err.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -285,6 +291,15 @@ export const CreateVacanteScreen = ({ route, navigation }: any) => {
           />
         </ScrollView>
       </SafeAreaView>
+
+      <ObsidianConfirm 
+        visible={confirmVisible}
+        title={confirmData?.title || ''}
+        message={confirmData?.message || ''}
+        onConfirm={confirmData?.onConfirm || (() => {})}
+        onCancel={() => setConfirmVisible(false)}
+        type={confirmData?.type}
+      />
     </View>
   );
 };

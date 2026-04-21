@@ -25,6 +25,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useApp } from '../../lib/AppContext';
 import { ObsidianHeader } from '../../components/ObsidianHeader';
 import { ObsidianModal } from '../../components/ObsidianModal';
+import { handleAccountSoftDelete } from '../../lib/accountUtils';
 
 export const ProfileScreen = ({ navigation }: any) => {
   const session = React.useContext(SessionContext);
@@ -34,6 +35,7 @@ export const ProfileScreen = ({ navigation }: any) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [errorConfig, setErrorConfig] = useState({ visible: false, message: '' });
   const [uploadingImage, setUploadingImage] = useState(false);
   
@@ -46,6 +48,17 @@ export const ProfileScreen = ({ navigation }: any) => {
   const [newExp, setNewExp] = useState({ title: '', company: '', description: '' });
   const [savingExp, setSavingExp] = useState(false);
   const [uploadingResume, setUploadingResume] = useState(false);
+
+  const confirmDelete = async () => {
+    try {
+      setShowDeleteModal(false);
+      if (!session?.user?.id) return;
+      await handleAccountSoftDelete(session.user.id);
+      setCurrentScreen('login');
+    } catch (err: any) {
+      setErrorConfig({ visible: true, message: err.message || 'No se pudo eliminar la cuenta' });
+    }
+  };
 
   const handleImageUpload = async () => {
     if (!session?.user?.id) return;
@@ -393,8 +406,11 @@ export const ProfileScreen = ({ navigation }: any) => {
             <Text style={styles.logoutText}>Cerrar Sesión</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.deleteBtn}>
-            <Text style={styles.deleteText}>Eliminar Cuenta</Text>
+          <TouchableOpacity 
+            onPress={() => setShowDeleteModal(true)}
+            style={styles.deleteBtn}
+          >
+            <Text style={styles.deleteText}>Eliminar Cuenta Permanente</Text>
           </TouchableOpacity>
         </View>
 
@@ -411,6 +427,19 @@ export const ProfileScreen = ({ navigation }: any) => {
         confirmText="Cerrar Sesión"
         cancelText="Cancelar"
         onConfirm={confirmLogout}
+      />
+
+      {/* Delete Account Confirmation Modal */}
+      <ObsidianModal
+        isVisible={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Eliminar Cuenta"
+        message="Tu cuenta será desactivada y no será visible. Tienes 30 días para recuperarla antes de que tus datos sean eliminados permanentemente. ¿Continuar con la eliminación?"
+        iconName="alert-triangle"
+        type="destructive"
+        confirmText="Eliminar Cuenta"
+        cancelText="Cancelar"
+        onConfirm={confirmDelete}
       />
 
       {/* Error Modal */}
