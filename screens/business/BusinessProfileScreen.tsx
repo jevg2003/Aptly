@@ -137,7 +137,6 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
         <ObsidianHeader 
           title="Enterprise Profile" 
           subtitle="Corporate Center"
-          rightIcon="settings-outline"
         />
 
         <ScrollView 

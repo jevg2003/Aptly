@@ -1,17 +1,17 @@
 import React, { useState, useCallback } from 'react';
-import { 
-  View, 
-  Text, 
-  ScrollView, 
-  TouchableOpacity, 
-  Image, 
-  SafeAreaView, 
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Image,
   StatusBar,
   RefreshControl,
   StyleSheet,
   ActivityIndicator,
   TextInput
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as DocumentPicker from 'expo-document-picker';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { pickAndOptimizeImage } from '../../lib/imageUtils';
@@ -38,7 +38,7 @@ export const ProfileScreen = ({ navigation }: any) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [errorConfig, setErrorConfig] = useState({ visible: false, message: '' });
   const [uploadingImage, setUploadingImage] = useState(false);
-  
+
   // Real data state
   const [appCount, setAppCount] = useState(0);
   const [recentApps, setRecentApps] = useState<any[]>([]);
@@ -64,7 +64,7 @@ export const ProfileScreen = ({ navigation }: any) => {
     if (!session?.user?.id) return;
     try {
       setUploadingImage(true);
-      
+
       const localUri = await pickAndOptimizeImage();
       if (!localUri) return;
 
@@ -79,7 +79,7 @@ export const ProfileScreen = ({ navigation }: any) => {
       if (error) throw error;
 
       setProfile((prev: any) => ({ ...prev, avatar_url: publicUrl }));
-      
+
     } catch (err: any) {
       setErrorConfig({ visible: true, message: err.message || 'Hubo un problema actualizando tu foto de perfil.' });
     } finally {
@@ -104,7 +104,7 @@ export const ProfileScreen = ({ navigation }: any) => {
         .from('applications')
         .select('*', { count: 'exact', head: true })
         .eq('candidate_id', session.user.id);
-      
+
       if (!countErr) setAppCount(count || 0);
 
       // Fetch Recent Applications Preview
@@ -132,9 +132,9 @@ export const ProfileScreen = ({ navigation }: any) => {
             jobTitle: job?.title || 'Vacante',
             companyName: company?.full_name || 'Empresa',
             companyLogo: company?.avatar_url,
-            status: app.status === 'pending' ? 'Recibida' : 
-                    app.status === 'reviewed' ? 'En revisión' :
-                    app.status === 'accepted' ? 'Seleccionado' : 'Procesando'
+            status: app.status === 'pending' ? 'Recibida' :
+              app.status === 'reviewed' ? 'En revisión' :
+                app.status === 'accepted' ? 'Seleccionado' : 'Procesando'
           };
         });
         setRecentApps(mapped);
@@ -160,7 +160,7 @@ export const ProfileScreen = ({ navigation }: any) => {
 
   const handleResumeUpload = async () => {
     if (!session?.user?.id) return;
-    
+
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
@@ -171,9 +171,9 @@ export const ProfileScreen = ({ navigation }: any) => {
 
       setUploadingResume(true);
       const asset = result.assets[0];
-      
+
       const publicUrl = await uploadDocument(asset.uri, session.user.id, asset.name);
-      
+
       if (!publicUrl) throw new Error('No se pudo subir el archivo.');
 
       const { error } = await supabase
@@ -182,11 +182,11 @@ export const ProfileScreen = ({ navigation }: any) => {
         .eq('id', session.user.id);
 
       if (error) throw error;
-      
+
       // Update local state
       setProfile({ ...profile, resume_url: publicUrl });
       Alert.alert('Éxito', 'Tu CV se ha subido correctamente.');
-      
+
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Hubo un problema al subir tu CV.');
     } finally {
@@ -211,7 +211,7 @@ export const ProfileScreen = ({ navigation }: any) => {
       setErrorConfig({ visible: true, message: 'Por favor completa al menos el cargo y la empresa.' });
       return;
     }
-    
+
     setSavingExp(true);
     try {
       const { error } = await supabase
@@ -225,7 +225,7 @@ export const ProfileScreen = ({ navigation }: any) => {
         });
 
       if (error) throw error;
-      
+
       setNewExp({ title: '', company: '', description: '' });
       setIsAddingExp(false);
       fetchProfileData(); // Refresh list
@@ -249,14 +249,14 @@ export const ProfileScreen = ({ navigation }: any) => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#050505' }}>
       <StatusBar barStyle="light-content" />
-      
-      <ObsidianHeader 
-        title="Profile" 
+
+      <ObsidianHeader
+        title="Profile"
         subtitle="Professional Hub"
         rightIcon="settings-outline"
       />
 
-      <ScrollView 
+      <ScrollView
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -274,21 +274,21 @@ export const ProfileScreen = ({ navigation }: any) => {
               )}
             </View>
             <TouchableOpacity style={styles.cameraBtn} onPress={handleImageUpload} disabled={uploadingImage}>
-               {uploadingImage ? (
-                  <ActivityIndicator size="small" color="#050505" />
-               ) : (
-                  <MaterialCommunityIcons name="camera" size={16} color="white" />
-               )}
+              {uploadingImage ? (
+                <ActivityIndicator size="small" color="#050505" />
+              ) : (
+                <MaterialCommunityIcons name="camera" size={16} color="white" />
+              )}
             </TouchableOpacity>
           </View>
-          
+
           <Text style={styles.nameText}>
             {profile?.full_name || 'Sin nombre'}
           </Text>
           <Text style={styles.titleText}>
             {profile?.professional_title || 'Añadir título profesional'}
           </Text>
-          
+
           {profile?.location && (
             <View style={styles.locationRow}>
               <MaterialCommunityIcons name="map-marker-outline" size={14} color="#475569" />
@@ -296,7 +296,7 @@ export const ProfileScreen = ({ navigation }: any) => {
             </View>
           )}
 
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => navigation.navigate('EditProfile', { profile })}
             style={styles.editBtn}
           >
@@ -307,9 +307,9 @@ export const ProfileScreen = ({ navigation }: any) => {
 
         {/* Stats Row */}
         <View style={styles.statsRow}>
-            <StatCard label="Progreso" value={`${profileCompletePercent}%`} sublabel="Añadir experiencia" />
-            <StatCard label="Postulaciones" value={appCount} />
-            <StatCard label="Vistas" value="0" />
+          <StatCard label="Progreso" value={`${profileCompletePercent}%`} sublabel="Añadir experiencia" />
+          <StatCard label="Postulaciones" value={appCount} />
+          <StatCard label="Vistas" value="0" />
         </View>
 
         {/* Experience Section */}
@@ -325,13 +325,13 @@ export const ProfileScreen = ({ navigation }: any) => {
               </TouchableOpacity>
             </View>
           </View>
-          
+
           {experiences.length > 0 ? (
             experiences.map(exp => (
               <ExperienceItem key={exp.id} experience={exp} />
             ))
           ) : (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.emptyExperience}
               onPress={() => setIsAddingExp(true)}
             >
@@ -343,17 +343,17 @@ export const ProfileScreen = ({ navigation }: any) => {
 
         {/* Resume Section */}
         <View style={styles.section}>
-            {uploadingResume ? (
-              <View style={[styles.emptyExperience, { borderStyle: 'solid' }]}>
-                <ActivityIndicator color="#00A3FF" size="large" />
-                <Text style={[styles.emptyText, { marginTop: 15 }]}>Subiendo currículum...</Text>
-              </View>
-            ) : (
-              <ResumeSection 
-                resumeUrl={profile?.resume_url} 
-                onUpload={handleResumeUpload}
-              />
-            )}
+          {uploadingResume ? (
+            <View style={[styles.emptyExperience, { borderStyle: 'solid' }]}>
+              <ActivityIndicator color="#00A3FF" size="large" />
+              <Text style={[styles.emptyText, { marginTop: 15 }]}>Subiendo currículum...</Text>
+            </View>
+          ) : (
+            <ResumeSection
+              resumeUrl={profile?.resume_url}
+              onUpload={handleResumeUpload}
+            />
+          )}
         </View>
 
         {/* Recent Applications Section */}
@@ -367,8 +367,8 @@ export const ProfileScreen = ({ navigation }: any) => {
 
           {recentApps.length > 0 ? (
             recentApps.map(app => (
-              <TouchableOpacity 
-                key={app.id} 
+              <TouchableOpacity
+                key={app.id}
                 style={styles.miniAppCard}
                 onPress={() => navigation.navigate('Postulaciones')}
               >
@@ -390,23 +390,23 @@ export const ProfileScreen = ({ navigation }: any) => {
             ))
           ) : (
             <View style={styles.emptyRecentApps}>
-               <Feather name="layers" size={24} color="rgba(255,255,255,0.1)" />
-               <Text style={styles.emptyText}>Aún no te has postulado a ninguna vacante.</Text>
+              <Feather name="layers" size={24} color="rgba(255,255,255,0.1)" />
+              <Text style={styles.emptyText}>Aún no te has postulado a ninguna vacante.</Text>
             </View>
           )}
         </View>
 
         {/* Action Buttons */}
         <View style={styles.footerActions}>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={handleLogout}
             style={styles.logoutBtn}
           >
             <MaterialCommunityIcons name="logout" size={20} color="#FF3B30" />
             <Text style={styles.logoutText}>Cerrar Sesión</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             onPress={() => setShowDeleteModal(true)}
             style={styles.deleteBtn}
           >
@@ -466,33 +466,33 @@ export const ProfileScreen = ({ navigation }: any) => {
         loading={savingExp}
       >
         <View style={styles.modalForm}>
-           <Text style={styles.modalInputLabel}>1. Cargo o Posición</Text>
-           <TextInput 
-             style={styles.modalInput} 
-             placeholder="Ej: Senior UI Designer" 
-             placeholderTextColor="#475569"
-             value={newExp.title}
-             onChangeText={(val) => setNewExp({...newExp, title: val})}
-           />
+          <Text style={styles.modalInputLabel}>1. Cargo o Posición</Text>
+          <TextInput
+            style={styles.modalInput}
+            placeholder="Ej: Senior UI Designer"
+            placeholderTextColor="#475569"
+            value={newExp.title}
+            onChangeText={(val) => setNewExp({ ...newExp, title: val })}
+          />
 
-           <Text style={styles.modalInputLabel}>2. Empresa / Organización</Text>
-           <TextInput 
-             style={styles.modalInput} 
-             placeholder="Ej: Obsidian Tech" 
-             placeholderTextColor="#475569"
-             value={newExp.company}
-             onChangeText={(val) => setNewExp({...newExp, company: val})}
-           />
+          <Text style={styles.modalInputLabel}>2. Empresa / Organización</Text>
+          <TextInput
+            style={styles.modalInput}
+            placeholder="Ej: Obsidian Tech"
+            placeholderTextColor="#475569"
+            value={newExp.company}
+            onChangeText={(val) => setNewExp({ ...newExp, company: val })}
+          />
 
-           <Text style={styles.modalInputLabel}>3. Periodo o Descripción</Text>
-           <TextInput 
-             style={[styles.modalInput, { height: 80, textAlignVertical: 'top' }]} 
-             placeholder="Ej: 2021 - Actualidad. Liderando equipos..." 
-             placeholderTextColor="#475569"
-             multiline
-             value={newExp.description}
-             onChangeText={(val) => setNewExp({...newExp, description: val})}
-           />
+          <Text style={styles.modalInputLabel}>3. Periodo o Descripción</Text>
+          <TextInput
+            style={[styles.modalInput, { height: 80, textAlignVertical: 'top' }]}
+            placeholder="Ej: 2021 - Actualidad. Liderando equipos..."
+            placeholderTextColor="#475569"
+            multiline
+            value={newExp.description}
+            onChangeText={(val) => setNewExp({ ...newExp, description: val })}
+          />
         </View>
       </ObsidianModal>
     </SafeAreaView>
