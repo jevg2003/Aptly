@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, SafeAreaView, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { Application } from './mockData';
 import { TimelineStep } from '../../components/applications/TimelineStep';
@@ -33,22 +34,66 @@ export const ApplicationStatusScreen = ({ route, navigation }: any) => {
         .select('*')
         .eq('application_id', application.id);
 
-      // 3. Mapear al formato de TimelineStep
-      const steps = (jobStages || []).map((js: any, index: number) => {
-        const prog = progress?.find(p => p.stage_id === js.id);
-        const isCompleted = prog?.status === 'completed';
+      // Obtener el estado actual general de la postulación
+      const { data: appData } = await supabase
+        .from('applications')
+        .select('status, created_at')
+        .eq('id', application.id)
+        .single();
         
-        return {
-          id: js.id,
-          title: js.name,
-          description: isCompleted ? 'Completado con éxito' : 'Pendiente de realizar',
-          date: prog?.completed_at ? new Date(prog.completed_at).toLocaleDateString() : (index === 0 ? 'En curso' : 'Próximamente'),
-          status: isCompleted ? 'completed' : (progress?.filter(p => p.status === 'completed').length === index ? 'current' : 'upcoming'),
-          icon: js.action_type === 'chat' ? 'message-circle' : 'activity'
-        };
-      });
+      const dbStatus = appData?.status || 'pending';
 
-      setPipeline(steps);
+      // 3. Mapear al formato de TimelineStep
+      if (jobStages && jobStages.length > 0) {
+        const steps = jobStages.map((js: any, index: number) => {
+          const prog = progress?.find(p => p.stage_id === js.id);
+          const isCompleted = prog?.status === 'completed';
+          
+          return {
+            id: js.id,
+            title: js.name,
+            description: isCompleted ? 'Completado con éxito' : 'Pendiente de realizar',
+            date: prog?.completed_at ? new Date(prog.completed_at).toLocaleDateString() : (index === 0 ? 'En curso' : 'Próximamente'),
+            status: isCompleted ? 'completed' : (progress?.filter(p => p.status === 'completed').length === index ? 'in_progress' : 'pending'),
+            icon: js.action_type === 'chat' ? 'message-circle' : 'activity'
+          };
+        });
+        setPipeline(steps);
+      } else {
+        // Fallback: Generar timeline determinístico basado en 'status'
+        const isRejected = dbStatus === 'rejected';
+        const isAccepted = dbStatus === 'accepted';
+        
+        const fallbackSteps = [
+           {
+              id: '1',
+              title: 'Aplicación Enviada',
+              description: 'Tu perfil fue enviado a la empresa.',
+              status: 'completed'
+           },
+           {
+              id: '2',
+              title: 'En revisión',
+              description: 'El reclutador está evaluando tu perfil.',
+              status: dbStatus === 'pending' ? 'in_progress' : 'completed'
+           },
+           {
+              id: '3',
+              title: 'Proceso de Selección',
+              description: 'Fase de entrevistas y pruebas.',
+              status: (dbStatus === 'reviewed' || dbStatus === 'interview') ? 'in_progress' : (isAccepted || isRejected ? 'completed' : 'pending')
+           },
+           {
+              id: '4',
+              title: isRejected ? 'Aplicación Cerrada' : (isAccepted ? '¡Seleccionado!' : 'Decisión Final'),
+              description: isRejected ? 'El proceso ha finalizado para esta vacante.' : (isAccepted ? 'Felicidades, fuiste seleccionado.' : 'La empresa tomará una decisión pronto.'),
+              status: (isAccepted || isRejected) ? 'completed' : 'pending'
+           }
+        ];
+        
+        setPipeline(fallbackSteps);
+      }
+
     } catch (err) {
       console.error('Error fetching application progress:', err);
     } finally {

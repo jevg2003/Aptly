@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { View, Text, SafeAreaView, TouchableOpacity, KeyboardAvoidingView, Platform, FlatList, TextInput, Image } from 'react-native';
+import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, FlatList, TextInput, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { Conversation, Message } from './mockData';
 import { supabase } from '../../lib/supabase';
