@@ -259,7 +259,7 @@ export const LoginScreen = ({ navigation }: any) => {
               {/* Footer */}
               <View style={styles.footer}>
                 <Text style={styles.footerText}>¿Nuevo por aquí? </Text>
-                <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                <TouchableOpacity onPress={() => navigation.navigate('Register', { initialRole: localRole })}>
                   <Animated.Text style={[styles.linkText, animatedAccentStyle]}>Regístrate gratis</Animated.Text>
                 </TouchableOpacity>
               </View>
