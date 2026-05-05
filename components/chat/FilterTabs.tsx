@@ -1,14 +1,14 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 
-export type FilterParam = 'All' | 'Unread' | 'Archived';
+export type FilterParam = 'Todos' | 'No leídos' | 'Archivados';
 
 interface FilterTabsProps {
   activeFilter: FilterParam;
   onFilterChange: (filter: FilterParam) => void;
 }
 
-const filters: FilterParam[] = ['All', 'Unread', 'Archived'];
+const filters: FilterParam[] = ['Todos', 'No leídos', 'Archivados'];
 
 export const FilterTabs = ({ activeFilter, onFilterChange }: FilterTabsProps) => {
   return (

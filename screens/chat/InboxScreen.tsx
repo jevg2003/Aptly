@@ -16,7 +16,7 @@ import { ObsidianSwitcher } from '../../components/ObsidianSwitcher';
 export const InboxScreen = ({ navigation }: any) => {
   const session = React.useContext(SessionContext);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState<FilterParam>('All');
+  const [activeFilter, setActiveFilter] = useState<FilterParam>('Todos');
   const [refreshKey, setRefreshKey] = useState(0);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -107,8 +107,8 @@ export const InboxScreen = ({ navigation }: any) => {
 
   const filteredConversations = useMemo(() => {
     let result = conversations;
-    if (activeFilter === 'Unread') result = result.filter(c => c.unreadCount > 0);
-    else if (activeFilter === 'Archived') result = result.filter(c => c.isArchived);
+    if (activeFilter === 'No leídos') result = result.filter(c => c.unreadCount > 0);
+    else if (activeFilter === 'Archivados') result = result.filter(c => c.isArchived);
     else result = result.filter(c => !c.isArchived);
 
     if (searchQuery.trim()) {
@@ -138,7 +138,7 @@ export const InboxScreen = ({ navigation }: any) => {
       <SearchBar value={searchQuery} onChangeText={setSearchQuery} />
       
       <ObsidianSwitcher 
-        options={['All', 'Unread', 'Archived']}
+        options={['Todos', 'No leídos', 'Archivados']}
         activeOption={activeFilter}
         onOptionChange={(opt) => setActiveFilter(opt as FilterParam)}
       />
@@ -155,7 +155,7 @@ export const InboxScreen = ({ navigation }: any) => {
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 60 }}>
              <Feather name="message-circle" size={50} color="rgba(255,255,255,0.1)" />
              <Text style={{ color: '#475569', marginTop: 15, textAlign: 'center', paddingHorizontal: 40 }}>
-               {searchQuery ? "No conversations found." : "You don't have any messages yet."}
+               {searchQuery ? "No se encontraron conversaciones." : "Aún no tienes ningún mensaje."}
              </Text>
           </View>
         }
