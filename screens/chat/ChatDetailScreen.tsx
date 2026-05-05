@@ -1,10 +1,14 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, FlatList, TextInput, Image } from 'react-native';
+import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, FlatList, TextInput, Image, Modal, Pressable, Linking, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { Conversation, Message } from './mockData';
 import { supabase } from '../../lib/supabase';
 import { SessionContext } from '../../lib/SessionContext';
+import { uploadAvatar, uploadDocument } from '../../lib/storageUtils';
 
 export const ChatDetailScreen = ({ route, navigation }: any) => {
   const { roomId, oppositeUserId, participant } = route.params;
@@ -13,38 +17,54 @@ export const ChatDetailScreen = ({ route, navigation }: any) => {
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
+  const [isAttachmentMenuVisible, setAttachmentMenuVisible] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
-  // Fetch initial messages and set up subscription
   useEffect(() => {
     if (!roomId || !currentUserId) return;
 
-    // 1. Fetch histórico
     const fetchMessages = async () => {
        const { data, error } = await supabase
          .from('messages')
          .select('*')
          .eq('room_id', roomId)
-         .order('created_at', { ascending: true }); // older first for chat view
+         .order('created_at', { ascending: true });
          
        if (!error && data) {
-          const mapped: Message[] = data.map(m => ({
-             id: m.id,
-             senderId: m.sender_id,
-             text: m.content || '',
-             timestamp: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-             type: 'text'
-          }));
+          const mapped: Message[] = data.map(m => {
+             const content = m.content || '';
+             let type: any = 'text';
+             let mediaUrl = undefined;
+             let text = content;
+             
+             if (content.startsWith('[IMAGE]')) {
+               type = 'image';
+               mediaUrl = content.replace('[IMAGE]', '');
+               text = 'Imagen adjunta';
+             } else if (content.startsWith('[DOCUMENT]')) {
+               type = 'file';
+               mediaUrl = content.replace('[DOCUMENT]', '');
+               text = 'Documento adjunto';
+             }
+
+             return {
+               id: m.id,
+               senderId: m.sender_id,
+               text,
+               mediaUrl,
+               timestamp: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+               type
+             };
+          });
           setMessages(mapped);
           
-          // Mark as read
           await supabase.from('messages').update({ is_read: true }).eq('room_id', roomId).neq('sender_id', currentUserId);
        }
     };
     
     fetchMessages();
 
-    // 2. Suscripción en Tiempo Real
     const channel = supabase
       .channel(`room_${roomId}`)
       .on(
@@ -52,17 +72,29 @@ export const ChatDetailScreen = ({ route, navigation }: any) => {
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` },
         (payload) => {
           const newMsg = payload.new;
-          // Avoid duplicating if we sent it
+          const content = newMsg.content || '';
+          let type: any = 'text';
+          let mediaUrl = undefined;
+          let text = content;
+          if (content.startsWith('[IMAGE]')) {
+            type = 'image';
+            mediaUrl = content.replace('[IMAGE]', '');
+            text = 'Imagen adjunta';
+          } else if (content.startsWith('[DOCUMENT]')) {
+            type = 'file';
+            mediaUrl = content.replace('[DOCUMENT]', '');
+            text = 'Documento adjunto';
+          }
+
           setMessages(prev => {
-             // Basic deduplication if id matches
              if (prev.find(m => m.id === newMsg.id)) return prev;
-             
              return [...prev, {
                 id: newMsg.id,
                 senderId: newMsg.sender_id,
-                text: newMsg.content || '',
+                text,
+                mediaUrl,
                 timestamp: new Date(newMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                type: 'text'
+                type
              }];
           });
           
@@ -97,6 +129,90 @@ export const ChatDetailScreen = ({ route, navigation }: any) => {
     } catch (e) { console.error('Send error:', e); }
   };
 
+  const handleAttachImage = async (useCamera: boolean) => {
+    try {
+      if (useCamera) {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          alert('Necesitamos acceso a tu cámara para tomar fotos.');
+          return;
+        }
+      } else {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          alert('Necesitamos acceso a tu galería para seleccionar fotos.');
+          return;
+        }
+      }
+
+      const result = useCamera 
+        ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 1 })
+        : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
+      
+      setAttachmentMenuVisible(false);
+      
+      if (!result.canceled && currentUserId) {
+         setIsUploading(true);
+         try {
+           const uri = result.assets[0].uri;
+           const manipResult = await ImageManipulator.manipulateAsync(
+             uri,
+             [{ resize: { width: 800 } }],
+             { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+           );
+
+           const uploadedUrl = await uploadAvatar(manipResult.uri, currentUserId);
+           
+           if (uploadedUrl) {
+             await supabase.from('messages').insert({
+                room_id: roomId,
+                sender_id: currentUserId,
+                content: `[IMAGE]${uploadedUrl}`,
+                is_read: false
+             });
+           }
+         } catch (error) {
+           console.error('Error uploading image:', error);
+         } finally {
+           setIsUploading(false);
+         }
+      }
+    } catch (e) {
+      console.error('Error al seleccionar imagen', e);
+      setAttachmentMenuVisible(false);
+    }
+  };
+
+  const handleAttachDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({ type: 'application/pdf' });
+      setAttachmentMenuVisible(false);
+      
+      if (!result.canceled && currentUserId) {
+         setIsUploading(true);
+         try {
+           const asset = result.assets[0];
+           const uploadedUrl = await uploadDocument(asset.uri, currentUserId, asset.name);
+           if (uploadedUrl) {
+             await supabase.from('messages').insert({
+                room_id: roomId,
+                sender_id: currentUserId,
+                content: `[DOCUMENT]${uploadedUrl}`,
+                is_read: false
+             });
+           }
+         } catch (error) {
+           console.error('Error uploading document:', error);
+         } finally {
+           setIsUploading(false);
+         }
+      }
+    } catch (e) {
+      console.error('Error al seleccionar documento', e);
+      setAttachmentMenuVisible(false);
+    }
+  };
+
   const renderMessage = ({ item, index }: { item: Message, index: number }) => {
     const isMe = item.senderId === currentUserId;
     const showAvatar = !isMe && (index === messages.length - 1 || messages[index + 1]?.senderId === currentUserId);
@@ -122,6 +238,20 @@ export const ChatDetailScreen = ({ route, navigation }: any) => {
               {item.text}
             </Text>
           )}
+
+          {item.type === 'image' && item.mediaUrl && (
+            <View>
+              <Image source={{ uri: item.mediaUrl }} className="w-48 h-48 rounded-lg mb-1" resizeMode="cover" />
+              <Text className={`text-[12px] italic ${isMe ? 'text-white/80' : 'text-slate-400'}`}>Foto</Text>
+            </View>
+          )}
+
+          {item.type === 'file' && item.mediaUrl && (
+            <TouchableOpacity className="flex-row items-center bg-black/20 p-2 rounded-lg" onPress={() => Linking.openURL(item.mediaUrl!)}>
+               <Feather name="file-text" size={24} color={isMe ? 'white' : '#f97316'} className="mr-2" />
+               <Text className={`text-sm shrink font-bold ${isMe ? 'text-white' : 'text-slate-200'}`} numberOfLines={1}>Ver Documento (PDF)</Text>
+            </TouchableOpacity>
+          )}
           
           {item.type === 'map' && item.mapData && (
              <View className="w-64 rounded-xl overflow-hidden bg-[#1a1a1c] border border-white/10">
@@ -146,7 +276,11 @@ export const ChatDetailScreen = ({ route, navigation }: any) => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#050505]">
+    <SafeAreaView className="flex-1 bg-[#050505]" edges={['top', 'left', 'right']}>
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
       {/* Header */}
       <View className="flex-row items-center px-4 py-3 bg-[#050505] border-b border-white/5">
         <TouchableOpacity onPress={() => navigation.goBack()} className="mr-4 p-1">
@@ -194,12 +328,8 @@ export const ChatDetailScreen = ({ route, navigation }: any) => {
       />
 
       {/* Input area */}
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-      >
         <View className="flex-row items-center bg-[#050505] px-4 py-4 border-t border-white/5">
-           <TouchableOpacity className="p-2">
+           <TouchableOpacity className="p-2" onPress={() => setAttachmentMenuVisible(true)}>
               <Feather name="plus-circle" size={24} color="#64748b" />
            </TouchableOpacity>
            
@@ -217,15 +347,61 @@ export const ChatDetailScreen = ({ route, navigation }: any) => {
               </TouchableOpacity>
            </View>
            
-           <TouchableOpacity 
-             className={`w-11 h-11 rounded-full items-center justify-center ${inputText.trim() ? 'bg-[#00A3FF]' : 'bg-[#121214]'}`}
-             onPress={sendMessage}
-             disabled={!inputText.trim()}
-           >
-              <Feather name="send" size={18} color={inputText.trim() ? "white" : "#475569"} className="mr-0.5 mt-0.5" />
-           </TouchableOpacity>
-        </View>
+           {isUploading ? (
+              <View className="w-11 h-11 items-center justify-center">
+                 <ActivityIndicator size="small" color="#00A3FF" />
+              </View>
+           ) : (
+             <TouchableOpacity 
+               className={`w-11 h-11 rounded-full items-center justify-center ${inputText.trim() ? 'bg-[#00A3FF]' : 'bg-[#121214]'}`}
+               onPress={sendMessage}
+               disabled={!inputText.trim()}
+             >
+                <Feather name="send" size={18} color={inputText.trim() ? "white" : "#475569"} className="mr-0.5 mt-0.5" />
+             </TouchableOpacity>
+           )}
+         </View>
       </KeyboardAvoidingView>
+
+      {/* Attachment Modal */}
+      <Modal
+        visible={isAttachmentMenuVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAttachmentMenuVisible(false)}
+      >
+        <Pressable 
+          className="flex-1 bg-black/60 justify-end"
+          onPress={() => setAttachmentMenuVisible(false)}
+        >
+          <TouchableOpacity activeOpacity={1} className="bg-[#121214] border-t border-white/10 rounded-t-3xl p-6 pb-10">
+            <Text className="text-white text-lg font-bold mb-6 text-center">Adjuntar archivo</Text>
+            
+            <View className="flex-row justify-around">
+               <TouchableOpacity className="items-center" onPress={() => handleAttachImage(true)}>
+                  <View className="w-14 h-14 rounded-full bg-[#00A3FF]/20 items-center justify-center mb-2">
+                     <Feather name="camera" size={24} color="#00A3FF" />
+                  </View>
+                  <Text className="text-slate-300 text-xs">Cámara</Text>
+               </TouchableOpacity>
+               
+               <TouchableOpacity className="items-center" onPress={() => handleAttachImage(false)}>
+                  <View className="w-14 h-14 rounded-full bg-purple-500/20 items-center justify-center mb-2">
+                     <Feather name="image" size={24} color="#a855f7" />
+                  </View>
+                  <Text className="text-slate-300 text-xs">Fototeca</Text>
+               </TouchableOpacity>
+               
+               <TouchableOpacity className="items-center" onPress={() => handleAttachDocument()}>
+                  <View className="w-14 h-14 rounded-full bg-orange-500/20 items-center justify-center mb-2">
+                     <Feather name="file-text" size={24} color="#f97316" />
+                  </View>
+                  <Text className="text-slate-300 text-xs">Archivo</Text>
+               </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 };

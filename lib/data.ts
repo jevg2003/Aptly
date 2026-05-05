@@ -18,12 +18,13 @@ export interface Company extends BaseUser {
 }
 
 // 2. Types for Messaging
-export type MessageType = 'text' | 'map' | 'file';
+export type MessageType = 'text' | 'map' | 'file' | 'image';
 
 export interface MessageData {
   id: string;
   senderId: string;
   text?: string;
+  mediaUrl?: string;
   timestamp: string;
   type: MessageType;
   mapData?: {
