@@ -57,6 +57,9 @@ export const RegisterScreen = ({ navigation, route }: any) => {
   const [legalRepresentative, setLegalRepresentative] = useState('');
   const [creationDate, setCreationDate] = useState('');
   const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
+  const [businessArea, setBusinessArea] = useState('');
+  const [customSector, setCustomSector] = useState('');
+  const [isOtherSector, setIsOtherSector] = useState(false);
   const [companyStep, setCompanyStep] = useState(1);
   
   const [candidateStep, setCandidateStep] = useState(1);
@@ -178,7 +181,8 @@ export const RegisterScreen = ({ navigation, route }: any) => {
   });
 
   const handleRegister = async () => {
-    const isCompanyIncomplete = localRole === 'company' && (!companyName || !taxId || !legalRepresentative || !creationDate || selectedSectors.length === 0);
+    const finalSector = isOtherSector ? customSector : selectedSectors[0];
+    const isCompanyIncomplete = localRole === 'company' && (!companyName || !taxId || !creationDate || !businessArea || !finalSector);
     const isCandidateIncomplete = localRole === 'candidate' && (!fullName || !birthDate || !profession || candidateSectors.length === 0);
 
     if (!email || !password || isCompanyIncomplete || isCandidateIncomplete) {
@@ -215,7 +219,8 @@ export const RegisterScreen = ({ navigation, route }: any) => {
           tax_id: taxId,
           legal_representative: legalRepresentative,
           creation_date: creationDate,
-          industry: selectedSectors.join(', '),
+          business_area: businessArea,
+          industry: finalSector,
           avatar_url: avatarUrl
         } : { 
           full_name: fullName,
@@ -250,7 +255,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
     }
   };
 
-  const totalSteps = localRole === 'company' ? 4 : 3;
+  const totalSteps = localRole === 'company' ? 6 : 3;
   const currentStep = localRole === 'company' ? companyStep : candidateStep;
   const accentColor = localRole === 'company' ? COLORS.company : COLORS.candidate;
 
@@ -262,15 +267,24 @@ export const RegisterScreen = ({ navigation, route }: any) => {
     setShowDatePicker(false);
     if (localRole === 'company') {
       if (companyStep === 1) {
-        if (!companyName || !taxId) return showAlert('Por favor, ingresa el nombre de la empresa y NIT.');
+        if (!email) return showAlert('Por favor, ingresa tu correo.');
         setCompanyStep(2);
       } else if (companyStep === 2) {
-        if (!legalRepresentative || !creationDate) return showAlert('Por favor, ingresa el representante y la fecha.');
+        if (!password || password !== confirmPassword) return showAlert('Verifica tu contraseña.');
         setCompanyStep(3);
       } else if (companyStep === 3) {
-        if (selectedSectors.length === 0) return showAlert('Selecciona al menos un sector.');
+        if (!companyName) return showAlert('Por favor, ingresa el nombre de la empresa.');
         setCompanyStep(4);
+      } else if (companyStep === 4) {
+        if (!taxId || !creationDate) return showAlert('Por favor, ingresa NIT y año de creación.');
+        setCompanyStep(5);
+      } else if (companyStep === 5) {
+        if (!businessArea) return showAlert('Selecciona el área de la empresa.');
+        setCompanyStep(6);
       } else {
+        const finalSector = isOtherSector ? customSector : selectedSectors[0];
+        if (!finalSector) return showAlert('Selecciona o escribe un sector.');
+        if (isOtherSector) supabase.from('business_sectors').insert({ name: finalSector }).then();
         handleRegister();
       }
     } else {
@@ -395,10 +409,45 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                 {localRole === 'company' && (
                   <>
                     {companyStep === 1 && (
-                      <View style={styles.stepContainer}>
-                        <Text style={styles.questionTitle}>¡Hagamos crecer tu equipo! ¿Cuál es el nombre de tu empresa y el NIT?</Text>
+                      <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
+                        <Text style={styles.questionTitle}>Crea tu cuenta empresarial</Text>
+                        <Text style={styles.questionSubtitle}>Ingresa con tu correo u opciones sociales.</Text>
                         
-                        <View style={{ alignItems: 'center', marginBottom: 20 }}>
+                        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+                           <TouchableOpacity style={styles.socialBtn} onPress={() => showAlert('Autenticación con Google próximamente')}>
+                              <Image source={{ uri: 'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png' }} style={{ width: 18, height: 18, marginRight: 8 }} />
+                              <Text style={styles.socialText}>Google</Text>
+                           </TouchableOpacity>
+                           <TouchableOpacity style={styles.socialBtn} onPress={() => showAlert('Autenticación con GitHub próximamente')}>
+                              <MaterialCommunityIcons name="github" size={20} color="white" />
+                              <Text style={styles.socialText}>GitHub</Text>
+                           </TouchableOpacity>
+                        </View>
+                        
+                        <View style={styles.divider}>
+                           <View style={styles.dividerLine} />
+                           <Text style={styles.dividerText}>o con tu correo electrónico</Text>
+                           <View style={styles.dividerLine} />
+                        </View>
+
+                        <CustomInput placeholder="Correo institucional" value={email} onChangeText={setEmail} iconName="email-outline" />
+                      </View>
+                    )}
+
+                    {companyStep === 2 && (
+                      <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
+                        <Text style={styles.questionTitle}>Seguridad de la cuenta</Text>
+                        <Text style={styles.questionSubtitle}>Crea una contraseña segura para tu empresa.</Text>
+                        <CustomInput placeholder="Contraseña segura" value={password} onChangeText={setPassword} iconName="lock-outline" isPassword />
+                        <CustomInput placeholder="Confirmar contraseña" value={confirmPassword} onChangeText={setConfirmPassword} iconName="lock-check-outline" isPassword />
+                      </View>
+                    )}
+
+                    {companyStep === 3 && (
+                      <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
+                        <Text style={styles.questionTitle}>¡Hagamos crecer tu equipo! ¿Cuál es el nombre de tu empresa?</Text>
+                        
+                        <View style={{ alignItems: 'center', marginBottom: 20, marginTop: 20 }}>
                           <TouchableOpacity onPress={pickImage} style={[styles.avatarPicker, { borderColor: COLORS.company, backgroundColor: 'rgba(255,0,92,0.05)' }]}>
                             {avatarUrl ? (
                               <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
@@ -412,14 +461,15 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                         </View>
 
                         <CustomInput placeholder="Nombre de la empresa / Razón Social" value={companyName} onChangeText={setCompanyName} iconName="office-building" />
-                        <CustomInput placeholder="NIT / ID Fiscal" value={taxId} onChangeText={setTaxId} iconName="card-account-details-outline" />
                       </View>
                     )}
 
-                    {companyStep === 2 && (
-                      <View style={styles.stepContainer}>
-                        <Text style={styles.questionTitle}>¿Quién representa legalmente a la empresa y cuándo se creó?</Text>
-                        <CustomInput placeholder="Nombre del Representante Legal" value={legalRepresentative} onChangeText={setLegalRepresentative} iconName="account-tie" />
+                    {companyStep === 4 && (
+                      <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
+                        <Text style={styles.questionTitle}>Identidad corporativa</Text>
+                        <Text style={styles.questionSubtitle}>Ingresa el ID fiscal y el año en que se fundó la empresa.</Text>
+                        
+                        <CustomInput placeholder="NIT / ID Fiscal" value={taxId} onChangeText={setTaxId} iconName="card-account-details-outline" />
                         
                         <TouchableOpacity 
                           activeOpacity={0.8} 
@@ -428,27 +478,53 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                         >
                           <MaterialCommunityIcons name="calendar" size={20} color={creationDate ? COLORS.company : "#64748b"} />
                           <Text style={[styles.dateText, !creationDate && styles.datePlaceholder]}>
-                            {creationDate || 'Fecha de Creación (DD/MM/AAAA)'}
+                            {creationDate || 'Fecha de creación (DD/MM/AAAA)'}
                           </Text>
                         </TouchableOpacity>
                       </View>
                     )}
 
-                    {companyStep === 3 && (
-                      <View style={styles.stepContainer}>
-                        <Text style={styles.questionTitle}>¿En qué sector o industria opera tu empresa?</Text>
+                    {companyStep === 5 && (
+                      <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
+                        <Text style={styles.questionTitle}>¿En qué área opera la empresa?</Text>
+                        <Text style={styles.questionSubtitle}>Selecciona el área principal de negocio.</Text>
+                        <View style={{ gap: 12, marginTop: 10 }}>
+                          {['Industrial', 'Servicio', 'Comercial'].map(area => (
+                            <TouchableOpacity 
+                               key={area}
+                               style={[styles.areaCard, businessArea === area && styles.areaCardActive]}
+                               onPress={() => setBusinessArea(area)}
+                            >
+                               <View style={styles.radioCircle}>
+                                  {businessArea === area && <View style={styles.radioInner} />}
+                               </View>
+                               <Text style={[styles.areaText, businessArea === area && styles.areaTextActive]}>{area}</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      </View>
+                    )}
+
+                    {companyStep === 6 && (
+                      <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
+                        <Text style={styles.questionTitle}>¿Qué sector destaca más?</Text>
+                        <Text style={styles.questionSubtitle}>Elige un sector o añade el tuyo.</Text>
                         <View style={styles.sectorsContainer}>
-                          <Text style={styles.sectorsLabel}>Puedes elegir una o varias opciones:</Text>
                           <View style={styles.sectorsGrid}>
-                            {SECTORS.map(sector => {
-                              const isSelected = selectedSectors.includes(sector);
+                            {['Tecnología', 'Salud', 'Finanzas', 'Construcción', 'Comercio', 'Supermercados', 'Restaurantes', 'Firma de Abogados', 'Educación', 'Otro'].map(sector => {
+                              const isSelected = selectedSectors.includes(sector) || (sector === 'Otro' && isOtherSector);
                               return (
                                 <TouchableOpacity 
                                   key={sector}
                                   style={[styles.sectorTag, isSelected && styles.sectorTagActive]}
                                   onPress={() => {
-                                    if (isSelected) setSelectedSectors(prev => prev.filter(s => s !== sector));
-                                    else setSelectedSectors(prev => [...prev, sector]);
+                                    if (sector === 'Otro') {
+                                      setIsOtherSector(true);
+                                      setSelectedSectors([]);
+                                    } else {
+                                      setIsOtherSector(false);
+                                      setSelectedSectors([sector]);
+                                    }
                                   }}
                                 >
                                   <Text style={[styles.sectorTagText, isSelected && styles.sectorTagTextActive]}>{sector}</Text>
@@ -456,17 +532,13 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                               );
                             })}
                           </View>
-                        </View>
-                      </View>
-                    )}
 
-                    {companyStep === 4 && (
-                      <View style={styles.stepContainer}>
-                        <Text style={styles.questionTitle}>Por último, crea tus credenciales empresariales</Text>
-                        <Text style={styles.questionSubtitle}>Con estos datos gestionarás tu perfil y vacantes.</Text>
-                        <CustomInput placeholder="Correo institucional" value={email} onChangeText={setEmail} iconName="email-outline" />
-                        <CustomInput placeholder="Contraseña segura" value={password} onChangeText={setPassword} iconName="lock-outline" isPassword />
-                        <CustomInput placeholder="Confirmar contraseña" value={confirmPassword} onChangeText={setConfirmPassword} iconName="lock-check-outline" isPassword />
+                          {isOtherSector && (
+                            <View style={{ marginTop: 20 }}>
+                               <CustomInput placeholder="Escribe tu sector" value={customSector} onChangeText={setCustomSector} iconName="pencil" />
+                            </View>
+                          )}
+                        </View>
                       </View>
                     )}
                   </>
@@ -624,4 +696,15 @@ const styles = StyleSheet.create({
   datePlaceholder: { color: '#64748b' },
   iosDatePickerContainer: { position: 'absolute', bottom: 0, width: '100%', backgroundColor: COLORS.card, zIndex: 999, paddingBottom: 30, borderTopLeftRadius: 24, borderTopRightRadius: 24, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.5, shadowRadius: 10, elevation: 10 },
   iosDatePickerHeader: { flexDirection: 'row', justifyContent: 'flex-end', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  socialBtn: { flex: 1, flexDirection: 'row', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.05)', height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center' },
+  socialText: { color: 'white', fontWeight: 'bold', marginLeft: 8 },
+  divider: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.1)' },
+  dividerText: { color: COLORS.textSecondary, paddingHorizontal: 10, fontSize: 12 },
+  areaCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border },
+  areaCardActive: { borderColor: COLORS.company, backgroundColor: 'rgba(255,0,92,0.1)' },
+  radioCircle: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: COLORS.textSecondary, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.company },
+  areaText: { color: COLORS.textSecondary, fontSize: 16, fontWeight: '600' },
+  areaTextActive: { color: 'white', fontWeight: '800' },
 });
