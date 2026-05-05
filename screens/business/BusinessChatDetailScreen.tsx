@@ -18,6 +18,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { 
   useSharedValue, 
@@ -46,6 +48,7 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
   const [confirmData, setConfirmData] = useState<any>(null);
   const [resumeVisible, setResumeVisible] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [isAttachmentMenuVisible, setAttachmentMenuVisible] = useState(false);
   const [menuData, setMenuData] = useState<{ message: any, x: number, y: number } | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
@@ -94,14 +97,59 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
     }
   };
 
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.7,
-    });
+  const handleAttachImage = async (useCamera: boolean) => {
+    try {
+      if (useCamera) {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          alert('Necesitamos acceso a tu cámara para tomar fotos.');
+          return;
+        }
+      } else {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          alert('Necesitamos acceso a tu galería para seleccionar fotos.');
+          return;
+        }
+      }
 
-    if (!result.canceled) {
-      uploadFile(result.assets[0].uri, 'image');
+      const result = useCamera 
+        ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 1 })
+        : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
+      
+      setAttachmentMenuVisible(false);
+      
+      if (!result.canceled) {
+         try {
+           const uri = result.assets[0].uri;
+           const manipResult = await ImageManipulator.manipulateAsync(
+             uri,
+             [{ resize: { width: 800 } }],
+             { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+           );
+           await uploadFile(manipResult.uri, 'image');
+         } catch (error) {
+           console.error('Error procesando imagen:', error);
+         }
+      }
+    } catch (e) {
+      console.error('Error al seleccionar imagen', e);
+      setAttachmentMenuVisible(false);
+    }
+  };
+
+  const handleAttachDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({ type: 'application/pdf' });
+      setAttachmentMenuVisible(false);
+      
+      if (!result.canceled) {
+         const asset = result.assets[0];
+         await uploadFile(asset.uri, 'file', asset.name);
+      }
+    } catch (e) {
+      console.error('Error al seleccionar documento', e);
+      setAttachmentMenuVisible(false);
     }
   };
 
@@ -337,8 +385,7 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
               <View style={styles.footer}>
                 <View style={styles.inputContainer}>
                   <TouchableOpacity style={styles.attachmentBtn} onPress={() => {
-                    // Simplified for brevity, could use a custom bottom sheet
-                    pickImage();
+                    setAttachmentMenuVisible(true);
                   }}>
                     <Ionicons name="add" size={24} color="#FF005C" />
                   </TouchableOpacity>
@@ -454,6 +501,59 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
               conversationId={conversation.id}
             />
           )}
+
+          {/* Attachment Modal */}
+          <Modal
+            visible={isAttachmentMenuVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setAttachmentMenuVisible(false)}
+          >
+            <TouchableOpacity 
+              style={styles.menuOverlay}
+              activeOpacity={1}
+              onPress={() => setAttachmentMenuVisible(false)}
+            >
+              <TouchableOpacity activeOpacity={1} style={{
+                 backgroundColor: '#121214',
+                 borderTopWidth: 1,
+                 borderTopColor: 'rgba(255,255,255,0.1)',
+                 borderTopLeftRadius: 24,
+                 borderTopRightRadius: 24,
+                 padding: 24,
+                 paddingBottom: 40,
+                 position: 'absolute',
+                 bottom: 0,
+                 left: 0,
+                 right: 0
+              }}>
+                <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold', marginBottom: 24, textAlign: 'center' }}>Adjuntar archivo</Text>
+                
+                <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+                   <TouchableOpacity style={{ alignItems: 'center' }} onPress={() => handleAttachImage(true)}>
+                      <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(0,163,255,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+                         <Feather name="camera" size={24} color="#00A3FF" />
+                      </View>
+                      <Text style={{ color: '#cbd5e1', fontSize: 12 }}>Cámara</Text>
+                   </TouchableOpacity>
+                   
+                   <TouchableOpacity style={{ alignItems: 'center' }} onPress={() => handleAttachImage(false)}>
+                      <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(168,85,247,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+                         <Feather name="image" size={24} color="#a855f7" />
+                      </View>
+                      <Text style={{ color: '#cbd5e1', fontSize: 12 }}>Fototeca</Text>
+                   </TouchableOpacity>
+                   
+                   <TouchableOpacity style={{ alignItems: 'center' }} onPress={() => handleAttachDocument()}>
+                      <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(249,115,22,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+                         <Feather name="file-text" size={24} color="#f97316" />
+                      </View>
+                      <Text style={{ color: '#cbd5e1', fontSize: 12 }}>Archivo</Text>
+                   </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </Modal>
         </SafeAreaView>
       </View>
     </GestureHandlerRootView>
