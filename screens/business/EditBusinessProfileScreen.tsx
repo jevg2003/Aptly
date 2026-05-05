@@ -13,7 +13,7 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MaterialCommunityIcons, Ionicons, Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useBusinessProfile } from '../../lib/BusinessProfileContext';
 import { SessionContext } from '../../lib/SessionContext';
 import { pickAndOptimizeImage } from '../../lib/imageUtils';
@@ -211,7 +211,7 @@ export const EditBusinessProfileScreen = ({ navigation }: any) => {
                        <Text className="text-slate-400 text-xs font-medium">{member.role}</Text>
                     </View>
                     <TouchableOpacity 
-                      onPress={() => handleEditTeamName(member.id, member.name)}
+                      onPress={() => console.log('Edit team member:', member.id)}
                       className="bg-[#1a1a1c] border border-[#333] px-4 py-2 rounded-xl"
                     >
                        <Text className="text-[#FF005C] font-bold text-xs flex-row">Editar</Text>

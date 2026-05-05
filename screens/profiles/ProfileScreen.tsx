@@ -9,7 +9,8 @@ import {
   RefreshControl,
   StyleSheet,
   ActivityIndicator,
-  TextInput
+  TextInput,
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as DocumentPicker from 'expo-document-picker';
@@ -472,7 +473,7 @@ export const ProfileScreen = ({ navigation }: any) => {
             placeholder="Ej: Senior UI Designer"
             placeholderTextColor="#475569"
             value={newExp.title}
-            onChangeText={(val) => setNewExp({ ...newExp, title: val })}
+            onChangeText={(val: string) => setNewExp({ ...newExp, title: val })}
           />
 
           <Text style={styles.modalInputLabel}>2. Empresa / Organización</Text>
@@ -481,7 +482,7 @@ export const ProfileScreen = ({ navigation }: any) => {
             placeholder="Ej: Obsidian Tech"
             placeholderTextColor="#475569"
             value={newExp.company}
-            onChangeText={(val) => setNewExp({ ...newExp, company: val })}
+            onChangeText={(val: string) => setNewExp({ ...newExp, company: val })}
           />
 
           <Text style={styles.modalInputLabel}>3. Periodo o Descripción</Text>
@@ -491,7 +492,7 @@ export const ProfileScreen = ({ navigation }: any) => {
             placeholderTextColor="#475569"
             multiline
             value={newExp.description}
-            onChangeText={(val) => setNewExp({ ...newExp, description: val })}
+            onChangeText={(val: string) => setNewExp({ ...newExp, description: val })}
           />
         </View>
       </ObsidianModal>
