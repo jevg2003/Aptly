@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   useColorScheme,
   StatusBar,
-  Modal,
+  Modal as RNModal,
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -129,7 +129,7 @@ export const MatchesScreen = () => {
         )}
       />
 
-      <Modal
+      <RNModal
         animationType="slide"
         transparent={true}
         visible={modalVisible}
@@ -203,7 +203,7 @@ export const MatchesScreen = () => {
             )}
           </View>
         </View>
-      </Modal>
+      </RNModal>
     </SafeAreaView>
   );
 };

@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { 
   View, 
   Text, 
-  Modal, 
+  Modal as RNModal, 
   TouchableOpacity, 
   StyleSheet, 
   Dimensions, 
@@ -79,7 +79,7 @@ export const ObsidianDetailModal: React.FC<ObsidianDetailModalProps> = ({
   ).current;
 
   return (
-    <Modal
+    <RNModal
       transparent
       visible={isVisible}
       animationType="slide"
@@ -162,7 +162,7 @@ export const ObsidianDetailModal: React.FC<ObsidianDetailModalProps> = ({
           </TouchableOpacity>
         </Animated.View>
       </View>
-    </Modal>
+    </RNModal>
   );
 };
 

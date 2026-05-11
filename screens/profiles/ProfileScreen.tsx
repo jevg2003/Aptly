@@ -299,63 +299,134 @@ export const ProfileScreen = ({ navigation }: any) => {
 
           <TouchableOpacity
             onPress={() => navigation.navigate('EditProfile', { profile })}
-            style={styles.editBtn}
+            style={[styles.editBtn, profile?.role === 'company' && { borderColor: 'rgba(255,0,92,0.3)' }]}
           >
-            <Feather name="edit-3" size={18} color="#00A3FF" />
-            <Text style={styles.editBtnText}>Gestionar Información</Text>
+            <Feather name="edit-3" size={18} color={profile?.role === 'company' ? "#FF005C" : "#00A3FF"} />
+            <Text style={[styles.editBtnText, profile?.role === 'company' && { color: '#FF005C' }]}>Gestionar Información</Text>
           </TouchableOpacity>
         </View>
 
         {/* Stats Row */}
         <View style={styles.statsRow}>
-          <StatCard label="Progreso" value={`${profileCompletePercent}%`} sublabel="Añadir experiencia" />
-          <StatCard label="Postulaciones" value={appCount} />
+          <StatCard label="Progreso" value={`${profileCompletePercent}%`} sublabel={profile?.role === 'company' ? "Completar perfil" : "Añadir experiencia"} />
+          <StatCard label={profile?.role === 'company' ? "Candidatos" : "Postulaciones"} value={appCount} />
           <StatCard label="Vistas" value="0" />
         </View>
 
-        {/* Experience Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Mi Experiencia</Text>
-            <View style={{ flexDirection: 'row', gap: 15 }}>
-              <TouchableOpacity onPress={() => setIsAddingExp(true)}>
-                <Text style={styles.seeAllText}>+ Añadir</Text>
-              </TouchableOpacity>
-              <TouchableOpacity>
-                <Text style={styles.seeAllText}>Ver Todo</Text>
-              </TouchableOpacity>
+        {profile?.role === 'company' ? (
+          <>
+            {/* Company Details Section */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Detalles Corporativos</Text>
+              </View>
+              <View style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: 20, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
+                  <View>
+                    <Text style={{ color: '#475569', fontSize: 12, marginBottom: 4 }}>NIT / ID Fiscal</Text>
+                    <Text style={{ color: '#FFF', fontWeight: '600' }}>{profile?.tax_id || 'No registrado'}</Text>
+                  </View>
+                  <View>
+                    <Text style={{ color: '#475569', fontSize: 12, marginBottom: 4 }}>Fecha de Creación</Text>
+                    <Text style={{ color: '#FFF', fontWeight: '600' }}>{profile?.creation_date || 'No registrada'}</Text>
+                  </View>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <View>
+                    <Text style={{ color: '#475569', fontSize: 12, marginBottom: 4 }}>Área de Negocio</Text>
+                    <Text style={{ color: '#FFF', fontWeight: '600' }}>{profile?.business_area || 'No registrada'}</Text>
+                  </View>
+                  <View>
+                    <Text style={{ color: '#475569', fontSize: 12, marginBottom: 4 }}>Sector principal</Text>
+                    <Text style={{ color: '#FFF', fontWeight: '600' }}>{profile?.industry || 'No registrado'}</Text>
+                  </View>
+                </View>
+              </View>
             </View>
-          </View>
 
-          {experiences.length > 0 ? (
-            experiences.map(exp => (
-              <ExperienceItem key={exp.id} experience={exp} />
-            ))
-          ) : (
-            <TouchableOpacity
-              style={styles.emptyExperience}
-              onPress={() => setIsAddingExp(true)}
-            >
-              <Text style={styles.emptyText}>Aún no has añadido experiencias</Text>
-              <Text style={styles.addText}>+ Añadir</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Resume Section */}
-        <View style={styles.section}>
-          {uploadingResume ? (
-            <View style={[styles.emptyExperience, { borderStyle: 'solid' }]}>
-              <ActivityIndicator color="#00A3FF" size="large" />
-              <Text style={[styles.emptyText, { marginTop: 15 }]}>Subiendo currículum...</Text>
+            {/* Company Tags Section */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Etiquetas de la Empresa</Text>
+              </View>
+              {profile?.company_tags ? (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                  {profile.company_tags.split(',').map((tag: string, index: number) => (
+                    <View key={index} style={{ backgroundColor: 'rgba(255,0,92,0.1)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,0,92,0.3)' }}>
+                      <Text style={{ color: '#FF005C', fontWeight: '600', fontSize: 13 }}>{tag.trim()}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.emptyText}>No hay etiquetas registradas.</Text>
+              )}
             </View>
-          ) : (
-            <ResumeSection
-              resumeUrl={profile?.resume_url}
-              onUpload={handleResumeUpload}
-            />
-          )}
-        </View>
+            
+            {/* PDF Preview Section */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Presentación Institucional</Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}>
+                <MaterialCommunityIcons name={profile?.pdf_name ? "file-pdf-box" : "file-outline"} size={32} color={profile?.pdf_name ? "#FF005C" : "#475569"} />
+                <View style={{ marginLeft: 16, flex: 1 }}>
+                  <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 14 }}>
+                    {profile?.pdf_name ? profile.pdf_name : 'Sin documento adjunto'}
+                  </Text>
+                  <Text style={{ color: '#475569', fontSize: 12, marginTop: 4 }}>
+                    {profile?.pdf_name ? 'Documento visible para candidatos' : 'Puedes subirlo desde la edición del perfil'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </>
+        ) : (
+          <>
+            {/* Experience Section */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Mi Experiencia</Text>
+                <View style={{ flexDirection: 'row', gap: 15 }}>
+                  <TouchableOpacity onPress={() => setIsAddingExp(true)}>
+                    <Text style={styles.seeAllText}>+ Añadir</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity>
+                    <Text style={styles.seeAllText}>Ver Todo</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {experiences.length > 0 ? (
+                experiences.map(exp => (
+                  <ExperienceItem key={exp.id} experience={exp} />
+                ))
+              ) : (
+                <TouchableOpacity
+                  style={styles.emptyExperience}
+                  onPress={() => setIsAddingExp(true)}
+                >
+                  <Text style={styles.emptyText}>Aún no has añadido experiencias</Text>
+                  <Text style={styles.addText}>+ Añadir</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Resume Section */}
+            <View style={styles.section}>
+              {uploadingResume ? (
+                <View style={[styles.emptyExperience, { borderStyle: 'solid' }]}>
+                  <ActivityIndicator color="#00A3FF" size="large" />
+                  <Text style={[styles.emptyText, { marginTop: 15 }]}>Subiendo currículum...</Text>
+                </View>
+              ) : (
+                <ResumeSection
+                  resumeUrl={profile?.resume_url}
+                  onUpload={handleResumeUpload}
+                />
+              )}
+            </View>
+          </>
+        )}
 
         {/* Recent Applications Section */}
         <View style={styles.section}>

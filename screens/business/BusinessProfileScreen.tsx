@@ -196,7 +196,75 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
           <View style={styles.statsRow}>
              <LocalStatCard label="Vacantes Activas" value={jobsCount.toString()} />
              <LocalStatCard label="Candidatos" value={candidatesCount.toString()} />
-             <LocalStatCard label="Valoración" value="4.8" icon="star" color="#FFCC00" />
+          </View>
+
+          {/* Corporate Details Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Detalles Corporativos</Text>
+            </View>
+            <View style={{ backgroundColor: '#121214', padding: 24, borderRadius: 28, borderWidth: 1, borderColor: 'rgba(255,255,255,0.03)' }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: '#475569', fontSize: 10, marginBottom: 8, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 }}>NIT / ID Fiscal</Text>
+                  <Text style={{ color: '#FFF', fontWeight: '900', fontSize: 15 }}>{profile?.tax_id || 'No registrado'}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: '#475569', fontSize: 10, marginBottom: 8, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 }}>Fundación</Text>
+                  <Text style={{ color: '#FFF', fontWeight: '900', fontSize: 15 }}>{profile?.creation_date || 'No registrada'}</Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: '#475569', fontSize: 10, marginBottom: 8, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 }}>Área de Negocio</Text>
+                  <Text style={{ color: '#FFF', fontWeight: '900', fontSize: 15 }}>{profile?.business_area || 'No registrada'}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: '#475569', fontSize: 10, marginBottom: 8, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 }}>Sector principal</Text>
+                  <Text style={{ color: '#FFF', fontWeight: '900', fontSize: 15 }}>{profile?.industry || profile?.category || 'No registrado'}</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* Company Tags Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Etiquetas de la Empresa</Text>
+            </View>
+            {profile?.company_tags ? (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                {profile.company_tags.split(',').map((tag: string, index: number) => (
+                  <View key={index} style={{ backgroundColor: 'rgba(255,0,92,0.08)', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,0,92,0.2)' }}>
+                    <Text style={{ color: '#FF005C', fontWeight: '800', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>{tag.trim()}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View style={{ backgroundColor: '#121214', padding: 24, borderRadius: 28, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.03)' }}>
+                 <Text style={{ color: '#475569', fontSize: 13, fontWeight: '600' }}>Aún no se han añadido etiquetas.</Text>
+              </View>
+            )}
+          </View>
+
+          {/* PDF Preview Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Presentación Institucional</Text>
+            </View>
+            <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#121214', padding: 20, borderRadius: 28, borderWidth: 1, borderColor: profile?.pdf_name ? 'rgba(255,0,92,0.3)' : 'rgba(255,255,255,0.03)' }}>
+              <View style={{ width: 50, height: 50, borderRadius: 16, backgroundColor: profile?.pdf_name ? 'rgba(255,0,92,0.1)' : '#1A1A1C', alignItems: 'center', justifyContent: 'center' }}>
+                 <MaterialCommunityIcons name={profile?.pdf_name ? "file-pdf-box" : "file-outline"} size={28} color={profile?.pdf_name ? "#FF005C" : "#475569"} />
+              </View>
+              <View style={{ marginLeft: 16, flex: 1 }}>
+                <Text style={{ color: '#FFF', fontWeight: '900', fontSize: 15, marginBottom: 4 }}>
+                  {profile?.pdf_name ? profile.pdf_name : 'Sin documento adjunto'}
+                </Text>
+                <Text style={{ color: '#94a3b8', fontSize: 12, fontWeight: '500', lineHeight: 18 }}>
+                  {profile?.pdf_name ? 'Documento visible para todos los candidatos' : 'Puedes subirlo desde la edición del perfil'}
+                </Text>
+              </View>
+            </TouchableOpacity>
           </View>
 
           {/* About Section */}
@@ -204,7 +272,7 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
             <Text style={styles.sectionTitle}>Cultura y Misión</Text>
             <View style={styles.descriptionCard}>
                <Text style={styles.descriptionText}>
-                 {profile.culture}
+                 {profile.culture || 'Añade información sobre la cultura y misión de tu empresa.'}
                </Text>
             </View>
           </View>
@@ -218,12 +286,12 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
                 </TouchableOpacity>
              </View>
 
-             {/* Dynamic Jobs */}
+              {/* Dynamic Jobs */}
              {recentJobs.length > 0 ? recentJobs.map(job => (
                <TouchableOpacity 
                  key={job.id} 
                  style={styles.miniJobCard}
-                 onPress={() => navigation.navigate('JobDetail', { job })}
+                 onPress={() => navigation.navigate('Vacantes', { screen: 'JobDetail', params: { job } })}
                >
                   <View style={styles.miniJobIcon}>
                       <MaterialCommunityIcons name="briefcase-outline" size={24} color="#FF005C" />
@@ -242,7 +310,7 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
 
              {/* Add New CTA */}
              <TouchableOpacity 
-                onPress={() => navigation.navigate('CreateVacante')}
+                onPress={() => navigation.navigate('Vacantes', { screen: 'CreateVacante' })}
                 style={styles.createCta}
              >
                 <Ionicons name="add-circle-outline" size={20} color="#475569" />
