@@ -11,8 +11,8 @@ import {
   Alert,
   KeyboardAvoidingView,
   ActivityIndicator,
-  Modal,
   FlatList,
+  Modal as RNModal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
@@ -337,7 +337,7 @@ export const EditBusinessProfileScreen = ({ navigation }: any) => {
       </SafeAreaView>
 
       {/* Tag Picker Modal */}
-      <Modal visible={showTagModal} animationType="slide" transparent>
+      <RNModal visible={showTagModal} animationType="slide" transparent>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' }}>
           <View style={{ backgroundColor: '#0A0A0B', borderTopLeftRadius: 32, borderTopRightRadius: 32, maxHeight: '88%', borderTopWidth: 1, borderColor: '#1e1e1e' }}>
             {/* Modal Header */}
@@ -421,7 +421,7 @@ export const EditBusinessProfileScreen = ({ navigation }: any) => {
             </View>
           </View>
         </View>
-      </Modal>
+      </RNModal>
     </View>
   );
 };

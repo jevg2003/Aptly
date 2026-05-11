@@ -2,12 +2,12 @@ import React from 'react';
 import { 
   View, 
   Text, 
-  Modal, 
   TouchableOpacity, 
   StyleSheet, 
   Dimensions, 
   Platform,
-  ActivityIndicator
+  ActivityIndicator,
+  Modal as RNModal,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -47,7 +47,7 @@ export const ObsidianModal: React.FC<ObsidianModalProps> = ({
   const finalIconColor = isDestructive ? '#FF3B30' : iconColor;
 
   return (
-    <Modal
+    <RNModal
       transparent
       visible={isVisible}
       animationType="fade"
@@ -109,7 +109,7 @@ export const ObsidianModal: React.FC<ObsidianModalProps> = ({
           </View>
         </View>
       </View>
-    </Modal>
+    </RNModal>
   );
 };
 

@@ -241,7 +241,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
     }
   };
 
-  const totalSteps = localRole === 'company' ? 10 : 3;
+  const totalSteps = localRole === 'company' ? 11 : 3;
   const currentStep = localRole === 'company' ? companyStep : candidateStep;
   const accentColor = localRole === 'company' ? COLORS.company : COLORS.candidate;
 
@@ -280,7 +280,10 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         // Culture step - optional, skip or fill
         setCompanyStep(9);
       } else if (companyStep === 9) {
+        // Contact step - optional, skip or fill
         setCompanyStep(10);
+      } else if (companyStep === 10) {
+        setCompanyStep(11);
       } else {
         handleRegister();
       }
@@ -656,6 +659,52 @@ export const RegisterScreen = ({ navigation, route }: any) => {
 
                     {companyStep === 9 && (
                       <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
+                        <Text style={styles.questionTitle}>Información de Contacto</Text>
+                        <Text style={styles.questionSubtitle}>Opcional – Ayuda a los candidatos a encontrarte y contactarte más fácil. Puedes omitir este paso.</Text>
+
+                        <View style={{ gap: 16 }}>
+                          <View>
+                            <Text style={styles.sectorsLabel}>Sitio Web</Text>
+                            <CustomInput 
+                              placeholder="https://tuempresa.com" 
+                              value={companyWebsite} 
+                              onChangeText={setCompanyWebsite} 
+                              iconName="earth" 
+                            />
+                          </View>
+
+                          <View>
+                            <Text style={styles.sectorsLabel}>Teléfono de Contacto</Text>
+                            <CustomInput 
+                              placeholder="+57 300 000 0000" 
+                              value={companyPhone} 
+                              onChangeText={setCompanyPhone} 
+                              iconName="phone-outline" 
+                            />
+                          </View>
+
+                          <View>
+                            <Text style={styles.sectorsLabel}>Ubicación Principal</Text>
+                            <CustomInput 
+                              placeholder="Ciudad, País" 
+                              value={companyLocation} 
+                              onChangeText={setCompanyLocation} 
+                              iconName="map-marker-outline" 
+                            />
+                          </View>
+                        </View>
+
+                        <TouchableOpacity
+                          onPress={() => setCompanyStep(10)}
+                          style={{ alignSelf: 'center', marginTop: 32, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}
+                        >
+                          <Text style={{ color: '#64748b', fontSize: 13, fontWeight: '600' }}>Omitir este paso</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
+                    {companyStep === 10 && (
+                      <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
                         <Text style={styles.questionTitle}>Vista Previa del Perfil</Text>
                         <Text style={styles.questionSubtitle}>Así es como los candidatos verán tu empresa.</Text>
                         
@@ -668,34 +717,42 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                                 <MaterialCommunityIcons name="domain" size={30} color={COLORS.company} />
                               </View>
                             )}
-                            <View>
-                              <Text style={{ color: '#FFF', fontSize: 20, fontWeight: 'bold' }}>{companyName || 'Nombre Empresa'}</Text>
-                              <Text style={{ color: COLORS.textSecondary }}>{isOtherSector ? customSector : (selectedSectors[0] || 'Sector')} • {businessArea || 'Área'}</Text>
+                            <View style={{ flex: 1 }}>
+                              <Text style={{ color: '#FFF', fontSize: 20, fontWeight: 'bold' }} numberOfLines={1}>{companyName || 'Nombre Empresa'}</Text>
+                              <Text style={{ color: COLORS.textSecondary }} numberOfLines={1}>{isOtherSector ? customSector : (selectedSectors[0] || 'Sector')} • {businessArea || 'Área'}</Text>
                             </View>
                           </View>
                           
-                          <View style={{ flexDirection: 'row', gap: 20, marginBottom: 16 }}>
+                          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
                             <View>
-                              <Text style={{ color: COLORS.textSecondary, fontSize: 12 }}>NIT</Text>
-                              <Text style={{ color: '#FFF' }}>{taxId}</Text>
+                              <Text style={{ color: COLORS.textSecondary, fontSize: 10, fontWeight: '800', textTransform: 'uppercase' }}>NIT</Text>
+                              <Text style={{ color: '#FFF', fontSize: 13 }}>{taxId}</Text>
                             </View>
-                            <View>
-                              <Text style={{ color: COLORS.textSecondary, fontSize: 12 }}>Fundación</Text>
-                              <Text style={{ color: '#FFF' }}>{creationDate}</Text>
-                            </View>
+                            {companyLocation ? (
+                              <View>
+                                <Text style={{ color: COLORS.textSecondary, fontSize: 10, fontWeight: '800', textTransform: 'uppercase' }}>Ubicación</Text>
+                                <Text style={{ color: '#FFF', fontSize: 13 }}>{companyLocation}</Text>
+                              </View>
+                            ) : null}
+                            {companyPhone ? (
+                              <View>
+                                <Text style={{ color: COLORS.textSecondary, fontSize: 10, fontWeight: '800', textTransform: 'uppercase' }}>Teléfono</Text>
+                                <Text style={{ color: '#FFF', fontSize: 13 }}>{companyPhone}</Text>
+                              </View>
+                            ) : null}
                           </View>
 
                           <View style={{ marginTop: 8 }}>
-                            <Text style={{ color: COLORS.textSecondary, fontSize: 12, marginBottom: 8 }}>Etiquetas Seleccionadas</Text>
+                            <Text style={{ color: COLORS.textSecondary, fontSize: 10, fontWeight: '800', textTransform: 'uppercase', marginBottom: 8 }}>Etiquetas Seleccionadas</Text>
                             <View style={styles.sectorsGrid}>
                               {[...selectedTags, ...customTags].length > 0 ? (
                                 [...selectedTags, ...customTags].map(tag => (
-                                  <View key={tag} style={[styles.sectorTag, { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' }]}>
-                                    <Text style={{ color: '#FFF', fontSize: 12 }}>{tag}</Text>
+                                  <View key={tag} style={[styles.sectorTag, { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' }]}>
+                                    <Text style={{ color: '#FFF', fontSize: 11 }}>{tag}</Text>
                                   </View>
                                 ))
                               ) : (
-                                <Text style={{ color: COLORS.textSecondary, fontSize: 13, fontStyle: 'italic' }}>Sin etiquetas</Text>
+                                <Text style={{ color: COLORS.textSecondary, fontSize: 12, fontStyle: 'italic' }}>Sin etiquetas aún</Text>
                               )}
                             </View>
                           </View>
@@ -716,7 +773,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                       </View>
                     )}
 
-                    {companyStep === 10 && (
+                    {companyStep === 11 && (
                       <View style={[styles.stepContainer, { justifyContent: 'center', alignItems: 'center' }]}>
                         <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(255,0,92,0.1)', justifyContent: 'center', alignItems: 'center', marginBottom: 32 }}>
                           <MaterialCommunityIcons name="rocket-launch" size={60} color={COLORS.company} />

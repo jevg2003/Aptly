@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Modal as RNModal, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
 import { SessionContext } from '../../lib/SessionContext';
@@ -57,7 +57,7 @@ export const CandidateResumePreview = ({ profile, onClose, isVisible = false, fr
   }, [isVisible, fetchData]);
 
   return (
-    <Modal visible={isVisible} animationType="slide" transparent={false}>
+    <RNModal visible={isVisible} animationType="slide" transparent={false}>
       <View style={styles.modalContent}>
         {/* Header Overlay Style */}
         <View style={styles.topBar}>
@@ -176,7 +176,7 @@ export const CandidateResumePreview = ({ profile, onClose, isVisible = false, fr
           </View>
         </ScrollView>
       </View>
-    </Modal>
+    </RNModal>
   );
 };
 

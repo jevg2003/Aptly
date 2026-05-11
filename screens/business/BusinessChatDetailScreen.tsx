@@ -13,7 +13,8 @@ import {
   Dimensions,
   ActivityIndicator,
   Vibration,
-  LayoutAnimation
+  LayoutAnimation,
+  Modal as RNModal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
@@ -50,6 +51,8 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
   const [menuVisible, setMenuVisible] = useState(false);
   const [isAttachmentMenuVisible, setAttachmentMenuVisible] = useState(false);
   const [menuData, setMenuData] = useState<{ message: any, x: number, y: number } | null>(null);
+  const [isSending, setIsSending] = useState(false);
+  const didSendAutoMessage = useRef(false);
   const flatListRef = useRef<FlatList>(null);
 
   // Find the live conversation object from context
@@ -71,16 +74,17 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
 
   // Auto-send message if provided via params
   useEffect(() => {
-    if (autoMessage && conversation?.id && messages.length === 0) {
+    if (autoMessage && conversation?.id && !didSendAutoMessage.current) {
+      didSendAutoMessage.current = true;
       sendMessage(conversation.id, autoMessage);
     }
-  }, [autoMessage, conversation?.id, messages.length, sendMessage]);
+  }, [autoMessage, conversation?.id, sendMessage]);
 
   useEffect(() => {
-    if (conversation?.id) {
+    if (conversation?.id && conversation.unreadCount > 0) {
       markAsRead(conversation.id);
     }
-  }, [messages.length, conversation?.id, markAsRead]);
+  }, [messages.length, conversation?.id, conversation?.unreadCount, markAsRead]);
 
   const handleSend = async () => {
     if (!messageText.trim()) return;
@@ -90,10 +94,15 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
       options.replyToId = replyingTo.id;
     }
 
-    if (conversation?.id) {
-      sendMessage(conversation.id, messageText, options);
-      setMessageText('');
-      setReplyingTo(null);
+    if (conversation?.id && !isSending) {
+      setIsSending(true);
+      try {
+        await sendMessage(conversation.id, messageText, options);
+        setMessageText('');
+        setReplyingTo(null);
+      } finally {
+        setIsSending(false);
+      }
     }
   };
 
@@ -237,6 +246,22 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
       runOnJS(setMenuData)({ message: item, x: menuX, y: menuY });
       runOnJS(setMenuVisible)(true);
     };
+
+    // Smart parsing for [IMAGE] or [FILE] prefixes if type is not already set
+    let displayType = item.type;
+    let displayUrl = item.metadata?.url;
+    let displayText = item.text || '';
+
+    if (!displayType || displayType === 'text') {
+      if (displayText.startsWith('[IMAGE]')) {
+        displayType = 'image';
+        displayUrl = displayText.replace('[IMAGE]', '').trim();
+      } else if (displayText.startsWith('[FILE]')) {
+        displayType = 'file';
+        displayUrl = displayText.replace('[FILE]', '').trim();
+      }
+    }
+
     const parentMessage = item.replyToId ? messages.find((m: any) => m.id === item.replyToId) : null;
 
     return (
@@ -265,28 +290,32 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
               )}
 
               {/* Multimedia Content */}
-              {item.type === 'image' && !isDeleted && (
-                <Image source={{ uri: item.metadata?.url }} style={styles.msgImage} resizeMode="cover" />
+              {displayType === 'image' && !isDeleted && displayUrl && (
+                <Image source={{ uri: displayUrl }} style={styles.msgImage} resizeMode="cover" />
               )}
               
-              {item.type === 'file' && !isDeleted && (
+              {displayType === 'file' && !isDeleted && displayUrl && (
                 <TouchableOpacity style={styles.fileContainer} onPress={() => showToast('Abriendo archivo...', 'info')}>
                    <Ionicons name="document-text" size={32} color={isMe ? 'white' : '#FF005C'} />
                    <View style={{ marginLeft: 10 }}>
-                      <Text style={[styles.fileName, { color: isMe ? 'white' : 'white' }]}>{item.metadata?.name}</Text>
+                      <Text style={[styles.fileName, { color: isMe ? 'white' : 'white' }]}>
+                        {item.metadata?.name || displayUrl.split('/').pop() || 'Archivo'}
+                      </Text>
                       <Text style={styles.fileSize}>PDF Document</Text>
                    </View>
                 </TouchableOpacity>
               )}
 
               {/* Text Content */}
-              <Text style={[
-                styles.msgText, 
-                isMe ? styles.textMe : styles.textOther,
-                isDeleted ? styles.textDeleted : null
-              ]}>
-                {isDeleted ? 'Este mensaje fue eliminado' : item.text}
-              </Text>
+              {displayType !== 'image' && displayType !== 'file' && (
+                <Text style={[
+                  styles.msgText, 
+                  isMe ? styles.textMe : styles.textOther,
+                  isDeleted ? styles.textDeleted : null
+                ]}>
+                  {isDeleted ? 'Este mensaje fue eliminado' : item.text}
+                </Text>
+              )}
               
               <Text style={[styles.timestamp, isMe ? styles.tsMe : styles.tsOther]}>
                 {item.timestamp}
@@ -503,7 +532,7 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
           )}
 
           {/* Attachment Modal */}
-          <Modal
+          <RNModal
             visible={isAttachmentMenuVisible}
             transparent
             animationType="fade"
@@ -553,7 +582,7 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
                 </View>
               </TouchableOpacity>
             </TouchableOpacity>
-          </Modal>
+          </RNModal>
         </SafeAreaView>
       </View>
     </GestureHandlerRootView>
