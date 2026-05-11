@@ -12,7 +12,8 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
-  ScrollView
+  ScrollView,
+  TextInput
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -75,6 +76,11 @@ export const RegisterScreen = ({ navigation, route }: any) => {
   const [customTags, setCustomTags] = useState<string[]>([]);
   const [pdfUri, setPdfUri] = useState<string | null>(null);
   const [pdfName, setPdfName] = useState<string | null>(null);
+  // New business fields
+  const [companyWebsite, setCompanyWebsite] = useState('');
+  const [companyPhone, setCompanyPhone] = useState('');
+  const [companyLocation, setCompanyLocation] = useState('');
+  const [companyCulture, setCompanyCulture] = useState('');
   
   const [candidateStep, setCandidateStep] = useState(1);
   const [fullName, setFullName] = useState('');
@@ -252,7 +258,11 @@ export const RegisterScreen = ({ navigation, route }: any) => {
           industry: finalSector,
           company_tags: [...selectedTags, ...customTags].join(', '),
           pdf_name: pdfName,
-          avatar_url: avatarUrl
+          avatar_url: avatarUrl,
+          website: companyWebsite || undefined,
+          phone: companyPhone || undefined,
+          location: companyLocation || undefined,
+          bio: companyCulture || undefined,
         } : { 
           full_name: fullName,
           role: 'candidate',
@@ -286,7 +296,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
     }
   };
 
-  const totalSteps = localRole === 'company' ? 9 : 3;
+  const totalSteps = localRole === 'company' ? 10 : 3;
   const currentStep = localRole === 'company' ? companyStep : candidateStep;
   const accentColor = localRole === 'company' ? COLORS.company : COLORS.candidate;
 
@@ -319,9 +329,13 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         if (isOtherSector) supabase.from('business_sectors').insert({ name: finalSector }).then();
         setCompanyStep(7);
       } else if (companyStep === 7) {
+        // Tags step - can continue without selecting any
         setCompanyStep(8);
       } else if (companyStep === 8) {
+        // Culture step - optional, skip or fill
         setCompanyStep(9);
+      } else if (companyStep === 9) {
+        setCompanyStep(10);
       } else {
         handleRegister();
       }
@@ -513,6 +527,12 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                         </View>
 
                         <CustomInput placeholder="Nombre de la empresa / Razón Social" value={companyName} onChangeText={setCompanyName} iconName="office-building" />
+
+                        <Text style={{ color: COLORS.textSecondary, fontSize: 13, marginTop: 16, marginBottom: 8, fontWeight: '600' }}>Datos opcionales (puedes completarlos después):</Text>
+
+                        <CustomInput placeholder="Sitio web (https://tuempresa.com)" value={companyWebsite} onChangeText={setCompanyWebsite} iconName="earth" />
+                        <CustomInput placeholder="Ciudad, País" value={companyLocation} onChangeText={setCompanyLocation} iconName="map-marker-outline" />
+                        <CustomInput placeholder="Teléfono de contacto" value={companyPhone} onChangeText={setCompanyPhone} iconName="phone-outline" />
                       </View>
                     )}
 
@@ -665,6 +685,32 @@ export const RegisterScreen = ({ navigation, route }: any) => {
 
                     {companyStep === 8 && (
                       <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
+                        <Text style={styles.questionTitle}>Cultura y Valores de la Empresa</Text>
+                        <Text style={styles.questionSubtitle}>Opcional – Cuente a los candidatos qué hace especial a tu empresa. Puedes omitir este paso.</Text>
+
+                        <View style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,0,92,0.2)', borderRadius: 20, padding: 16, minHeight: 160, marginBottom: 20 }}>
+                          <TextInput
+                            multiline
+                            numberOfLines={7}
+                            style={{ color: '#FFF', fontSize: 15, lineHeight: 24, textAlignVertical: 'top' }}
+                            value={companyCulture}
+                            onChangeText={setCompanyCulture}
+                            placeholder="Ej. Somos una empresa ágil que apuesta por la innovación y el bienestar de nuestro equipo..."
+                            placeholderTextColor="#475569"
+                          />
+                        </View>
+
+                        <TouchableOpacity
+                          onPress={() => setCompanyStep(9)}
+                          style={{ alignSelf: 'center', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}
+                        >
+                          <Text style={{ color: '#64748b', fontSize: 13, fontWeight: '600' }}>Omitir este paso</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
+                    {companyStep === 9 && (
+                      <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
                         <Text style={styles.questionTitle}>Vista Previa del Perfil</Text>
                         <Text style={styles.questionSubtitle}>Así es como los candidatos verán tu empresa.</Text>
                         
@@ -725,7 +771,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                       </View>
                     )}
 
-                    {companyStep === 9 && (
+                    {companyStep === 10 && (
                       <View style={[styles.stepContainer, { justifyContent: 'center', alignItems: 'center' }]}>
                         <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(255,0,92,0.1)', justifyContent: 'center', alignItems: 'center', marginBottom: 32 }}>
                           <MaterialCommunityIcons name="rocket-launch" size={60} color={COLORS.company} />

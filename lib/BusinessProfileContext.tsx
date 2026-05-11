@@ -9,13 +9,14 @@ export interface BusinessProfile {
   website: string;
   culture: string;
   avatar_url?: string;
-  team?: any[]; // Keep for future use
+  team?: any[];
   tax_id?: string;
   creation_date?: string;
   industry?: string;
   business_area?: string;
   company_tags?: string;
   pdf_name?: string;
+  phone?: string;
 }
 
 interface BusinessProfileContextType {
@@ -36,7 +37,8 @@ const INITIAL_PROFILE: BusinessProfile = {
   industry: '',
   business_area: '',
   company_tags: '',
-  pdf_name: ''
+  pdf_name: '',
+  phone: ''
 };
 
 const BusinessProfileContext = createContext<BusinessProfileContextType | undefined>(undefined);
@@ -75,7 +77,8 @@ export const BusinessProfileProvider = ({ children }: { children: ReactNode }) =
              industry: data.industry || '',
              business_area: data.business_area || '',
              company_tags: data.company_tags || '',
-             pdf_name: data.pdf_name || ''
+             pdf_name: data.pdf_name || '',
+             phone: data.phone || ''
            }));
         }
       } catch (err) {
@@ -107,6 +110,7 @@ export const BusinessProfileProvider = ({ children }: { children: ReactNode }) =
     if (updates.business_area !== undefined) dbUpdate.business_area = updates.business_area;
     if (updates.company_tags !== undefined) dbUpdate.company_tags = updates.company_tags;
     if (updates.pdf_name !== undefined) dbUpdate.pdf_name = updates.pdf_name;
+    if (updates.phone !== undefined) dbUpdate.phone = updates.phone;
 
     const { error } = await supabase
       .from('profiles')
