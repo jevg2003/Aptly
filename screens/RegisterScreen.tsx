@@ -5,7 +5,6 @@ import {
   TouchableOpacity, 
   Image, 
   StatusBar,
-  Alert,
   Dimensions,
   StyleSheet,
   KeyboardAvoidingView,
@@ -23,18 +22,14 @@ import Animated, {
   withSpring, 
   withTiming,
   interpolateColor,
-  withDelay
 } from 'react-native-reanimated';
 import { CustomInput } from '../components/CustomInput';
-import { CustomButton } from '../components/CustomButton';
 import { supabase } from '../lib/supabase';
-import { useApp } from '../lib/AppContext';
 import { ObsidianModal } from '../components/ObsidianModal';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-const { width } = Dimensions.get('window');
 
 const COLORS = {
   background: '#050505',
@@ -57,14 +52,12 @@ const TAG_CATEGORIES = {
 };
 
 export const RegisterScreen = ({ navigation, route }: any) => {
-  const { setIsBusiness } = useApp();
   const initialRole = route?.params?.initialRole || 'candidate';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [taxId, setTaxId] = useState('');
-  const [legalRepresentative, setLegalRepresentative] = useState('');
   const [creationDate, setCreationDate] = useState('');
   const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
   const [businessArea, setBusinessArea] = useState('');
@@ -74,7 +67,6 @@ export const RegisterScreen = ({ navigation, route }: any) => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [customTagInput, setCustomTagInput] = useState('');
   const [customTags, setCustomTags] = useState<string[]>([]);
-  const [pdfUri, setPdfUri] = useState<string | null>(null);
   const [pdfName, setPdfName] = useState<string | null>(null);
   // New business fields
   const [companyWebsite, setCompanyWebsite] = useState('');
@@ -112,7 +104,6 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         copyToCacheDirectory: true
       });
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setPdfUri(result.assets[0].uri);
         setPdfName(result.assets[0].name);
       }
     } catch (err) {
@@ -150,7 +141,6 @@ export const RegisterScreen = ({ navigation, route }: any) => {
   const switchAnim = useSharedValue(initialRole === 'company' ? 1 : 0);
   const contentFade = useSharedValue(0);
   const cardTranslateY = useSharedValue(50);
-  const [containerWidth, setContainerWidth] = useState(0);
   const [alertConfig, setAlertConfig] = useState({ 
     visible: false, 
     title: '', 
@@ -163,50 +153,21 @@ export const RegisterScreen = ({ navigation, route }: any) => {
   useEffect(() => {
     contentFade.value = withTiming(1, { duration: 800 });
     cardTranslateY.value = withSpring(0, { damping: 15 });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleRoleChange = (role: 'candidate' | 'company') => {
-    setLocalRole(role);
-    if (role === 'company') setCompanyStep(1);
-    if (role === 'candidate') setCandidateStep(1);
-    switchAnim.value = withSpring(role === 'candidate' ? 0 : 1, { damping: 20 });
-  };
 
-  const animatedSwitchStyle = useAnimatedStyle(() => {
-    const isMoving = switchAnim.value > 0.1 && switchAnim.value < 0.9;
-    const stretch = withSpring(isMoving ? 1.1 : 1, { damping: 10 });
-    const travelDistance = (containerWidth - 12) / 2;
-
-    return {
-      transform: [
-        { translateX: withSpring(switchAnim.value * travelDistance) },
-        { scaleX: stretch }
-      ],
-      backgroundColor: interpolateColor(
-        switchAnim.value,
-        [0, 1],
-        [COLORS.candidate, COLORS.company]
-      ),
-      shadowColor: interpolateColor(
-        switchAnim.value,
-        [0, 1],
-        [COLORS.candidate, COLORS.company]
-      ),
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.8,
-      shadowRadius: 10,
-    };
-  });
-
-  const animatedAccentStyle = useAnimatedStyle(() => {
-    return {
-      color: interpolateColor(
-        switchAnim.value,
-        [0, 1],
-        [COLORS.candidate, COLORS.company]
-      ),
-    };
-  });
+  const switchTabWidth = Dimensions.get('window').width - 48; // approximate tab width
+  const animatedSwitchStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: withSpring(switchAnim.value * ((switchTabWidth - 12) / 2)) },
+    ],
+    backgroundColor: interpolateColor(switchAnim.value, [0, 1], [COLORS.candidate, COLORS.company]),
+    shadowColor: interpolateColor(switchAnim.value, [0, 1], [COLORS.candidate, COLORS.company]),
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 10,
+  }));
 
   const animatedCardStyle = useAnimatedStyle(() => {
     return {
@@ -252,7 +213,6 @@ export const RegisterScreen = ({ navigation, route }: any) => {
           full_name: companyName,
           role: 'company',
           tax_id: taxId,
-          legal_representative: legalRepresentative,
           creation_date: creationDate,
           business_area: businessArea,
           industry: finalSector,
