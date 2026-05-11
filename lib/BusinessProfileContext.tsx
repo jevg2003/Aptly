@@ -10,6 +10,12 @@ export interface BusinessProfile {
   culture: string;
   avatar_url?: string;
   team?: any[]; // Keep for future use
+  tax_id?: string;
+  creation_date?: string;
+  industry?: string;
+  business_area?: string;
+  company_tags?: string;
+  pdf_name?: string;
 }
 
 interface BusinessProfileContextType {
@@ -24,7 +30,13 @@ const INITIAL_PROFILE: BusinessProfile = {
   location: 'Ciudad de México, México',
   website: 'https://techflow.io',
   culture: 'Somos una empresa impulsada por la innovación y la colaboración.',
-  team: []
+  team: [],
+  tax_id: '',
+  creation_date: '',
+  industry: '',
+  business_area: '',
+  company_tags: '',
+  pdf_name: ''
 };
 
 const BusinessProfileContext = createContext<BusinessProfileContextType | undefined>(undefined);
@@ -57,7 +69,13 @@ export const BusinessProfileProvider = ({ children }: { children: ReactNode }) =
              website: data.resume_url || '', // Abusing resume_url for website
              culture: data.bio || '',
              avatar_url: data.avatar_url || '',
-             team: prev.team || []
+             team: prev.team || [],
+             tax_id: data.tax_id || '',
+             creation_date: data.creation_date || '',
+             industry: data.industry || '',
+             business_area: data.business_area || '',
+             company_tags: data.company_tags || '',
+             pdf_name: data.pdf_name || ''
            }));
         }
       } catch (err) {
@@ -83,6 +101,12 @@ export const BusinessProfileProvider = ({ children }: { children: ReactNode }) =
     if (updates.website !== undefined) dbUpdate.resume_url = updates.website;
     if (updates.culture !== undefined) dbUpdate.bio = updates.culture;
     if (updates.avatar_url !== undefined) dbUpdate.avatar_url = updates.avatar_url;
+    if (updates.tax_id !== undefined) dbUpdate.tax_id = updates.tax_id;
+    if (updates.creation_date !== undefined) dbUpdate.creation_date = updates.creation_date;
+    if (updates.industry !== undefined) dbUpdate.industry = updates.industry;
+    if (updates.business_area !== undefined) dbUpdate.business_area = updates.business_area;
+    if (updates.company_tags !== undefined) dbUpdate.company_tags = updates.company_tags;
+    if (updates.pdf_name !== undefined) dbUpdate.pdf_name = updates.pdf_name;
 
     const { error } = await supabase
       .from('profiles')

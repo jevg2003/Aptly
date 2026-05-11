@@ -16,8 +16,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useBusinessProfile } from '../../lib/BusinessProfileContext';
 import { SessionContext } from '../../lib/SessionContext';
+import * as DocumentPicker from 'expo-document-picker';
 import { pickAndOptimizeImage } from '../../lib/imageUtils';
-import { uploadAvatar } from '../../lib/storageUtils';
+import { uploadAvatar, uploadDocument } from '../../lib/storageUtils';
 import { CustomInput } from '../../components/CustomInput';
 
 export const EditBusinessProfileScreen = ({ navigation }: any) => {
@@ -28,9 +29,41 @@ export const EditBusinessProfileScreen = ({ navigation }: any) => {
   const [website, setWebsite] = useState(profile.website || '');
   const [location, setLocation] = useState(profile.location || '');
   const [culture, setCulture] = useState(profile.culture || '');
+  const [taxId, setTaxId] = useState(profile.tax_id || '');
+  const [industry, setIndustry] = useState(profile.industry || profile.category || '');
+  const [businessArea, setBusinessArea] = useState(profile.business_area || '');
+  const [companyTags, setCompanyTags] = useState(profile.company_tags || '');
   
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingDocument, setUploadingDocument] = useState(false);
+
+  const handleDocumentUpload = async () => {
+    if (!session?.user?.id) return;
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf'],
+        copyToCacheDirectory: true
+      });
+      if (result.canceled) return;
+      
+      setUploadingDocument(true);
+      const asset = result.assets[0];
+      const publicUrl = await uploadDocument(asset.uri, session.user.id, asset.name);
+      if (!publicUrl) throw new Error('No se pudo subir el archivo.');
+      
+      await updateProfile({ pdf_name: asset.name });
+      Alert.alert('Éxito', 'Presentación institucional subida correctamente.');
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Hubo un problema al subir el documento.');
+    } finally {
+      setUploadingDocument(false);
+    }
+  };
+  
+  const handleRemoveDocument = async () => {
+    await updateProfile({ pdf_name: '' });
+  };
 
   const handleSave = async () => {
     setLoading(true);
@@ -39,7 +72,11 @@ export const EditBusinessProfileScreen = ({ navigation }: any) => {
       full_name: name,
       website,
       location,
-      culture
+      culture,
+      tax_id: taxId,
+      industry: industry,
+      business_area: businessArea,
+      company_tags: companyTags
     });
 
     setLoading(false);
@@ -181,6 +218,47 @@ export const EditBusinessProfileScreen = ({ navigation }: any) => {
               </View>
 
               <View>
+                <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">NIT / ID Fiscal</Text>
+                <CustomInput
+                  placeholder="Ej. 900.123.456-7"
+                  value={taxId}
+                  onChangeText={setTaxId}
+                  iconName="card-account-details-outline"
+                />
+              </View>
+
+              <View>
+                <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Sector / Industria</Text>
+                <CustomInput
+                  placeholder="Ej. Software, Finanzas, Salud"
+                  value={industry}
+                  onChangeText={setIndustry}
+                  iconName="domain"
+                />
+              </View>
+
+              <View>
+                <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Área de Negocio</Text>
+                <CustomInput
+                  placeholder="Ej. Desarrollo Web, Contabilidad"
+                  value={businessArea}
+                  onChangeText={setBusinessArea}
+                  iconName="briefcase-outline"
+                />
+              </View>
+
+              <View>
+                <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Etiquetas de Empresa</Text>
+                <CustomInput
+                  placeholder="Ej. Innovación, Remoto, Seguro Médico"
+                  value={companyTags}
+                  onChangeText={setCompanyTags}
+                  iconName="tag-multiple-outline"
+                />
+                <Text className="text-slate-500 text-[10px] ml-2 mt-1">Separa cada etiqueta con una coma (,).</Text>
+              </View>
+
+              <View>
                 <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Cultura y Valores</Text>
                 <View className="bg-[#1a1a1c] border border-[#333] rounded-[25px] p-4 min-h-[120px]">
                   <TextInput
@@ -221,34 +299,40 @@ export const EditBusinessProfileScreen = ({ navigation }: any) => {
             </View>
 
             {/* Verification Section */}
-            <SectionHeader icon="shield-check-outline" title="Verificación" />
+            <SectionHeader icon="shield-check-outline" title="Presentación Institucional" />
             
-            <TouchableOpacity className="w-full aspect-[2/1] border-2 border-dashed border-[#FF005C]/30 rounded-[30px] bg-[#121214] items-center justify-center p-6">
-                <View className="w-12 h-12 bg-[#1A1A1C] border border-[#333] rounded-2xl items-center justify-center shadow-sm mb-4">
-                  <MaterialCommunityIcons name="cloud-upload-outline" size={24} color="#FF005C" />
-                </View>
-                <Text className="text-white font-black text-sm">Subir Documentos Legales</Text>
-                <Text className="text-slate-400 text-[10px] mt-1">PDF, JPG o PNG hasta 10MB</Text>
-                <View className="flex-row mt-4">
-                   <View className="bg-[#1A1A1C] border border-[#333] px-3 py-1 rounded-full mr-2 shadow-sm">
-                      <Text className="text-slate-400 text-[8px] font-bold uppercase">Constancia Fiscal</Text>
-                   </View>
-                   <View className="bg-[#1A1A1C] border border-[#333] px-3 py-1 rounded-full shadow-sm">
-                      <Text className="text-slate-400 text-[8px] font-bold uppercase">Acta</Text>
-                   </View>
-                </View>
+            <TouchableOpacity 
+              onPress={handleDocumentUpload} 
+              disabled={uploadingDocument}
+              className="w-full aspect-[2/1] border-2 border-dashed border-[#FF005C]/30 rounded-[30px] bg-[#121214] items-center justify-center p-6"
+            >
+                {uploadingDocument ? (
+                  <ActivityIndicator size="large" color="#FF005C" />
+                ) : (
+                  <>
+                    <View className="w-12 h-12 bg-[#1A1A1C] border border-[#333] rounded-2xl items-center justify-center shadow-sm mb-4">
+                      <MaterialCommunityIcons name="cloud-upload-outline" size={24} color="#FF005C" />
+                    </View>
+                    <Text className="text-white font-black text-sm">Subir Documento (PDF)</Text>
+                    <Text className="text-slate-400 text-[10px] mt-1">Sube la presentación o portafolio de tu empresa</Text>
+                  </>
+                )}
             </TouchableOpacity>
 
-            <View className="mt-4 bg-[#121214] p-3 rounded-2xl flex-row items-center border border-[#1e1e1e] shadow-lg shadow-black/30">
-                <View className="w-10 h-10 bg-[#2a0d15] border border-[#4d1323] rounded-xl items-center justify-center">
-                    <MaterialCommunityIcons name="file-pdf-box" size={24} color="#FF005C" />
-                </View>
-                <View className="flex-1 ml-3 mr-2">
-                   <Text className="text-white font-bold text-xs" numberOfLines={1}>Constancia_Fiscal_2024.pdf</Text>
-                   <Text className="text-slate-400 text-[9px]">2.4 MB • Subido hace 2 días</Text>
-                </View>
-                <Ionicons name="trash-outline" size={18} color="#FF005C" />
-            </View>
+            {profile.pdf_name ? (
+              <View className="mt-4 bg-[#121214] p-3 rounded-2xl flex-row items-center border border-[#1e1e1e] shadow-lg shadow-black/30">
+                  <View className="w-10 h-10 bg-[#2a0d15] border border-[#4d1323] rounded-xl items-center justify-center">
+                      <MaterialCommunityIcons name="file-pdf-box" size={24} color="#FF005C" />
+                  </View>
+                  <View className="flex-1 ml-3 mr-2">
+                     <Text className="text-white font-bold text-xs" numberOfLines={1}>{profile.pdf_name}</Text>
+                     <Text className="text-slate-400 text-[9px]">Documento activo</Text>
+                  </View>
+                  <TouchableOpacity onPress={handleRemoveDocument}>
+                    <Ionicons name="trash-outline" size={18} color="#FF005C" />
+                  </TouchableOpacity>
+              </View>
+            ) : null}
 
             {/* Logout/Delete */}
             <View className="mt-12 mb-10">

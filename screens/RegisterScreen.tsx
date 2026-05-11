@@ -301,7 +301,8 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         if (!email) return showAlert('Por favor, ingresa tu correo.');
         setCompanyStep(2);
       } else if (companyStep === 2) {
-        if (!password || password !== confirmPassword) return showAlert('Verifica tu contraseña.');
+        if (!password || password.length < 6) return showAlert('La contraseña debe tener al menos 6 caracteres para ser segura.');
+        if (password !== confirmPassword) return showAlert('Las contraseñas no coinciden. Por favor verifica.');
         setCompanyStep(3);
       } else if (companyStep === 3) {
         if (!companyName) return showAlert('Por favor, ingresa el nombre de la empresa.');
@@ -332,6 +333,8 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         if (!profession || candidateSectors.length === 0) return showAlert('Ingresa tu profesión y al menos un sector de interés.');
         setCandidateStep(3);
       } else {
+        if (!password || password.length < 6) return showAlert('La contraseña debe tener al menos 6 caracteres para ser segura.');
+        if (password !== confirmPassword) return showAlert('Las contraseñas no coinciden. Por favor verifica.');
         handleRegister();
       }
     }
@@ -437,7 +440,13 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                         <Text style={styles.questionSubtitle}>Usarás estos datos para iniciar sesión en Aptly.</Text>
                         <CustomInput placeholder="Correo electrónico" value={email} onChangeText={setEmail} iconName="email-outline" />
                         <CustomInput placeholder="Contraseña" value={password} onChangeText={setPassword} iconName="lock-outline" isPassword />
+                        {password.length > 0 && password.length < 6 && (
+                          <Text style={{ color: '#ef4444', fontSize: 12, marginTop: -15, marginBottom: 15, marginLeft: 5 }}>La contraseña debe tener al menos 6 caracteres.</Text>
+                        )}
                         <CustomInput placeholder="Confirmar contraseña" value={confirmPassword} onChangeText={setConfirmPassword} iconName="lock-check-outline" isPassword />
+                        {confirmPassword.length > 0 && password !== confirmPassword && (
+                          <Text style={{ color: '#ef4444', fontSize: 12, marginTop: -15, marginBottom: 15, marginLeft: 5 }}>Las contraseñas no coinciden.</Text>
+                        )}
                       </View>
                     )}
                   </>
@@ -476,7 +485,13 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                         <Text style={styles.questionTitle}>Seguridad de la cuenta</Text>
                         <Text style={styles.questionSubtitle}>Crea una contraseña segura para tu empresa.</Text>
                         <CustomInput placeholder="Contraseña segura" value={password} onChangeText={setPassword} iconName="lock-outline" isPassword />
+                        {password.length > 0 && password.length < 6 && (
+                          <Text style={{ color: '#ef4444', fontSize: 12, marginTop: -15, marginBottom: 15, marginLeft: 5 }}>La contraseña debe tener al menos 6 caracteres.</Text>
+                        )}
                         <CustomInput placeholder="Confirmar contraseña" value={confirmPassword} onChangeText={setConfirmPassword} iconName="lock-check-outline" isPassword />
+                        {confirmPassword.length > 0 && password !== confirmPassword && (
+                          <Text style={{ color: '#ef4444', fontSize: 12, marginTop: -15, marginBottom: 15, marginLeft: 5 }}>Las contraseñas no coinciden.</Text>
+                        )}
                       </View>
                     )}
 

@@ -31,6 +31,13 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
   const [bio, setBio] = useState(initialProfile.bio || '');
   const [avatarUrl, setAvatarUrl] = useState(initialProfile.avatar_url || '');
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Company State
+  const [taxId, setTaxId] = useState(initialProfile.tax_id || '');
+  const [creationDate, setCreationDate] = useState(initialProfile.creation_date || '');
+  const [businessArea, setBusinessArea] = useState(initialProfile.business_area || '');
+  const [industry, setIndustry] = useState(initialProfile.industry || '');
+  const [companyTags, setCompanyTags] = useState(initialProfile.company_tags || '');
   
   // Experience State
   const [experiences, setExperiences] = useState<any[]>([]);
@@ -107,9 +114,14 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
         .upsert({
           id: session?.user?.id,
           full_name: fullName,
-          professional_title: title,
+          professional_title: initialProfile.role === 'company' ? undefined : title,
           location: location,
           bio,
+          tax_id: initialProfile.role === 'company' ? taxId : undefined,
+          creation_date: initialProfile.role === 'company' ? creationDate : undefined,
+          business_area: initialProfile.role === 'company' ? businessArea : undefined,
+          industry: initialProfile.role === 'company' ? industry : undefined,
+          company_tags: initialProfile.role === 'company' ? companyTags : undefined,
           updated_at: new Date(),
         });
 
@@ -197,59 +209,94 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
             </View>
           </View>
 
-          {/* Professional Info */}
-          <View style={styles.card}>
-            <Text style={styles.cardSectionLabel}>Información Profesional</Text>
+          {initialProfile.role === 'company' ? (
+            <>
+              {/* Company Info */}
+              <View style={styles.card}>
+                <Text style={styles.cardSectionLabel}>Detalles de la Empresa</Text>
 
-            <Text style={styles.inputLabel}>Nombre Completo</Text>
-            <TextInput value={fullName} onChangeText={setFullName} placeholderTextColor="#334155" style={styles.input} />
+                <Text style={styles.inputLabel}>Nombre de la Empresa</Text>
+                <TextInput value={fullName} onChangeText={setFullName} placeholderTextColor="#334155" style={styles.input} />
 
-            <Text style={styles.inputLabel}>Título Profesional</Text>
-            <TextInput value={title} onChangeText={setTitle} placeholderTextColor="#334155" style={styles.input} />
+                <Text style={styles.inputLabel}>NIT / ID Fiscal</Text>
+                <TextInput value={taxId} onChangeText={setTaxId} placeholderTextColor="#334155" style={styles.input} />
 
-            <Text style={styles.inputLabel}>Ubicación</Text>
-            <TextInput value={location} onChangeText={setLocation} placeholderTextColor="#334155" style={styles.input} />
+                <Text style={styles.inputLabel}>Fecha de Fundación</Text>
+                <TextInput value={creationDate} onChangeText={setCreationDate} placeholderTextColor="#334155" style={styles.input} />
 
-            <Text style={styles.inputLabel}>Resumen / Bio</Text>
-            <TextInput value={bio} onChangeText={setBio} multiline numberOfLines={3} placeholderTextColor="#334155" style={[styles.input, styles.inputMultiline]} />
-          </View>
+                <Text style={styles.inputLabel}>Área de Negocio</Text>
+                <TextInput value={businessArea} onChangeText={setBusinessArea} placeholderTextColor="#334155" style={styles.input} />
 
-          {/* Experiences Section */}
-          <View className="mb-10 px-2">
-            <View className="flex-row justify-between items-center mb-8">
-              <Text className="text-xs font-black text-slate-500 uppercase tracking-[3px]">Experiencia</Text>
-              <TouchableOpacity 
-                onPress={() => setIsAddingExp(!isAddingExp)}
-                className="bg-[#00A3FF] px-5 py-2 rounded-full"
-              >
-                <Text className="text-white font-black uppercase text-[10px] tracking-widest">{isAddingExp ? "Cerrar" : "+ Añadir"}</Text>
-              </TouchableOpacity>
-            </View>
+                <Text style={styles.inputLabel}>Sector principal</Text>
+                <TextInput value={industry} onChangeText={setIndustry} placeholderTextColor="#334155" style={styles.input} />
 
+                <Text style={styles.inputLabel}>Etiquetas de Empresa (separadas por coma)</Text>
+                <TextInput value={companyTags} onChangeText={setCompanyTags} placeholderTextColor="#334155" style={styles.input} />
 
-            {/* The inline form was removed in favor of the ObsidianModal */}
+                <Text style={styles.inputLabel}>Ubicación</Text>
+                <TextInput value={location} onChangeText={setLocation} placeholderTextColor="#334155" style={styles.input} />
 
-            {fetchingExp ? (
-              <ActivityIndicator color="#00A3FF" />
-            ) : experiences.length > 0 ? (
-              experiences.map((exp) => (
-                <View key={exp.id} className="flex-row items-center justify-between bg-[#121214] p-5 rounded-[24px] mb-4 border border-white/5">
-                  <View className="flex-1 mr-4">
-                    <Text className="font-bold text-white text-base">{exp.title}</Text>
-                    <Text className="text-[11px] font-black uppercase tracking-widest text-[#00A3FF] mt-1">{exp.company}</Text>
-                  </View>
-                  <TouchableOpacity onPress={() => handleDeleteExperience(exp.id)} className="w-10 h-10 bg-red-500/10 rounded-full items-center justify-center">
-                    <Feather name="trash-2" size={16} color="#ef4444" />
+                <Text style={styles.inputLabel}>Descripción (Bio)</Text>
+                <TextInput value={bio} onChangeText={setBio} multiline numberOfLines={3} placeholderTextColor="#334155" style={[styles.input, styles.inputMultiline]} />
+              </View>
+            </>
+          ) : (
+            <>
+              {/* Professional Info */}
+              <View style={styles.card}>
+                <Text style={styles.cardSectionLabel}>Información Profesional</Text>
+
+                <Text style={styles.inputLabel}>Nombre Completo</Text>
+                <TextInput value={fullName} onChangeText={setFullName} placeholderTextColor="#334155" style={styles.input} />
+
+                <Text style={styles.inputLabel}>Título Profesional</Text>
+                <TextInput value={title} onChangeText={setTitle} placeholderTextColor="#334155" style={styles.input} />
+
+                <Text style={styles.inputLabel}>Ubicación</Text>
+                <TextInput value={location} onChangeText={setLocation} placeholderTextColor="#334155" style={styles.input} />
+
+                <Text style={styles.inputLabel}>Resumen / Bio</Text>
+                <TextInput value={bio} onChangeText={setBio} multiline numberOfLines={3} placeholderTextColor="#334155" style={[styles.input, styles.inputMultiline]} />
+              </View>
+
+              {/* Experiences Section */}
+              <View className="mb-10 px-2">
+                <View className="flex-row justify-between items-center mb-8">
+                  <Text className="text-xs font-black text-slate-500 uppercase tracking-[3px]">Experiencia</Text>
+                  <TouchableOpacity 
+                    onPress={() => setIsAddingExp(!isAddingExp)}
+                    className="bg-[#00A3FF] px-5 py-2 rounded-full"
+                  >
+                    <Text className="text-white font-black uppercase text-[10px] tracking-widest">{isAddingExp ? "Cerrar" : "+ Añadir"}</Text>
                   </TouchableOpacity>
                 </View>
-              ))
-            ) : (
-              <View className="py-10 items-center">
-                 <Feather name="briefcase" size={24} color="#1e293b" />
-                 <Text className="text-slate-600 text-center uppercase font-black text-[10px] tracking-widest mt-4">No hay experiencias registradas</Text>
+
+
+                {/* The inline form was removed in favor of the ObsidianModal */}
+
+                {fetchingExp ? (
+                  <ActivityIndicator color="#00A3FF" />
+                ) : experiences.length > 0 ? (
+                  experiences.map((exp) => (
+                    <View key={exp.id} className="flex-row items-center justify-between bg-[#121214] p-5 rounded-[24px] mb-4 border border-white/5">
+                      <View className="flex-1 mr-4">
+                        <Text className="font-bold text-white text-base">{exp.title}</Text>
+                        <Text className="text-[11px] font-black uppercase tracking-widest text-[#00A3FF] mt-1">{exp.company}</Text>
+                      </View>
+                      <TouchableOpacity onPress={() => handleDeleteExperience(exp.id)} className="w-10 h-10 bg-red-500/10 rounded-full items-center justify-center">
+                        <Feather name="trash-2" size={16} color="#ef4444" />
+                      </TouchableOpacity>
+                    </View>
+                  ))
+                ) : (
+                  <View className="py-10 items-center">
+                    <Feather name="briefcase" size={24} color="#1e293b" />
+                    <Text className="text-slate-600 text-center uppercase font-black text-[10px] tracking-widest mt-4">No hay experiencias registradas</Text>
+                  </View>
+                )}
               </View>
-            )}
-          </View>
+            </>
+          )}
 
           <TouchableOpacity onPress={handleSaveProfile} disabled={loading} style={styles.saveAllBtn}>
             <Text style={styles.saveAllText}>{loading ? "Guardando..." : "Guardar Todo"}</Text>
