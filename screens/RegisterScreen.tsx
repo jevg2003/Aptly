@@ -30,6 +30,7 @@ import { supabase } from '../lib/supabase';
 import { useApp } from '../lib/AppContext';
 import { ObsidianModal } from '../components/ObsidianModal';
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 const { width } = Dimensions.get('window');
@@ -46,6 +47,14 @@ const COLORS = {
 
 const SECTORS = ['Tecnología', 'Salud', 'Finanzas', 'Construcción', 'Comercio', 'Manufactura', 'Servicios', 'Marketing', 'Educación', 'Otro'];
 
+const TAG_CATEGORIES = {
+  'Modalidad': ['Remoto', 'Híbrido', 'Presencial', 'Horario Flexible'],
+  'Horarios': ['Tiempo Completo', 'Medio Tiempo', 'Fines de Semana'],
+  'Beneficios': ['Seguro Médico', 'Bonos', 'Crecimiento', 'Snacks', 'Gimnasio'],
+  'Valores': ['Innovación', 'Diversidad', 'Sostenibilidad', 'Trabajo en Equipo'],
+  'Tamaño': ['Startup', 'Pequeña (1-50)', 'Mediana (51-200)', 'Corporativo (200+)']
+};
+
 export const RegisterScreen = ({ navigation, route }: any) => {
   const { setIsBusiness } = useApp();
   const initialRole = route?.params?.initialRole || 'candidate';
@@ -61,6 +70,11 @@ export const RegisterScreen = ({ navigation, route }: any) => {
   const [customSector, setCustomSector] = useState('');
   const [isOtherSector, setIsOtherSector] = useState(false);
   const [companyStep, setCompanyStep] = useState(1);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [customTagInput, setCustomTagInput] = useState('');
+  const [customTags, setCustomTags] = useState<string[]>([]);
+  const [pdfUri, setPdfUri] = useState<string | null>(null);
+  const [pdfName, setPdfName] = useState<string | null>(null);
   
   const [candidateStep, setCandidateStep] = useState(1);
   const [fullName, setFullName] = useState('');
@@ -82,6 +96,21 @@ export const RegisterScreen = ({ navigation, route }: any) => {
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
       setAvatarUrl(result.assets[0].uri);
+    }
+  };
+
+  const pickDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+        copyToCacheDirectory: true
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setPdfUri(result.assets[0].uri);
+        setPdfName(result.assets[0].name);
+      }
+    } catch (err) {
+      console.log('Error picking document', err);
     }
   };
 
@@ -221,6 +250,8 @@ export const RegisterScreen = ({ navigation, route }: any) => {
           creation_date: creationDate,
           business_area: businessArea,
           industry: finalSector,
+          company_tags: [...selectedTags, ...customTags].join(', '),
+          pdf_name: pdfName,
           avatar_url: avatarUrl
         } : { 
           full_name: fullName,
@@ -255,7 +286,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
     }
   };
 
-  const totalSteps = localRole === 'company' ? 6 : 3;
+  const totalSteps = localRole === 'company' ? 9 : 3;
   const currentStep = localRole === 'company' ? companyStep : candidateStep;
   const accentColor = localRole === 'company' ? COLORS.company : COLORS.candidate;
 
@@ -281,10 +312,16 @@ export const RegisterScreen = ({ navigation, route }: any) => {
       } else if (companyStep === 5) {
         if (!businessArea) return showAlert('Selecciona el área de la empresa.');
         setCompanyStep(6);
-      } else {
+      } else if (companyStep === 6) {
         const finalSector = isOtherSector ? customSector : selectedSectors[0];
         if (!finalSector) return showAlert('Selecciona o escribe un sector.');
         if (isOtherSector) supabase.from('business_sectors').insert({ name: finalSector }).then();
+        setCompanyStep(7);
+      } else if (companyStep === 7) {
+        setCompanyStep(8);
+      } else if (companyStep === 8) {
+        setCompanyStep(9);
+      } else {
         handleRegister();
       }
     } else {
@@ -541,6 +578,154 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                         </View>
                       </View>
                     )}
+
+                    {companyStep === 7 && (
+                      <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
+                        <Text style={styles.questionTitle}>Etiquetas de la Empresa</Text>
+                        <Text style={styles.questionSubtitle}>Selecciona las características que mejor describen a tu empresa para atraer a los candidatos ideales.</Text>
+                        
+                        {Object.entries(TAG_CATEGORIES).map(([category, tags]) => (
+                          <View key={category} style={{ marginBottom: 20 }}>
+                            <Text style={styles.sectorsLabel}>{category}</Text>
+                            <View style={styles.sectorsGrid}>
+                              {tags.map(tag => {
+                                const isSelected = selectedTags.includes(tag);
+                                return (
+                                  <TouchableOpacity 
+                                    key={tag}
+                                    style={[styles.sectorTag, isSelected && styles.sectorTagActive]}
+                                    onPress={() => {
+                                      if (isSelected) setSelectedTags(prev => prev.filter(t => t !== tag));
+                                      else setSelectedTags(prev => [...prev, tag]);
+                                    }}
+                                  >
+                                    <Text style={[styles.sectorTagText, isSelected && styles.sectorTagTextActive]}>{tag}</Text>
+                                  </TouchableOpacity>
+                                );
+                              })}
+                            </View>
+                          </View>
+                        ))}
+
+                        <View style={{ marginTop: 10, borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 20 }}>
+                          <Text style={styles.sectorsLabel}>¿No encontraste lo que buscabas? Créalo:</Text>
+                          <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+                            <View style={{ flex: 1 }}>
+                              <CustomInput 
+                                placeholder="Escribe tu etiqueta" 
+                                value={customTagInput} 
+                                onChangeText={setCustomTagInput} 
+                                iconName="tag-plus-outline" 
+                              />
+                            </View>
+                            <TouchableOpacity 
+                              style={{ backgroundColor: COLORS.company, height: 50, width: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', marginTop: -15 }}
+                              onPress={() => {
+                                if (customTagInput.trim() && !customTags.includes(customTagInput.trim())) {
+                                  setCustomTags(prev => [...prev, customTagInput.trim()]);
+                                  setCustomTagInput('');
+                                }
+                              }}
+                            >
+                              <MaterialCommunityIcons name="plus" size={24} color="#FFF" />
+                            </TouchableOpacity>
+                          </View>
+                          
+                          {customTags.length > 0 && (
+                            <View style={[styles.sectorsGrid, { marginTop: 10 }]}>
+                              {customTags.map(tag => (
+                                <TouchableOpacity 
+                                  key={tag}
+                                  style={[styles.sectorTag, styles.sectorTagActive]}
+                                  onPress={() => setCustomTags(prev => prev.filter(t => t !== tag))}
+                                >
+                                  <Text style={styles.sectorTagTextActive}>{tag} ✕</Text>
+                                </TouchableOpacity>
+                              ))}
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                    )}
+
+                    {companyStep === 8 && (
+                      <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
+                        <Text style={styles.questionTitle}>Vista Previa del Perfil</Text>
+                        <Text style={styles.questionSubtitle}>Así es como los candidatos verán tu empresa.</Text>
+                        
+                        <View style={styles.previewCard}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                            {avatarUrl ? (
+                              <Image source={{ uri: avatarUrl }} style={{ width: 60, height: 60, borderRadius: 30, marginRight: 16 }} />
+                            ) : (
+                              <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(255,0,92,0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+                                <MaterialCommunityIcons name="domain" size={30} color={COLORS.company} />
+                              </View>
+                            )}
+                            <View>
+                              <Text style={{ color: '#FFF', fontSize: 20, fontWeight: 'bold' }}>{companyName || 'Nombre Empresa'}</Text>
+                              <Text style={{ color: COLORS.textSecondary }}>{isOtherSector ? customSector : (selectedSectors[0] || 'Sector')} • {businessArea || 'Área'}</Text>
+                            </View>
+                          </View>
+                          
+                          <View style={{ flexDirection: 'row', gap: 20, marginBottom: 16 }}>
+                            <View>
+                              <Text style={{ color: COLORS.textSecondary, fontSize: 12 }}>NIT</Text>
+                              <Text style={{ color: '#FFF' }}>{taxId}</Text>
+                            </View>
+                            <View>
+                              <Text style={{ color: COLORS.textSecondary, fontSize: 12 }}>Fundación</Text>
+                              <Text style={{ color: '#FFF' }}>{creationDate}</Text>
+                            </View>
+                          </View>
+
+                          <View style={{ marginTop: 8 }}>
+                            <Text style={{ color: COLORS.textSecondary, fontSize: 12, marginBottom: 8 }}>Etiquetas Seleccionadas</Text>
+                            <View style={styles.sectorsGrid}>
+                              {[...selectedTags, ...customTags].length > 0 ? (
+                                [...selectedTags, ...customTags].map(tag => (
+                                  <View key={tag} style={[styles.sectorTag, { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' }]}>
+                                    <Text style={{ color: '#FFF', fontSize: 12 }}>{tag}</Text>
+                                  </View>
+                                ))
+                              ) : (
+                                <Text style={{ color: COLORS.textSecondary, fontSize: 13, fontStyle: 'italic' }}>Sin etiquetas</Text>
+                              )}
+                            </View>
+                          </View>
+                        </View>
+
+                        <Text style={[styles.questionSubtitle, { marginTop: 24, marginBottom: 12 }]}>Añadir más información (Opcional)</Text>
+                        <TouchableOpacity style={styles.pdfButton} onPress={pickDocument}>
+                          <MaterialCommunityIcons name={pdfName ? "file-pdf-box" : "file-upload-outline"} size={24} color={pdfName ? COLORS.company : COLORS.textSecondary} />
+                          <View style={{ marginLeft: 12, flex: 1 }}>
+                            <Text style={{ color: pdfName ? '#FFF' : COLORS.textSecondary, fontWeight: 'bold' }}>
+                              {pdfName ? pdfName : 'Subir presentación o brochure (PDF)'}
+                            </Text>
+                            <Text style={{ color: COLORS.textSecondary, fontSize: 12 }}>
+                              {pdfName ? 'Toca para cambiar el archivo' : 'Los candidatos podrán descargarlo'}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
+                    {companyStep === 9 && (
+                      <View style={[styles.stepContainer, { justifyContent: 'center', alignItems: 'center' }]}>
+                        <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(255,0,92,0.1)', justifyContent: 'center', alignItems: 'center', marginBottom: 32 }}>
+                          <MaterialCommunityIcons name="rocket-launch" size={60} color={COLORS.company} />
+                        </View>
+                        <Text style={[styles.questionTitle, { textAlign: 'center' }]}>¡Todo listo!</Text>
+                        <Text style={[styles.questionSubtitle, { textAlign: 'center', fontSize: 16, lineHeight: 24 }]}>
+                          Tu perfil de empresa ha sido preparado exitosamente.
+                        </Text>
+                        <View style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border, marginTop: 10 }}>
+                          <Text style={{ color: '#FFF', textAlign: 'center', lineHeight: 22 }}>
+                            Para comenzar a conocer a los candidatos ideales, tu primer paso será presionar el botón <Text style={{ fontWeight: 'bold', color: COLORS.company }}>+</Text> en la parte inferior de tu pantalla principal para crear un puesto vacante.
+                          </Text>
+                        </View>
+                      </View>
+                    )}
                   </>
                 )}
 
@@ -707,4 +892,6 @@ const styles = StyleSheet.create({
   radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.company },
   areaText: { color: COLORS.textSecondary, fontSize: 16, fontWeight: '600' },
   areaTextActive: { color: 'white', fontWeight: '800' },
+  previewCard: { backgroundColor: 'rgba(255,255,255,0.02)', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border, marginTop: 10 },
+  pdfButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border },
 });
