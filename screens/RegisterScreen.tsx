@@ -5,7 +5,6 @@ import {
   TouchableOpacity, 
   Image, 
   StatusBar,
-  Dimensions,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
@@ -21,7 +20,6 @@ import Animated, {
   useAnimatedStyle, 
   withSpring, 
   withTiming,
-  interpolateColor,
 } from 'react-native-reanimated';
 import { CustomInput } from '../components/CustomInput';
 import { supabase } from '../lib/supabase';
@@ -136,9 +134,8 @@ export const RegisterScreen = ({ navigation, route }: any) => {
   
   const [loading, setLoading] = useState(false);
   
-  const [localRole, setLocalRole] = useState<'candidate' | 'company'>(initialRole);
+  const localRole: 'candidate' | 'company' = initialRole;
   
-  const switchAnim = useSharedValue(initialRole === 'company' ? 1 : 0);
   const contentFade = useSharedValue(0);
   const cardTranslateY = useSharedValue(50);
   const [alertConfig, setAlertConfig] = useState({ 
@@ -156,18 +153,6 @@ export const RegisterScreen = ({ navigation, route }: any) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-
-  const switchTabWidth = Dimensions.get('window').width - 48; // approximate tab width
-  const animatedSwitchStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: withSpring(switchAnim.value * ((switchTabWidth - 12) / 2)) },
-    ],
-    backgroundColor: interpolateColor(switchAnim.value, [0, 1], [COLORS.candidate, COLORS.company]),
-    shadowColor: interpolateColor(switchAnim.value, [0, 1], [COLORS.candidate, COLORS.company]),
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 10,
-  }));
 
   const animatedCardStyle = useAnimatedStyle(() => {
     return {
