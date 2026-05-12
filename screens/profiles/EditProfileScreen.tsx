@@ -20,6 +20,8 @@ import { pickAndOptimizeImage } from '../../lib/imageUtils';
 import { uploadAvatar } from '../../lib/storageUtils';
 import { ObsidianModal } from '../../components/ObsidianModal';
 
+const SECTORS = ['Tecnología', 'Salud', 'Finanzas', 'Construcción', 'Comercio', 'Manufactura', 'Servicios', 'Marketing', 'Educación', 'Otro'];
+
 export const EditProfileScreen = ({ navigation, route }: any) => {
   const session = React.useContext(SessionContext);
   const initialProfile = route.params?.profile || {};
@@ -38,6 +40,14 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
   const [businessArea, setBusinessArea] = useState(initialProfile.business_area || '');
   const [industry, setIndustry] = useState(initialProfile.industry || '');
   const [companyTags, setCompanyTags] = useState(initialProfile.company_tags || '');
+  
+  // Candidate Specific State
+  const [candidateTags, setCandidateTags] = useState(initialProfile.candidate_tags || '');
+  const [industryInterests, setIndustryInterests] = useState<string[]>(
+    initialProfile.industry_interests 
+      ? initialProfile.industry_interests.split(',').map((s: string) => s.trim()).filter(Boolean)
+      : []
+  );
   
   // Experience State
   const [experiences, setExperiences] = useState<any[]>([]);
@@ -122,6 +132,8 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
           business_area: initialProfile.role === 'company' ? businessArea : undefined,
           industry: initialProfile.role === 'company' ? industry : undefined,
           company_tags: initialProfile.role === 'company' ? companyTags : undefined,
+          candidate_tags: initialProfile.role === 'company' ? undefined : candidateTags,
+          industry_interests: initialProfile.role === 'company' ? undefined : industryInterests.join(', '),
           updated_at: new Date(),
         });
 
@@ -254,6 +266,30 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
 
                 <Text style={styles.inputLabel}>Ubicación</Text>
                 <TextInput value={location} onChangeText={setLocation} placeholderTextColor="#334155" style={styles.input} />
+
+                <Text style={styles.inputLabel}>Sectores de Interés</Text>
+                <View style={styles.sectorsContainer}>
+                  <View style={styles.sectorsGrid}>
+                    {SECTORS.map(sector => {
+                      const isSelected = industryInterests.includes(sector);
+                      return (
+                        <TouchableOpacity 
+                          key={sector}
+                          style={[styles.sectorTag, isSelected && { borderColor: '#00A3FF', backgroundColor: 'rgba(0,163,255,0.1)' }]}
+                          onPress={() => {
+                            if (isSelected) setIndustryInterests(prev => prev.filter(s => s !== sector));
+                            else setIndustryInterests(prev => [...prev, sector]);
+                          }}
+                        >
+                          <Text style={[styles.sectorTagText, isSelected && styles.sectorTagTextActive]}>{sector}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+
+                <Text style={styles.inputLabel}>Habilidades / Etiquetas (separadas por coma)</Text>
+                <TextInput value={candidateTags} onChangeText={setCandidateTags} placeholderTextColor="#334155" style={styles.input} />
 
                 <Text style={styles.inputLabel}>Resumen / Bio</Text>
                 <TextInput value={bio} onChangeText={setBio} multiline numberOfLines={3} placeholderTextColor="#334155" style={[styles.input, styles.inputMultiline]} />
@@ -401,5 +437,10 @@ const styles = StyleSheet.create({
   saveAllText: { color: '#FFFFFF', fontWeight: '900', textTransform: 'uppercase', letterSpacing: 2, fontSize: 14 },
   modalForm: { width: '100%', marginTop: 20 },
   modalInputLabel: { color: '#00A3FF', fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, marginLeft: 4 },
-  modalInput: { backgroundColor: '#050505', borderRadius: 16, padding: 16, color: 'white', fontSize: 14, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)', marginBottom: 20 }
+  modalInput: { backgroundColor: '#050505', borderRadius: 16, padding: 16, color: 'white', fontSize: 14, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)', marginBottom: 20 },
+  sectorsContainer: { marginBottom: 24 },
+  sectorsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  sectorTag: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'transparent' },
+  sectorTagText: { color: '#94a3b8', fontSize: 13, fontWeight: '600' },
+  sectorTagTextActive: { color: '#00A3FF' }
 });
