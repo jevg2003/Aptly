@@ -41,6 +41,7 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
   
   // Candidate Specific State
   const [candidateTags, setCandidateTags] = useState(initialProfile.candidate_tags || '');
+  const [industryInterests, setIndustryInterests] = useState(initialProfile.industry_interests || '');
   
   // Experience State
   const [experiences, setExperiences] = useState<any[]>([]);
@@ -126,6 +127,7 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
           industry: initialProfile.role === 'company' ? industry : undefined,
           company_tags: initialProfile.role === 'company' ? companyTags : undefined,
           candidate_tags: initialProfile.role === 'company' ? undefined : candidateTags,
+          industry_interests: initialProfile.role === 'company' ? undefined : industryInterests,
           updated_at: new Date(),
         });
 
@@ -258,6 +260,9 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
 
                 <Text style={styles.inputLabel}>Ubicación</Text>
                 <TextInput value={location} onChangeText={setLocation} placeholderTextColor="#334155" style={styles.input} />
+
+                <Text style={styles.inputLabel}>Sectores de Interés (separados por coma)</Text>
+                <TextInput value={industryInterests} onChangeText={setIndustryInterests} placeholderTextColor="#334155" style={styles.input} />
 
                 <Text style={styles.inputLabel}>Habilidades / Etiquetas (separadas por coma)</Text>
                 <TextInput value={candidateTags} onChangeText={setCandidateTags} placeholderTextColor="#334155" style={styles.input} />
