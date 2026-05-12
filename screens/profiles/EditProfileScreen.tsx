@@ -39,6 +39,9 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
   const [industry, setIndustry] = useState(initialProfile.industry || '');
   const [companyTags, setCompanyTags] = useState(initialProfile.company_tags || '');
   
+  // Candidate Specific State
+  const [candidateTags, setCandidateTags] = useState(initialProfile.candidate_tags || '');
+  
   // Experience State
   const [experiences, setExperiences] = useState<any[]>([]);
   const [isAddingExp, setIsAddingExp] = useState(false);
@@ -122,6 +125,7 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
           business_area: initialProfile.role === 'company' ? businessArea : undefined,
           industry: initialProfile.role === 'company' ? industry : undefined,
           company_tags: initialProfile.role === 'company' ? companyTags : undefined,
+          candidate_tags: initialProfile.role === 'company' ? undefined : candidateTags,
           updated_at: new Date(),
         });
 
@@ -254,6 +258,9 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
 
                 <Text style={styles.inputLabel}>Ubicación</Text>
                 <TextInput value={location} onChangeText={setLocation} placeholderTextColor="#334155" style={styles.input} />
+
+                <Text style={styles.inputLabel}>Habilidades / Etiquetas (separadas por coma)</Text>
+                <TextInput value={candidateTags} onChangeText={setCandidateTags} placeholderTextColor="#334155" style={styles.input} />
 
                 <Text style={styles.inputLabel}>Resumen / Bio</Text>
                 <TextInput value={bio} onChangeText={setBio} multiline numberOfLines={3} placeholderTextColor="#334155" style={[styles.input, styles.inputMultiline]} />
