@@ -361,7 +361,7 @@ export const ProfileScreen = ({ navigation }: any) => {
                 <Text style={styles.emptyText}>No hay etiquetas registradas.</Text>
               )}
             </View>
-            
+
             {/* PDF Preview Section */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>

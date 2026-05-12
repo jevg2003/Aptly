@@ -77,6 +77,16 @@ export const RegisterScreen = ({ navigation, route }: any) => {
   const [birthDate, setBirthDate] = useState('');
   const [profession, setProfession] = useState('');
   const [candidateSectors, setCandidateSectors] = useState<string[]>([]);
+  // New candidate fields
+  const [candidateLocation, setCandidateLocation] = useState('');
+  const [experienceLevel, setExperienceLevel] = useState('');
+  const [candidateTags, setCandidateTags] = useState<string[]>([]);
+  const [customCandidateTagInput, setCustomCandidateTagInput] = useState('');
+  const [customCandidateTags, setCustomCandidateTags] = useState<string[]>([]);
+  const [candidateBio, setCandidateBio] = useState('');
+  const [candidatePhone, setCandidatePhone] = useState('');
+  const [candidatePortfolio, setCandidatePortfolio] = useState('');
+  const [candidateLinkedIn, setCandidateLinkedIn] = useState('');
   
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -214,7 +224,15 @@ export const RegisterScreen = ({ navigation, route }: any) => {
           birth_date: birthDate,
           profession: profession,
           industry_interests: candidateSectors.join(', '),
-          avatar_url: avatarUrl
+          avatar_url: avatarUrl,
+          location: candidateLocation || undefined,
+          experience_level: experienceLevel || undefined,
+          candidate_tags: [...candidateTags, ...customCandidateTags].join(', '),
+          bio: candidateBio || undefined,
+          phone: candidatePhone || undefined,
+          portfolio_url: candidatePortfolio || undefined,
+          linkedin_url: candidateLinkedIn || undefined,
+          resume_name: pdfName || undefined,
         }
       }
     });
@@ -241,7 +259,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
     }
   };
 
-  const totalSteps = localRole === 'company' ? 11 : 3;
+  const totalSteps = 11;
   const currentStep = localRole === 'company' ? companyStep : candidateStep;
   const accentColor = localRole === 'company' ? COLORS.company : COLORS.candidate;
 
@@ -289,14 +307,34 @@ export const RegisterScreen = ({ navigation, route }: any) => {
       }
     } else {
       if (candidateStep === 1) {
-        if (!fullName || !birthDate) return showAlert('Por favor, ingresa tu nombre y fecha de nacimiento.');
+        if (!email) return showAlert('Por favor, ingresa tu correo.');
         setCandidateStep(2);
       } else if (candidateStep === 2) {
-        if (!profession || candidateSectors.length === 0) return showAlert('Ingresa tu profesión y al menos un sector de interés.');
-        setCandidateStep(3);
-      } else {
         if (!password || password.length < 6) return showAlert('La contraseña debe tener al menos 6 caracteres para ser segura.');
         if (password !== confirmPassword) return showAlert('Las contraseñas no coinciden. Por favor verifica.');
+        setCandidateStep(3);
+      } else if (candidateStep === 3) {
+        if (!fullName) return showAlert('Por favor, ingresa tu nombre completo.');
+        setCandidateStep(4);
+      } else if (candidateStep === 4) {
+        if (!birthDate) return showAlert('Por favor, ingresa tu fecha de nacimiento.');
+        setCandidateStep(5);
+      } else if (candidateStep === 5) {
+        if (!profession) return showAlert('Por favor, ingresa tu profesión u ocupación.');
+        if (!experienceLevel) return showAlert('Por favor, selecciona tu nivel de experiencia.');
+        setCandidateStep(6);
+      } else if (candidateStep === 6) {
+        if (candidateSectors.length === 0) return showAlert('Selecciona al menos un sector de interés.');
+        setCandidateStep(7);
+      } else if (candidateStep === 7) {
+        setCandidateStep(8);
+      } else if (candidateStep === 8) {
+        setCandidateStep(9);
+      } else if (candidateStep === 9) {
+        setCandidateStep(10);
+      } else if (candidateStep === 10) {
+        setCandidateStep(11);
+      } else {
         handleRegister();
       }
     }
@@ -337,27 +375,80 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                 {localRole === 'candidate' && (
                   <>
                     {candidateStep === 1 && (
-                      <View style={styles.stepContainer}>
-                        <Text style={styles.questionTitle}>Para empezar, ¿cuál es tu nombre y fecha de nacimiento?</Text>
+                      <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
+                        <Text style={styles.questionTitle}>Crea tu cuenta de candidato</Text>
+                        <Text style={styles.questionSubtitle}>Ingresa con tu correo u opciones sociales.</Text>
                         
-                        <View style={{ alignItems: 'center', marginBottom: 20 }}>
-                          <TouchableOpacity onPress={pickImage} style={styles.avatarPicker}>
+                        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+                           <TouchableOpacity style={styles.socialBtn} onPress={() => showAlert('Autenticación con Google próximamente')}>
+                              <Image source={{ uri: 'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png' }} style={{ width: 18, height: 18, marginRight: 8 }} />
+                              <Text style={styles.socialText}>Google</Text>
+                           </TouchableOpacity>
+                           <TouchableOpacity style={styles.socialBtn} onPress={() => showAlert('Autenticación con GitHub próximamente')}>
+                              <MaterialCommunityIcons name="github" size={20} color="white" />
+                              <Text style={styles.socialText}>GitHub</Text>
+                           </TouchableOpacity>
+                        </View>
+                        
+                        <View style={styles.divider}>
+                           <View style={styles.dividerLine} />
+                           <Text style={styles.dividerText}>o con tu correo electrónico</Text>
+                           <View style={styles.dividerLine} />
+                        </View>
+
+                        <CustomInput placeholder="Correo electrónico" value={email} onChangeText={setEmail} iconName="email-outline" />
+                      </View>
+                    )}
+
+                    {candidateStep === 2 && (
+                      <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
+                        <Text style={styles.questionTitle}>Seguridad de la cuenta</Text>
+                        <Text style={styles.questionSubtitle}>Crea una contraseña segura para tu perfil.</Text>
+                        <CustomInput placeholder="Contraseña segura" value={password} onChangeText={setPassword} iconName="lock-outline" isPassword />
+                        {password.length > 0 && password.length < 6 && (
+                          <Text style={{ color: '#ef4444', fontSize: 12, marginTop: -15, marginBottom: 15, marginLeft: 5 }}>La contraseña debe tener al menos 6 caracteres.</Text>
+                        )}
+                        <CustomInput placeholder="Confirmar contraseña" value={confirmPassword} onChangeText={setConfirmPassword} iconName="lock-check-outline" isPassword />
+                        {confirmPassword.length > 0 && password !== confirmPassword && (
+                          <Text style={{ color: '#ef4444', fontSize: 12, marginTop: -15, marginBottom: 15, marginLeft: 5 }}>Las contraseñas no coinciden.</Text>
+                        )}
+                      </View>
+                    )}
+
+                    {candidateStep === 3 && (
+                      <View style={styles.stepContainer}>
+                        <Text style={styles.questionTitle}>¿Cómo te llamas y cómo te verán las empresas?</Text>
+                        
+                        <View style={{ alignItems: 'center', marginBottom: 20, marginTop: 20 }}>
+                          <TouchableOpacity onPress={pickImage} style={[styles.avatarPicker, { borderColor: COLORS.candidate, backgroundColor: 'rgba(0,163,255,0.05)' }]}>
                             {avatarUrl ? (
                               <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
                             ) : (
                               <View style={styles.avatarPlaceholder}>
                                 <MaterialCommunityIcons name="camera-plus" size={32} color={COLORS.candidate} />
-                                <Text style={{ color: COLORS.textSecondary, fontSize: 13, marginTop: 4 }}>Añadir foto</Text>
+                                <Text style={{ color: COLORS.textSecondary, fontSize: 13, marginTop: 4 }}>Tu foto</Text>
                               </View>
                             )}
                           </TouchableOpacity>
                         </View>
 
-                        <CustomInput placeholder="Nombre Completo" value={fullName} onChangeText={setFullName} iconName="account-outline" />
+                        <CustomInput placeholder="Nombre y Apellidos" value={fullName} onChangeText={setFullName} iconName="account-outline" />
+                      </View>
+                    )}
+
+                    {candidateStep === 4 && (
+                      <View style={styles.stepContainer}>
+                        <Text style={styles.questionTitle}>Datos básicos</Text>
+                        <Text style={styles.questionSubtitle}>Cuéntanos un poco más sobre ti.</Text>
+                        
+                        <CustomInput placeholder="Ciudad, País" value={candidateLocation} onChangeText={setCandidateLocation} iconName="map-marker-outline" />
                         
                         <TouchableOpacity 
                           activeOpacity={0.8} 
-                          onPress={() => setShowDatePicker(true)}
+                          onPress={() => {
+                            Keyboard.dismiss();
+                            setShowDatePicker(true);
+                          }}
                           style={styles.dateSelector}
                         >
                           <MaterialCommunityIcons name="calendar" size={20} color={birthDate ? COLORS.candidate : "#64748b"} />
@@ -368,13 +459,34 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                       </View>
                     )}
 
-                    {candidateStep === 2 && (
+                    {candidateStep === 5 && (
                       <View style={styles.stepContainer}>
-                        <Text style={styles.questionTitle}>¿A qué te dedicas y cuáles son tus sectores de interés?</Text>
+                        <Text style={styles.questionTitle}>Perfil Profesional</Text>
+                        <Text style={styles.questionSubtitle}>¿A qué te dedicas y cuál es tu nivel?</Text>
                         <CustomInput placeholder="Profesión u Ocupación Principal" value={profession} onChangeText={setProfession} iconName="briefcase-outline" />
                         
+                        <View style={{ gap: 12, marginTop: 10 }}>
+                          {['Junior', 'Mid-Level', 'Senior', 'Lead/Manager'].map(lvl => (
+                            <TouchableOpacity 
+                               key={lvl}
+                               style={[styles.areaCard, experienceLevel === lvl && { borderColor: COLORS.candidate, backgroundColor: 'rgba(0,163,255,0.05)' }]}
+                               onPress={() => setExperienceLevel(lvl)}
+                            >
+                               <View style={[styles.radioCircle, { borderColor: experienceLevel === lvl ? COLORS.candidate : COLORS.textSecondary }]}>
+                                  {experienceLevel === lvl && <View style={[styles.radioInner, { backgroundColor: COLORS.candidate }]} />}
+                               </View>
+                               <Text style={[styles.areaText, experienceLevel === lvl && { color: COLORS.candidate }]}>{lvl}</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      </View>
+                    )}
+
+                    {candidateStep === 6 && (
+                      <View style={styles.stepContainer}>
+                        <Text style={styles.questionTitle}>¿Qué sectores te interesan?</Text>
+                        <Text style={styles.questionSubtitle}>Selecciona las industrias en las que te gustaría trabajar.</Text>
                         <View style={styles.sectorsContainer}>
-                          <Text style={styles.sectorsLabel}>Selecciona tus industrias preferidas:</Text>
                           <View style={styles.sectorsGrid}>
                             {SECTORS.map(sector => {
                               const isSelected = candidateSectors.includes(sector);
@@ -396,19 +508,177 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                       </View>
                     )}
 
-                    {candidateStep === 3 && (
-                      <View style={styles.stepContainer}>
-                        <Text style={styles.questionTitle}>Por último, crea tus credenciales de acceso</Text>
-                        <Text style={styles.questionSubtitle}>Usarás estos datos para iniciar sesión en Aptly.</Text>
-                        <CustomInput placeholder="Correo electrónico" value={email} onChangeText={setEmail} iconName="email-outline" />
-                        <CustomInput placeholder="Contraseña" value={password} onChangeText={setPassword} iconName="lock-outline" isPassword />
-                        {password.length > 0 && password.length < 6 && (
-                          <Text style={{ color: '#ef4444', fontSize: 12, marginTop: -15, marginBottom: 15, marginLeft: 5 }}>La contraseña debe tener al menos 6 caracteres.</Text>
-                        )}
-                        <CustomInput placeholder="Confirmar contraseña" value={confirmPassword} onChangeText={setConfirmPassword} iconName="lock-check-outline" isPassword />
-                        {confirmPassword.length > 0 && password !== confirmPassword && (
-                          <Text style={{ color: '#ef4444', fontSize: 12, marginTop: -15, marginBottom: 15, marginLeft: 5 }}>Las contraseñas no coinciden.</Text>
-                        )}
+                    {candidateStep === 7 && (
+                      <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
+                        <Text style={styles.questionTitle}>Tus Habilidades (Opcional)</Text>
+                        <Text style={styles.questionSubtitle}>Añade habilidades clave, idiomas o herramientas que dominas.</Text>
+                        
+                        <View style={{ marginTop: 10 }}>
+                          <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+                            <View style={{ flex: 1 }}>
+                              <CustomInput 
+                                placeholder="Ej: React, Inglés C1, Liderazgo..." 
+                                value={customCandidateTagInput} 
+                                onChangeText={setCustomCandidateTagInput} 
+                                iconName="tag-plus-outline" 
+                              />
+                            </View>
+                            <TouchableOpacity 
+                              style={{ backgroundColor: COLORS.candidate, height: 50, width: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', marginTop: -15 }}
+                              onPress={() => {
+                                if (customCandidateTagInput.trim() && !customCandidateTags.includes(customCandidateTagInput.trim())) {
+                                  setCustomCandidateTags(prev => [...prev, customCandidateTagInput.trim()]);
+                                  setCustomCandidateTagInput('');
+                                }
+                              }}
+                            >
+                              <MaterialCommunityIcons name="plus" size={24} color="#FFF" />
+                            </TouchableOpacity>
+                          </View>
+                          
+                          {customCandidateTags.length > 0 && (
+                            <View style={[styles.sectorsGrid, { marginTop: 10 }]}>
+                              {customCandidateTags.map(tag => (
+                                <TouchableOpacity 
+                                  key={tag}
+                                  style={[styles.sectorTag, { borderColor: COLORS.candidate, backgroundColor: 'rgba(0,163,255,0.1)' }]}
+                                  onPress={() => setCustomCandidateTags(prev => prev.filter(t => t !== tag))}
+                                >
+                                  <Text style={{ color: COLORS.candidate, fontSize: 13, fontWeight: '600' }}>{tag} ✕</Text>
+                                </TouchableOpacity>
+                              ))}
+                            </View>
+                          )}
+                        </View>
+                        <TouchableOpacity onPress={() => setCandidateStep(8)} style={{ alignSelf: 'center', marginTop: 32, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                          <Text style={{ color: '#64748b', fontSize: 13, fontWeight: '600' }}>Omitir este paso</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
+                    {candidateStep === 8 && (
+                      <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
+                        <Text style={styles.questionTitle}>Sobre ti (Opcional)</Text>
+                        <Text style={styles.questionSubtitle}>Escribe un breve resumen profesional que las empresas verán en tu perfil.</Text>
+
+                        <View style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(0,163,255,0.2)', borderRadius: 20, padding: 16, minHeight: 160, marginBottom: 20 }}>
+                          <TextInput
+                            multiline
+                            numberOfLines={7}
+                            style={{ color: '#FFF', fontSize: 15, lineHeight: 24, textAlignVertical: 'top' }}
+                            value={candidateBio}
+                            onChangeText={setCandidateBio}
+                            placeholder="Ej. Soy un profesional apasionado por el desarrollo web con 3 años de experiencia..."
+                            placeholderTextColor="#475569"
+                          />
+                        </View>
+
+                        <TouchableOpacity onPress={() => setCandidateStep(9)} style={{ alignSelf: 'center', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                          <Text style={{ color: '#64748b', fontSize: 13, fontWeight: '600' }}>Omitir este paso</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
+                    {candidateStep === 9 && (
+                      <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
+                        <Text style={styles.questionTitle}>Enlaces y Contacto (Opcional)</Text>
+                        <Text style={styles.questionSubtitle}>Añade tus enlaces para que las empresas puedan conocer más sobre tu trabajo.</Text>
+
+                        <View style={{ gap: 16 }}>
+                          <View>
+                            <Text style={styles.sectorsLabel}>Teléfono</Text>
+                            <CustomInput placeholder="+57 300 000 0000" value={candidatePhone} onChangeText={setCandidatePhone} iconName="phone-outline" />
+                          </View>
+                          <View>
+                            <Text style={styles.sectorsLabel}>LinkedIn</Text>
+                            <CustomInput placeholder="https://linkedin.com/in/tu-perfil" value={candidateLinkedIn} onChangeText={setCandidateLinkedIn} iconName="linkedin" />
+                          </View>
+                          <View>
+                            <Text style={styles.sectorsLabel}>Portafolio / GitHub / Sitio Web</Text>
+                            <CustomInput placeholder="https://tu-portafolio.com" value={candidatePortfolio} onChangeText={setCandidatePortfolio} iconName="web" />
+                          </View>
+                        </View>
+
+                        <TouchableOpacity onPress={() => setCandidateStep(10)} style={{ alignSelf: 'center', marginTop: 32, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                          <Text style={{ color: '#64748b', fontSize: 13, fontWeight: '600' }}>Omitir este paso</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
+                    {candidateStep === 10 && (
+                      <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
+                        <Text style={styles.questionTitle}>Vista Previa y Currículum</Text>
+                        <Text style={styles.questionSubtitle}>Así se verá tu perfil principal.</Text>
+                        
+                        <View style={[styles.previewCard, { borderColor: 'rgba(0,163,255,0.1)' }]}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                            {avatarUrl ? (
+                              <Image source={{ uri: avatarUrl }} style={{ width: 60, height: 60, borderRadius: 30, marginRight: 16 }} />
+                            ) : (
+                              <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(0,163,255,0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+                                <MaterialCommunityIcons name="account" size={30} color={COLORS.candidate} />
+                              </View>
+                            )}
+                            <View style={{ flex: 1 }}>
+                              <Text style={{ color: '#FFF', fontSize: 20, fontWeight: 'bold' }} numberOfLines={1}>{fullName || 'Nombre Completo'}</Text>
+                              <Text style={{ color: COLORS.textSecondary }} numberOfLines={1}>{profession || 'Profesión'} • {experienceLevel || 'Nivel'}</Text>
+                            </View>
+                          </View>
+                          
+                          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
+                            {candidateLocation ? (
+                              <View>
+                                <Text style={{ color: COLORS.textSecondary, fontSize: 10, fontWeight: '800', textTransform: 'uppercase' }}>Ubicación</Text>
+                                <Text style={{ color: '#FFF', fontSize: 13 }}>{candidateLocation}</Text>
+                              </View>
+                            ) : null}
+                          </View>
+
+                          <View style={{ marginTop: 8 }}>
+                            <Text style={{ color: COLORS.textSecondary, fontSize: 10, fontWeight: '800', textTransform: 'uppercase', marginBottom: 8 }}>Habilidades</Text>
+                            <View style={styles.sectorsGrid}>
+                              {customCandidateTags.length > 0 ? (
+                                customCandidateTags.map(tag => (
+                                  <View key={tag} style={[styles.sectorTag, { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(0,163,255,0.1)' }]}>
+                                    <Text style={{ color: '#FFF', fontSize: 11 }}>{tag}</Text>
+                                  </View>
+                                ))
+                              ) : (
+                                <Text style={{ color: COLORS.textSecondary, fontSize: 12, fontStyle: 'italic' }}>Sin habilidades aún</Text>
+                              )}
+                            </View>
+                          </View>
+                        </View>
+
+                        <Text style={[styles.questionSubtitle, { marginTop: 24, marginBottom: 12 }]}>Añadir Currículum (Opcional)</Text>
+                        <TouchableOpacity style={[styles.pdfButton, { borderColor: pdfName ? COLORS.candidate : COLORS.border }]} onPress={pickDocument}>
+                          <MaterialCommunityIcons name={pdfName ? "file-pdf-box" : "file-upload-outline"} size={24} color={pdfName ? COLORS.candidate : COLORS.textSecondary} />
+                          <View style={{ marginLeft: 12, flex: 1 }}>
+                            <Text style={{ color: pdfName ? '#FFF' : COLORS.textSecondary, fontWeight: 'bold' }}>
+                              {pdfName ? pdfName : 'Subir tu CV (PDF)'}
+                            </Text>
+                            <Text style={{ color: COLORS.textSecondary, fontSize: 12 }}>
+                              {pdfName ? 'Toca para cambiar el archivo' : 'Las empresas podrán descargarlo'}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
+                    {candidateStep === 11 && (
+                      <View style={[styles.stepContainer, { justifyContent: 'center', alignItems: 'center' }]}>
+                        <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(0,163,255,0.1)', justifyContent: 'center', alignItems: 'center', marginBottom: 32 }}>
+                          <MaterialCommunityIcons name="account-check" size={60} color={COLORS.candidate} />
+                        </View>
+                        <Text style={[styles.questionTitle, { textAlign: 'center' }]}>¡Todo listo!</Text>
+                        <Text style={[styles.questionSubtitle, { textAlign: 'center', fontSize: 16, lineHeight: 24 }]}>
+                          Tu perfil está configurado.
+                        </Text>
+                        <View style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border, marginTop: 10 }}>
+                          <Text style={{ color: '#FFF', textAlign: 'center', lineHeight: 22 }}>
+                            Al crear tu cuenta, podrás empezar a buscar oportunidades y hacer match con las mejores empresas.
+                          </Text>
+                        </View>
                       </View>
                     )}
                   </>
@@ -493,7 +763,10 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                         
                         <TouchableOpacity 
                           activeOpacity={0.8} 
-                          onPress={() => setShowDatePicker(true)}
+                          onPress={() => {
+                            Keyboard.dismiss();
+                            setShowDatePicker(true);
+                          }}
                           style={styles.dateSelector}
                         >
                           <MaterialCommunityIcons name="calendar" size={20} color={creationDate ? COLORS.company : "#64748b"} />
