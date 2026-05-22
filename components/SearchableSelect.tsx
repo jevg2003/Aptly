@@ -12,6 +12,8 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Dimensions,
+  StyleProp,
+  ViewStyle,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -31,6 +33,7 @@ interface SearchableSelectProps {
   disabled?: boolean;
   role?: 'candidate' | 'company';
   label?: string;
+  containerStyle?: StyleProp<ViewStyle>;
 }
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -44,6 +47,7 @@ export const SearchableSelect = ({
   disabled = false,
   role = 'candidate',
   label,
+  containerStyle,
 }: SearchableSelectProps) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -100,7 +104,7 @@ export const SearchableSelect = ({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, containerStyle]}>
       {label && <Text style={styles.label}>{label}</Text>}
 
       <TouchableOpacity
