@@ -22,6 +22,9 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { CustomInput } from '../components/CustomInput';
+import { SearchableSelect } from '../components/SearchableSelect';
+import { COUNTRIES } from '../lib/countries';
+import { PROFESSIONS } from '../lib/professions';
 import { supabase } from '../lib/supabase';
 import { uploadAvatar, uploadDocument } from '../lib/storageUtils';
 import { ObsidianModal } from '../components/ObsidianModal';
@@ -72,6 +75,8 @@ export const RegisterScreen = ({ navigation, route }: any) => {
   const [companyWebsite, setCompanyWebsite] = useState('');
   const [companyPhone, setCompanyPhone] = useState('');
   const [companyLocation, setCompanyLocation] = useState('');
+  const [selectedCompanyCountry, setSelectedCompanyCountry] = useState('');
+  const [selectedCompanyCity, setSelectedCompanyCity] = useState('');
   const [companyCulture, setCompanyCulture] = useState('');
   
   const [candidateStep, setCandidateStep] = useState(1);
@@ -81,6 +86,8 @@ export const RegisterScreen = ({ navigation, route }: any) => {
   const [candidateSectors, setCandidateSectors] = useState<string[]>([]);
   // New candidate fields
   const [candidateLocation, setCandidateLocation] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
   const [experienceLevel, setExperienceLevel] = useState('');
   const [candidateTags, setCandidateTags] = useState<string[]>([]);
   const [customCandidateTagInput, setCustomCandidateTagInput] = useState('');
@@ -93,6 +100,28 @@ export const RegisterScreen = ({ navigation, route }: any) => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateObj, setDateObj] = useState(new Date());
+
+  // Parse initial candidate location if it exists
+  useEffect(() => {
+    if (candidateLocation && candidateLocation.includes(',')) {
+      const parts = candidateLocation.split(',').map(s => s.trim());
+      if (parts.length === 2) {
+        setSelectedCity(parts[0]);
+        setSelectedCountry(parts[1]);
+      }
+    }
+  }, [candidateLocation]);
+
+  // Parse initial company location if it exists
+  useEffect(() => {
+    if (companyLocation && companyLocation.includes(',')) {
+      const parts = companyLocation.split(',').map(s => s.trim());
+      if (parts.length === 2) {
+        setSelectedCompanyCity(parts[0]);
+        setSelectedCompanyCountry(parts[1]);
+      }
+    }
+  }, [companyLocation]);
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -148,9 +177,22 @@ export const RegisterScreen = ({ navigation, route }: any) => {
   const [loading, setLoading] = useState(false);
   
   const localRole: 'candidate' | 'company' = initialRole;
-  
+  const totalSteps = 11;
+  const currentStep = localRole === 'company' ? companyStep : candidateStep;
+  const accentColor = localRole === 'company' ? COLORS.company : COLORS.candidate;
+
+  // Keyboard Visibility state to prevent navbar overlapping inputs
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  // Reanimated Shared Values
   const contentFade = useSharedValue(0);
   const cardTranslateY = useSharedValue(50);
+  const stepOpacity = useSharedValue(1);
+  const stepTranslateX = useSharedValue(0);
+  const progressAnim = useSharedValue(0);
+
+  const prevStepRef = React.useRef(currentStep);
+
   const [alertConfig, setAlertConfig] = useState({ 
     visible: false, 
     title: '', 
@@ -163,14 +205,65 @@ export const RegisterScreen = ({ navigation, route }: any) => {
   useEffect(() => {
     contentFade.value = withTiming(1, { duration: 800 });
     cardTranslateY.value = withSpring(0, { damping: 15 });
+    progressAnim.value = withTiming(currentStep / totalSteps, { duration: 300 });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Keyboard Show/Hide listeners
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => setIsKeyboardVisible(true)
+    );
+    const hideSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setIsKeyboardVisible(false)
+    );
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
+  // Smoothly animate progress fill width on step change
+  useEffect(() => {
+    progressAnim.value = withTiming(currentStep / totalSteps, { duration: 300 });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep]);
+
+  // Smoothly transition layouts on step changes
+  useEffect(() => {
+    const isForward = currentStep > prevStepRef.current;
+    prevStepRef.current = currentStep;
+
+    // Reset initial values based on slide direction
+    stepTranslateX.value = isForward ? 45 : -45;
+    stepOpacity.value = 0;
+
+    // Transition values to normal screen position
+    stepTranslateX.value = withSpring(0, { damping: 16, stiffness: 110 });
+    stepOpacity.value = withTiming(1, { duration: 250 });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep]);
 
   const animatedCardStyle = useAnimatedStyle(() => {
     return {
       opacity: contentFade.value,
       transform: [{ translateY: cardTranslateY.value }],
+    };
+  });
+
+  const animatedProgressStyle = useAnimatedStyle(() => {
+    return {
+      width: `${progressAnim.value * 100}%`,
+    };
+  });
+
+  const animatedStepStyle = useAnimatedStyle(() => {
+    return {
+      opacity: stepOpacity.value,
+      transform: [{ translateX: stepTranslateX.value }],
     };
   });
 
@@ -327,10 +420,6 @@ export const RegisterScreen = ({ navigation, route }: any) => {
     });
   };
 
-  const totalSteps = 11;
-  const currentStep = localRole === 'company' ? companyStep : candidateStep;
-  const accentColor = localRole === 'company' ? COLORS.company : COLORS.candidate;
-
   const showAlert = (msg: string) => {
     setAlertConfig({ visible: true, title: 'Datos Incompletos', message: msg, icon: 'edit-3', type: 'info', onOk: () => {} });
   };
@@ -427,10 +516,11 @@ export const RegisterScreen = ({ navigation, route }: any) => {
           
           {/* Top Progress Bar */}
           <View style={styles.progressBarContainer}>
-            <Animated.View style={[styles.progressBarFill, { 
-               width: `${(currentStep / totalSteps) * 100}%`,
-               backgroundColor: accentColor
-            }]} />
+            <Animated.View style={[
+              styles.progressBarFill, 
+              animatedProgressStyle, 
+              { backgroundColor: accentColor }
+            ]} />
           </View>
 
           <KeyboardAvoidingView 
@@ -439,7 +529,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
           >
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <Animated.View style={[animatedCardStyle, { flex: 1 }]}>
-                
+                <Animated.View style={[animatedStepStyle, { flex: 1 }]}>
                 {localRole === 'candidate' && (
                   <>
                     {candidateStep === 1 && (
@@ -464,7 +554,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                            <View style={styles.dividerLine} />
                         </View>
 
-                        <CustomInput placeholder="Correo electrónico" value={email} onChangeText={setEmail} iconName="email-outline" />
+                        <CustomInput placeholder="Correo electrónico" value={email} onChangeText={setEmail} iconName="email-outline" role={localRole} />
                       </View>
                     )}
 
@@ -472,11 +562,11 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                       <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
                         <Text style={styles.questionTitle}>Seguridad de la cuenta</Text>
                         <Text style={styles.questionSubtitle}>Crea una contraseña segura para tu perfil.</Text>
-                        <CustomInput placeholder="Contraseña segura" value={password} onChangeText={setPassword} iconName="lock-outline" isPassword />
+                        <CustomInput placeholder="Contraseña segura" value={password} onChangeText={setPassword} iconName="lock-outline" isPassword role={localRole} />
                         {password.length > 0 && password.length < 6 && (
                           <Text style={{ color: '#ef4444', fontSize: 12, marginTop: -15, marginBottom: 15, marginLeft: 5 }}>La contraseña debe tener al menos 6 caracteres.</Text>
                         )}
-                        <CustomInput placeholder="Confirmar contraseña" value={confirmPassword} onChangeText={setConfirmPassword} iconName="lock-check-outline" isPassword />
+                        <CustomInput placeholder="Confirmar contraseña" value={confirmPassword} onChangeText={setConfirmPassword} iconName="lock-check-outline" isPassword role={localRole} />
                         {confirmPassword.length > 0 && password !== confirmPassword && (
                           <Text style={{ color: '#ef4444', fontSize: 12, marginTop: -15, marginBottom: 15, marginLeft: 5 }}>Las contraseñas no coinciden.</Text>
                         )}
@@ -500,7 +590,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                           </TouchableOpacity>
                         </View>
 
-                        <CustomInput placeholder="Nombre y Apellidos" value={fullName} onChangeText={setFullName} iconName="account-outline" />
+                        <CustomInput placeholder="Nombre y Apellidos" value={fullName} onChangeText={setFullName} iconName="account-outline" role={localRole} />
                       </View>
                     )}
 
@@ -509,7 +599,31 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                         <Text style={styles.questionTitle}>Datos básicos</Text>
                         <Text style={styles.questionSubtitle}>Cuéntanos un poco más sobre ti.</Text>
                         
-                        <CustomInput placeholder="Ciudad, País" value={candidateLocation} onChangeText={setCandidateLocation} iconName="map-marker-outline" />
+                        <SearchableSelect
+                          placeholder="Selecciona tu País"
+                          value={selectedCountry}
+                          onSelect={(country) => {
+                            setSelectedCountry(country);
+                            setSelectedCity('');
+                            setCandidateLocation('');
+                          }}
+                          options={COUNTRIES.map(c => ({ name: c.name, flag: c.flag }))}
+                          iconName="earth"
+                          role={localRole}
+                        />
+
+                        <SearchableSelect
+                          placeholder="Selecciona tu Ciudad"
+                          value={selectedCity}
+                          onSelect={(city) => {
+                            setSelectedCity(city);
+                            setCandidateLocation(`${city}, ${selectedCountry}`);
+                          }}
+                          options={selectedCountry ? COUNTRIES.find(c => c.name === selectedCountry)?.cities || [] : []}
+                          iconName="city"
+                          disabled={!selectedCountry}
+                          role={localRole}
+                        />
                         
                         <TouchableOpacity 
                           activeOpacity={0.8} 
@@ -531,19 +645,26 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                       <View style={styles.stepContainer}>
                         <Text style={styles.questionTitle}>Perfil Profesional</Text>
                         <Text style={styles.questionSubtitle}>¿A qué te dedicas y cuál es tu nivel?</Text>
-                        <CustomInput placeholder="Profesión u Ocupación Principal" value={profession} onChangeText={setProfession} iconName="briefcase-outline" />
+                        <SearchableSelect
+                          placeholder="Profesión u Ocupación Principal"
+                          value={profession}
+                          onSelect={setProfession}
+                          options={PROFESSIONS.map(p => ({ name: p.name, subtext: p.category }))}
+                          iconName="briefcase-outline"
+                          role={localRole}
+                        />
                         
                         <View style={{ gap: 12, marginTop: 10 }}>
                           {['Junior', 'Mid-Level', 'Senior', 'Lead/Manager'].map(lvl => (
                             <TouchableOpacity 
                                key={lvl}
-                               style={[styles.areaCard, experienceLevel === lvl && { borderColor: COLORS.candidate, backgroundColor: 'rgba(0,163,255,0.05)' }]}
+                               style={[styles.areaCard, experienceLevel === lvl && styles.areaCardCandidateActive]}
                                onPress={() => setExperienceLevel(lvl)}
                             >
                                <View style={[styles.radioCircle, { borderColor: experienceLevel === lvl ? COLORS.candidate : COLORS.textSecondary }]}>
                                   {experienceLevel === lvl && <View style={[styles.radioInner, { backgroundColor: COLORS.candidate }]} />}
                                </View>
-                               <Text style={[styles.areaText, experienceLevel === lvl && { color: COLORS.candidate }]}>{lvl}</Text>
+                               <Text style={[styles.areaText, experienceLevel === lvl && { color: experienceLevel === lvl ? COLORS.candidate : COLORS.textSecondary }]}>{lvl}</Text>
                             </TouchableOpacity>
                           ))}
                         </View>
@@ -561,7 +682,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                               return (
                                 <TouchableOpacity 
                                   key={sector}
-                                  style={[styles.sectorTag, isSelected && { borderColor: COLORS.candidate, backgroundColor: 'rgba(0,163,255,0.1)' }]}
+                                  style={[styles.sectorTag, isSelected && styles.sectorTagCandidateActive]}
                                   onPress={() => {
                                     if (isSelected) setCandidateSectors(prev => prev.filter(s => s !== sector));
                                     else setCandidateSectors(prev => [...prev, sector]);
@@ -589,6 +710,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                                 value={customCandidateTagInput} 
                                 onChangeText={setCustomCandidateTagInput} 
                                 iconName="tag-plus-outline" 
+                                role={localRole}
                               />
                             </View>
                             <TouchableOpacity 
@@ -609,7 +731,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                               {customCandidateTags.map(tag => (
                                 <TouchableOpacity 
                                   key={tag}
-                                  style={[styles.sectorTag, { borderColor: COLORS.candidate, backgroundColor: 'rgba(0,163,255,0.1)' }]}
+                                  style={[styles.sectorTag, styles.sectorTagCandidateActive]}
                                   onPress={() => setCustomCandidateTags(prev => prev.filter(t => t !== tag))}
                                 >
                                   <Text style={{ color: COLORS.candidate, fontSize: 13, fontWeight: '600' }}>{tag} ✕</Text>
@@ -655,15 +777,15 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                         <View style={{ gap: 16 }}>
                           <View>
                             <Text style={styles.sectorsLabel}>Teléfono</Text>
-                            <CustomInput placeholder="+57 300 000 0000" value={candidatePhone} onChangeText={setCandidatePhone} iconName="phone-outline" />
+                            <CustomInput placeholder="+57 300 000 0000" value={candidatePhone} onChangeText={setCandidatePhone} iconName="phone-outline" role={localRole} />
                           </View>
                           <View>
                             <Text style={styles.sectorsLabel}>LinkedIn</Text>
-                            <CustomInput placeholder="https://linkedin.com/in/tu-perfil" value={candidateLinkedIn} onChangeText={setCandidateLinkedIn} iconName="linkedin" />
+                            <CustomInput placeholder="https://linkedin.com/in/tu-perfil" value={candidateLinkedIn} onChangeText={setCandidateLinkedIn} iconName="linkedin" role={localRole} />
                           </View>
                           <View>
                             <Text style={styles.sectorsLabel}>Portafolio / GitHub / Sitio Web</Text>
-                            <CustomInput placeholder="https://tu-portafolio.com" value={candidatePortfolio} onChangeText={setCandidatePortfolio} iconName="web" />
+                            <CustomInput placeholder="https://tu-portafolio.com" value={candidatePortfolio} onChangeText={setCandidatePortfolio} iconName="web" role={localRole} />
                           </View>
                         </View>
 
@@ -776,7 +898,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                            <View style={styles.dividerLine} />
                         </View>
 
-                        <CustomInput placeholder="Correo institucional" value={email} onChangeText={setEmail} iconName="email-outline" />
+                        <CustomInput placeholder="Correo institucional" value={email} onChangeText={setEmail} iconName="email-outline" role={localRole} />
                       </View>
                     )}
 
@@ -784,11 +906,11 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                       <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
                         <Text style={styles.questionTitle}>Seguridad de la cuenta</Text>
                         <Text style={styles.questionSubtitle}>Crea una contraseña segura para tu empresa.</Text>
-                        <CustomInput placeholder="Contraseña segura" value={password} onChangeText={setPassword} iconName="lock-outline" isPassword />
+                        <CustomInput placeholder="Contraseña segura" value={password} onChangeText={setPassword} iconName="lock-outline" isPassword role={localRole} />
                         {password.length > 0 && password.length < 6 && (
                           <Text style={{ color: '#ef4444', fontSize: 12, marginTop: -15, marginBottom: 15, marginLeft: 5 }}>La contraseña debe tener al menos 6 caracteres.</Text>
                         )}
-                        <CustomInput placeholder="Confirmar contraseña" value={confirmPassword} onChangeText={setConfirmPassword} iconName="lock-check-outline" isPassword />
+                        <CustomInput placeholder="Confirmar contraseña" value={confirmPassword} onChangeText={setConfirmPassword} iconName="lock-check-outline" isPassword role={localRole} />
                         {confirmPassword.length > 0 && password !== confirmPassword && (
                           <Text style={{ color: '#ef4444', fontSize: 12, marginTop: -15, marginBottom: 15, marginLeft: 5 }}>Las contraseñas no coinciden.</Text>
                         )}
@@ -812,13 +934,37 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                           </TouchableOpacity>
                         </View>
 
-                        <CustomInput placeholder="Nombre de la empresa / Razón Social" value={companyName} onChangeText={setCompanyName} iconName="office-building" />
+                        <CustomInput placeholder="Nombre de la empresa / Razón Social" value={companyName} onChangeText={setCompanyName} iconName="office-building" role={localRole} />
 
                         <Text style={{ color: COLORS.textSecondary, fontSize: 13, marginTop: 16, marginBottom: 8, fontWeight: '600' }}>Datos opcionales (puedes completarlos después):</Text>
 
-                        <CustomInput placeholder="Sitio web (https://tuempresa.com)" value={companyWebsite} onChangeText={setCompanyWebsite} iconName="earth" />
-                        <CustomInput placeholder="Ciudad, País" value={companyLocation} onChangeText={setCompanyLocation} iconName="map-marker-outline" />
-                        <CustomInput placeholder="Teléfono de contacto" value={companyPhone} onChangeText={setCompanyPhone} iconName="phone-outline" />
+                        <CustomInput placeholder="Sitio web (https://tuempresa.com)" value={companyWebsite} onChangeText={setCompanyWebsite} iconName="earth" role={localRole} />
+                        <SearchableSelect
+                          placeholder="Selecciona el País de la empresa"
+                          value={selectedCompanyCountry}
+                          onSelect={(country) => {
+                            setSelectedCompanyCountry(country);
+                            setSelectedCompanyCity('');
+                            setCompanyLocation('');
+                          }}
+                          options={COUNTRIES.map(c => ({ name: c.name, flag: c.flag }))}
+                          iconName="earth"
+                          role={localRole}
+                        />
+
+                        <SearchableSelect
+                          placeholder="Selecciona la Ciudad de la empresa"
+                          value={selectedCompanyCity}
+                          onSelect={(city) => {
+                            setSelectedCompanyCity(city);
+                            setCompanyLocation(`${city}, ${selectedCompanyCountry}`);
+                          }}
+                          options={selectedCompanyCountry ? COUNTRIES.find(c => c.name === selectedCompanyCountry)?.cities || [] : []}
+                          iconName="city"
+                          disabled={!selectedCompanyCountry}
+                          role={localRole}
+                        />
+                        <CustomInput placeholder="Teléfono de contacto" value={companyPhone} onChangeText={setCompanyPhone} iconName="phone-outline" role={localRole} />
                       </View>
                     )}
 
@@ -827,7 +973,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                         <Text style={styles.questionTitle}>Identidad corporativa</Text>
                         <Text style={styles.questionSubtitle}>Ingresa el ID fiscal y el año en que se fundó la empresa.</Text>
                         
-                        <CustomInput placeholder="NIT / ID Fiscal" value={taxId} onChangeText={setTaxId} iconName="card-account-details-outline" />
+                        <CustomInput placeholder="NIT / ID Fiscal" value={taxId} onChangeText={setTaxId} iconName="card-account-details-outline" role={localRole} />
                         
                         <TouchableOpacity 
                           activeOpacity={0.8} 
@@ -896,7 +1042,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
 
                           {isOtherSector && (
                             <View style={{ marginTop: 20 }}>
-                               <CustomInput placeholder="Escribe tu sector" value={customSector} onChangeText={setCustomSector} iconName="pencil" />
+                               <CustomInput placeholder="Escribe tu sector" value={customSector} onChangeText={setCustomSector} iconName="pencil" role={localRole} />
                             </View>
                           )}
                         </View>
@@ -940,6 +1086,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                                 value={customTagInput} 
                                 onChangeText={setCustomTagInput} 
                                 iconName="tag-plus-outline" 
+                                role={localRole}
                               />
                             </View>
                             <TouchableOpacity 
@@ -1011,6 +1158,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                               value={companyWebsite} 
                               onChangeText={setCompanyWebsite} 
                               iconName="earth" 
+                              role={localRole}
                             />
                           </View>
 
@@ -1021,16 +1169,36 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                               value={companyPhone} 
                               onChangeText={setCompanyPhone} 
                               iconName="phone-outline" 
+                              role={localRole}
                             />
                           </View>
 
-                          <View>
+                          <View style={{ gap: 8 }}>
                             <Text style={styles.sectorsLabel}>Ubicación Principal</Text>
-                            <CustomInput 
-                              placeholder="Ciudad, País" 
-                              value={companyLocation} 
-                              onChangeText={setCompanyLocation} 
-                              iconName="map-marker-outline" 
+                            <SearchableSelect
+                              placeholder="Selecciona el País de la empresa"
+                              value={selectedCompanyCountry}
+                              onSelect={(country) => {
+                                setSelectedCompanyCountry(country);
+                                setSelectedCompanyCity('');
+                                setCompanyLocation('');
+                              }}
+                              options={COUNTRIES.map(c => ({ name: c.name, flag: c.flag }))}
+                              iconName="earth"
+                              role={localRole}
+                            />
+
+                            <SearchableSelect
+                              placeholder="Selecciona la Ciudad de la empresa"
+                              value={selectedCompanyCity}
+                              onSelect={(city) => {
+                                setSelectedCompanyCity(city);
+                                setCompanyLocation(`${city}, ${selectedCompanyCountry}`);
+                              }}
+                              options={selectedCompanyCountry ? COUNTRIES.find(c => c.name === selectedCompanyCountry)?.cities || [] : []}
+                              iconName="city"
+                              disabled={!selectedCompanyCountry}
+                              role={localRole}
                             />
                           </View>
                         </View>
@@ -1133,29 +1301,32 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                   </>
                 )}
 
+                </Animated.View>
               </Animated.View>
             </ScrollView>
 
             {/* Bottom Actions Row */}
-            <View style={styles.bottomNav}>
-              <TouchableOpacity style={styles.backBtn} onPress={handleBack} activeOpacity={0.7}>
-                <MaterialCommunityIcons name="arrow-left" size={28} color="#FFFFFF" />
-              </TouchableOpacity>
+            {!isKeyboardVisible && (
+              <View style={styles.bottomNav}>
+                <TouchableOpacity style={styles.backBtn} onPress={handleBack} activeOpacity={0.7}>
+                  <MaterialCommunityIcons name="arrow-left" size={28} color="#FFFFFF" />
+                </TouchableOpacity>
 
-              <TouchableOpacity 
-                style={[styles.nextBtn, { backgroundColor: accentColor }]} 
-                onPress={handleNext}
-                disabled={loading}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.nextBtnText}>
-                  {loading ? 'Creando...' : (currentStep === totalSteps ? 'Finalizar' : 'Continuar')}
-                </Text>
-                {!loading && currentStep !== totalSteps && (
-                  <MaterialCommunityIcons name="arrow-right" size={20} color="#FFFFFF" style={{ marginLeft: 8 }} />
-                )}
-              </TouchableOpacity>
-            </View>
+                <TouchableOpacity 
+                  style={[styles.nextBtn, { backgroundColor: accentColor }]} 
+                  onPress={handleNext}
+                  disabled={loading}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.nextBtnText}>
+                    {loading ? 'Creando...' : (currentStep === totalSteps ? 'Finalizar' : 'Continuar')}
+                  </Text>
+                  {!loading && currentStep !== totalSteps && (
+                    <MaterialCommunityIcons name="arrow-right" size={20} color="#FFFFFF" style={{ marginLeft: 8 }} />
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
 
             <ObsidianModal
               isVisible={alertConfig.visible}
@@ -1239,7 +1410,22 @@ const styles = StyleSheet.create({
   sectorsLabel: { color: COLORS.textSecondary, fontSize: 13, marginBottom: 12, fontWeight: '600' },
   sectorsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   sectorTag: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 24, borderWidth: 1, borderColor: COLORS.border, backgroundColor: 'rgba(255,255,255,0.02)' },
-  sectorTagActive: { borderColor: COLORS.company, backgroundColor: 'rgba(255,0,92,0.1)' },
+  sectorTagActive: { 
+    borderColor: COLORS.company, 
+    backgroundColor: 'rgba(255,0,92,0.1)',
+    shadowColor: COLORS.company,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  sectorTagCandidateActive: { 
+    borderColor: COLORS.candidate, 
+    backgroundColor: 'rgba(0,163,255,0.1)',
+    shadowColor: COLORS.candidate,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
   sectorTagText: { color: COLORS.textSecondary, fontSize: 14, fontWeight: '500' },
   sectorTagTextActive: { color: '#FFF', fontWeight: '800' },
   
@@ -1291,7 +1477,24 @@ const styles = StyleSheet.create({
   dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.1)' },
   dividerText: { color: COLORS.textSecondary, paddingHorizontal: 10, fontSize: 12 },
   areaCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border },
-  areaCardActive: { borderColor: COLORS.company, backgroundColor: 'rgba(255,0,92,0.1)' },
+  areaCardActive: { 
+    borderColor: COLORS.company, 
+    backgroundColor: 'rgba(255,0,92,0.08)',
+    shadowColor: COLORS.company,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3
+  },
+  areaCardCandidateActive: {
+    borderColor: COLORS.candidate,
+    backgroundColor: 'rgba(0,163,255,0.08)',
+    shadowColor: COLORS.candidate,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3
+  },
   radioCircle: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: COLORS.textSecondary, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.company },
   areaText: { color: COLORS.textSecondary, fontSize: 16, fontWeight: '600' },
