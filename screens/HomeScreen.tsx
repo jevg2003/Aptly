@@ -110,6 +110,14 @@ export const HomeScreen = ({ navigation }: any) => {
     }
   }, [filterModalVisible]);
 
+  const dismissFilterSheet = useCallback(() => {
+    sheetTranslateY.value = withSpring(800, { damping: 20, stiffness: 200 }, (finished) => {
+      if (finished) {
+        runOnJS(setFilterModalVisible)(false);
+      }
+    });
+  }, [sheetTranslateY]);
+
   const [modalConfig, setModalConfig] = useState({
     visible: false,
     title: '',
@@ -496,111 +504,115 @@ export const HomeScreen = ({ navigation }: any) => {
         transparent
         animationType="slide"
         statusBarTranslucent={true}
-        onRequestClose={() => setFilterModalVisible(false)}
-      >
-        <View style={styles.filterOverlay}>
-          <KeyboardAvoidingView 
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={styles.filterKeyboardContainer}
-          >
-            <View style={styles.filterContainer}>
-              {/* Drag Indicator / Drag Handle */}
-              <View style={styles.dragIndicator} />
-              
-              <View style={styles.filterHeader}>
-                <Text style={styles.filterTitle}>Filtrar Empleos</Text>
-                <TouchableOpacity onPress={() => setFilterModalVisible(false)} style={styles.closeBtn}>
-                  <Ionicons name="close" size={20} color="#FFFFFF" />
-                </TouchableOpacity>
-              </View>
-
-              <ScrollView contentContainerStyle={styles.filterScroll} showsVerticalScrollIndicator={false}>
-                {/* Modality Section */}
-                <Text style={styles.filterSectionTitle}>Modalidad</Text>
-                <ScrollView 
-                  horizontal 
-                  showsHorizontalScrollIndicator={false} 
-                  contentContainerStyle={styles.horizontalChipsScroll}
-                  style={styles.horizontalScrollWrapper}
+        onRequestClose={dismissFilterSheet}>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <TouchableWithoutFeedback onPress={dismissFilterSheet}>
+            <View style={styles.filterOverlay}>
+              <TouchableWithoutFeedback>
+                <KeyboardAvoidingView 
+                  behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                  style={styles.filterKeyboardContainer}
                 >
-                  {['', 'Remoto', 'Presencial', 'Híbrido'].map((mod) => (
-                    <TouchableOpacity
-                      key={mod}
-                      onPress={() => setActiveFilters({ ...activeFilters, modality: mod })}
-                      style={[
-                        styles.filterChip,
-                        activeFilters.modality === mod && styles.activeFilterChip
-                      ]}
-                    >
-                      <Text style={[
-                        styles.filterChipText,
-                        activeFilters.modality === mod && styles.activeFilterChipText
-                      ]}>
-                        {mod === '' ? 'Todos' : mod}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+                  <Animated.View style={[styles.filterContainer, sheetAnimatedStyle]}>
+                    <GestureDetector gesture={sheetGesture}>
+                      <View style={styles.dragHandleArea}>
+                        <View style={styles.dragIndicator} />
+                        
+                        <View style={styles.filterHeader}>
+                          <Text style={styles.filterTitle}>Filtrar Empleos</Text>
+                          <TouchableOpacity onPress={dismissFilterSheet} style={styles.closeBtn}>
+                            <Ionicons name="close" size={20} color="#FFFFFF" />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </GestureDetector>
 
-                {/* Job Type Section */}
-                <Text style={styles.filterSectionTitle}>Tipo de Empleo</Text>
-                <ScrollView 
-                  horizontal 
-                  showsHorizontalScrollIndicator={false} 
-                  contentContainerStyle={styles.horizontalChipsScroll}
-                  style={styles.horizontalScrollWrapper}
-                >
-                  {['', 'Tiempo Completo', 'Medio Tiempo', 'Práctica', 'Freelance'].map((t) => (
-                    <TouchableOpacity
-                      key={t}
-                      onPress={() => setActiveFilters({ ...activeFilters, type: t })}
-                      style={[
-                        styles.filterChip,
-                        activeFilters.type === t && styles.activeFilterChip
-                      ]}
-                    >
-                      <Text style={[
-                        styles.filterChipText,
-                        activeFilters.type === t && styles.activeFilterChipText
-                      ]}>
-                        {t === '' ? 'Todos' : t}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+                    <ScrollView contentContainerStyle={styles.filterScroll} showsVerticalScrollIndicator={false}>
+                      <Text style={styles.filterSectionTitle}>Modalidad</Text>
+                      <ScrollView 
+                        horizontal 
+                        showsHorizontalScrollIndicator={false} 
+                        contentContainerStyle={styles.horizontalChipsScroll}
+                        style={styles.horizontalScrollWrapper}
+                      >
+                        {['', 'Remoto', 'Presencial', 'Híbrido'].map((mod) => (
+                          <TouchableOpacity
+                            key={mod}
+                            onPress={() => setActiveFilters({ ...activeFilters, modality: mod })}
+                            style={[
+                              styles.filterChip,
+                              activeFilters.modality === mod && styles.activeFilterChip
+                            ]}
+                          >
+                            <Text style={[
+                              styles.filterChipText,
+                              activeFilters.modality === mod && styles.activeFilterChipText
+                            ]}>
+                              {mod === '' ? 'Todos' : mod}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
 
-                {/* Location Section */}
-                <Text style={styles.filterSectionTitle}>Ubicación (Ciudad o País)</Text>
-                <View style={styles.inputWrapper}>
-                  <Ionicons name="location-outline" size={20} color="#64748B" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.filterInput}
-                    placeholder="Ej. Bogotá, Cali, Colombia..."
-                    placeholderTextColor="#475569"
-                    value={activeFilters.location}
-                    onChangeText={(text) => setActiveFilters({ ...activeFilters, location: text })}
-                  />
-                  {activeFilters.location !== '' && (
-                    <TouchableOpacity onPress={() => setActiveFilters({ ...activeFilters, location: '' })}>
-                      <Ionicons name="close-circle" size={18} color="#64748B" />
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </ScrollView>
+                      <Text style={styles.filterSectionTitle}>Tipo de Empleo</Text>
+                      <ScrollView 
+                        horizontal 
+                        showsHorizontalScrollIndicator={false} 
+                        contentContainerStyle={styles.horizontalChipsScroll}
+                        style={styles.horizontalScrollWrapper}
+                      >
+                        {['', 'Tiempo Completo', 'Medio Tiempo', 'Práctica', 'Freelance'].map((t) => (
+                          <TouchableOpacity
+                            key={t}
+                            onPress={() => setActiveFilters({ ...activeFilters, type: t })}
+                            style={[
+                              styles.filterChip,
+                              activeFilters.type === t && styles.activeFilterChip
+                            ]}
+                          >
+                            <Text style={[
+                              styles.filterChipText,
+                              activeFilters.type === t && styles.activeFilterChipText
+                            ]}>
+                              {t === '' ? 'Todos' : t}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
 
-              {/* Filter Actions */}
-              <View style={styles.filterActions}>
-                <TouchableOpacity onPress={clearFilters} style={styles.clearBtn}>
-                  <Text style={styles.clearBtnText}>Limpiar</Text>
-                </TouchableOpacity>
+                      <Text style={styles.filterSectionTitle}>Ubicación (Ciudad o País)</Text>
+                      <View style={styles.inputWrapper}>
+                        <Ionicons name="location-outline" size={20} color="#64748B" style={styles.inputIcon} />
+                        <TextInput
+                          style={styles.filterInput}
+                          placeholder="Ej. Bogotá, Cali, Colombia..."
+                          placeholderTextColor="#475569"
+                          value={activeFilters.location}
+                          onChangeText={(text) => setActiveFilters({ ...activeFilters, location: text })}
+                        />
+                        {activeFilters.location !== '' && (
+                          <TouchableOpacity onPress={() => setActiveFilters({ ...activeFilters, location: '' })}>
+                            <Ionicons name="close-circle" size={18} color="#64748B" />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </ScrollView>
 
-                <TouchableOpacity onPress={() => applyFilters()} style={styles.applyBtn}>
-                  <Text style={styles.applyBtnText}>Aplicar Filtros</Text>
-                </TouchableOpacity>
-              </View>
+                    <View style={styles.filterActions}>
+                      <TouchableOpacity onPress={clearFilters} style={styles.clearBtn}>
+                        <Text style={styles.clearBtnText}>Limpiar</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity onPress={() => applyFilters()} style={styles.applyBtn}>
+                        <Text style={styles.applyBtnText}>Aplicar Filtros</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </Animated.View>
+                </KeyboardAvoidingView>
+              </TouchableWithoutFeedback>
             </View>
-          </KeyboardAvoidingView>
-        </View>
+          </TouchableWithoutFeedback>
+        </GestureHandlerRootView>
       </Modal>
     </View>
   );
@@ -755,6 +767,11 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'ios' ? 40 : 24,
     paddingHorizontal: 24,
     maxHeight: Dimensions.get('window').height * 0.85,
+  },
+  dragHandleArea: {
+    width: '100%',
+    paddingBottom: 4,
+    backgroundColor: 'transparent',
   },
   dragIndicator: {
     width: 48,
