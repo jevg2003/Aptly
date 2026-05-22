@@ -10,7 +10,8 @@ import {
   StyleSheet,
   ActivityIndicator,
   TextInput,
-  Alert
+  Alert,
+  Linking
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as DocumentPicker from 'expo-document-picker';
@@ -49,6 +50,24 @@ export const ProfileScreen = ({ navigation }: any) => {
   const [newExp, setNewExp] = useState({ title: '', company: '', description: '' });
   const [savingExp, setSavingExp] = useState(false);
   const [uploadingResume, setUploadingResume] = useState(false);
+
+  const handleOpenURL = async (url: string) => {
+    if (!url) return;
+    try {
+      let targetUrl = url.trim();
+      if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+        targetUrl = `https://${targetUrl}`;
+      }
+      const supported = await Linking.canOpenURL(targetUrl);
+      if (supported) {
+        await Linking.openURL(targetUrl);
+      } else {
+        Alert.alert('Enlace no soportado', `No se pudo abrir la dirección: ${url}`);
+      }
+    } catch (err) {
+      Alert.alert('Error', 'No se pudo abrir el enlace en el navegador.');
+    }
+  };
 
   const confirmDelete = async () => {
     try {
@@ -287,13 +306,24 @@ export const ProfileScreen = ({ navigation }: any) => {
             {profile?.full_name || 'Sin nombre'}
           </Text>
           <Text style={styles.titleText}>
-            {profile?.professional_title || 'Añadir título profesional'}
+            {profile?.professional_title || (profile?.role === 'company' ? 'Empresa' : 'Añadir título profesional')}
+            {profile?.role !== 'company' && profile?.experience_level ? ` • ${profile.experience_level}` : ''}
           </Text>
 
-          {profile?.location && (
+          {(profile?.location || (profile?.role !== 'company' && profile?.birth_date)) && (
             <View style={styles.locationRow}>
-              <MaterialCommunityIcons name="map-marker-outline" size={14} color="#475569" />
-              <Text style={styles.locationText}>{profile.location}</Text>
+              {profile?.location && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
+                  <MaterialCommunityIcons name="map-marker-outline" size={14} color="#475569" />
+                  <Text style={styles.locationText}>{profile.location}</Text>
+                </View>
+              )}
+              {profile?.role !== 'company' && profile?.birth_date && (
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <MaterialCommunityIcons name="cake-variant" size={14} color="#475569" />
+                  <Text style={styles.locationText}>{profile.birth_date}</Text>
+                </View>
+              )}
             </View>
           )}
 
@@ -382,6 +412,101 @@ export const ProfileScreen = ({ navigation }: any) => {
           </>
         ) : (
           <>
+            {/* Contact & Links Section */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Contacto y Enlaces</Text>
+              </View>
+              {profile?.phone || profile?.linkedin_url || profile?.portfolio_url ? (
+                <View style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: 20, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', gap: 15 }}>
+                  {profile?.phone && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <MaterialCommunityIcons name="phone-outline" size={20} color="#00A3FF" />
+                      <Text style={{ color: '#E2E8F0', marginLeft: 12, fontSize: 14, fontWeight: '500' }}>{profile.phone}</Text>
+                    </View>
+                  )}
+                  {profile?.linkedin_url && (
+                    <TouchableOpacity 
+                      style={{ flexDirection: 'row', alignItems: 'center' }} 
+                      onPress={() => handleOpenURL(profile.linkedin_url)}
+                    >
+                      <MaterialCommunityIcons name="linkedin" size={20} color="#00A3FF" />
+                      <Text style={{ color: '#00A3FF', marginLeft: 12, fontSize: 14, fontWeight: '600', textDecorationLine: 'underline' }}>
+                        Ver perfil de LinkedIn
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                  {profile?.portfolio_url && (
+                    <TouchableOpacity 
+                      style={{ flexDirection: 'row', alignItems: 'center' }} 
+                      onPress={() => handleOpenURL(profile.portfolio_url)}
+                    >
+                      <MaterialCommunityIcons name="web" size={20} color="#00A3FF" />
+                      <Text style={{ color: '#00A3FF', marginLeft: 12, fontSize: 14, fontWeight: '600', textDecorationLine: 'underline' }}>
+                        Ver Portafolio Profesional
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.emptyExperience}
+                  onPress={() => navigation.navigate('EditProfile', { profile })}
+                >
+                  <Text style={styles.emptyText}>Aún no has añadido datos de contacto o enlaces profesionales</Text>
+                  <Text style={styles.addText}>+ Configurar Enlaces</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Skills Section */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Habilidades Clave</Text>
+              </View>
+              {profile?.candidate_tags ? (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                  {profile.candidate_tags.split(',').map((tag: string, index: number) => (
+                    <View key={index} style={{ backgroundColor: 'rgba(0,163,255,0.08)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(0,163,255,0.25)' }}>
+                      <Text style={{ color: '#00A3FF', fontWeight: '600', fontSize: 13 }}>{tag.trim()}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.emptyExperience}
+                  onPress={() => navigation.navigate('EditProfile', { profile })}
+                >
+                  <Text style={styles.emptyText}>Aún no has añadido tus habilidades clave</Text>
+                  <Text style={styles.addText}>+ Configurar Habilidades</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Industry Interests Section */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Sectores de Interés</Text>
+              </View>
+              {profile?.industry_interests ? (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                  {profile.industry_interests.split(',').map((interest: string, index: number) => (
+                    <View key={index} style={{ backgroundColor: 'rgba(255,255,255,0.03)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
+                      <Text style={{ color: '#E2E8F0', fontWeight: '600', fontSize: 13 }}>{interest.trim()}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.emptyExperience}
+                  onPress={() => navigation.navigate('EditProfile', { profile })}
+                >
+                  <Text style={styles.emptyText}>Aún no has añadido tus sectores de interés</Text>
+                  <Text style={styles.addText}>+ Configurar Intereses</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
             {/* Experience Section */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>

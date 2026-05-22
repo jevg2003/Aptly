@@ -13,7 +13,11 @@
 -- 1. Add missing candidate-specific columns to public.profiles
 ALTER TABLE public.profiles 
 ADD COLUMN IF NOT EXISTS candidate_tags text,
-ADD COLUMN IF NOT EXISTS industry_interests text;
+ADD COLUMN IF NOT EXISTS industry_interests text,
+ADD COLUMN IF NOT EXISTS experience_level text,
+ADD COLUMN IF NOT EXISTS portfolio_url text,
+ADD COLUMN IF NOT EXISTS linkedin_url text,
+ADD COLUMN IF NOT EXISTS birth_date text;
 
 -- 2. Update the authentication trigger function to replicate ALL metadata fields correctly.
 -- This ensures location, phone, and candidate fields copy on signup and do not remain null.
@@ -42,7 +46,11 @@ BEGIN
     pdf_name,
     -- Candidate specific fields
     candidate_tags,
-    industry_interests
+    industry_interests,
+    experience_level,
+    portfolio_url,
+    linkedin_url,
+    birth_date
   )
   VALUES (
     new.id,
@@ -63,7 +71,11 @@ BEGIN
     new.raw_user_meta_data->>'pdf_name',
     -- Candidate fields
     new.raw_user_meta_data->>'candidate_tags',
-    new.raw_user_meta_data->>'industry_interests'
+    new.raw_user_meta_data->>'industry_interests',
+    new.raw_user_meta_data->>'experience_level',
+    new.raw_user_meta_data->>'portfolio_url',
+    new.raw_user_meta_data->>'linkedin_url',
+    new.raw_user_meta_data->>'birth_date'
   )
   ON CONFLICT (id) DO UPDATE SET
     full_name = EXCLUDED.full_name,
@@ -81,6 +93,10 @@ BEGIN
     pdf_name = EXCLUDED.pdf_name,
     candidate_tags = EXCLUDED.candidate_tags,
     industry_interests = EXCLUDED.industry_interests,
+    experience_level = EXCLUDED.experience_level,
+    portfolio_url = EXCLUDED.portfolio_url,
+    linkedin_url = EXCLUDED.linkedin_url,
+    birth_date = EXCLUDED.birth_date,
     updated_at = now();
 
   RETURN NEW;

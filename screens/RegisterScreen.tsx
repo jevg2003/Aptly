@@ -23,6 +23,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { CustomInput } from '../components/CustomInput';
 import { supabase } from '../lib/supabase';
+import { uploadAvatar, uploadDocument } from '../lib/storageUtils';
 import { ObsidianModal } from '../components/ObsidianModal';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -66,6 +67,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
   const [customTagInput, setCustomTagInput] = useState('');
   const [customTags, setCustomTags] = useState<string[]>([]);
   const [pdfName, setPdfName] = useState<string | null>(null);
+  const [pdfUri, setPdfUri] = useState<string | null>(null);
   // New business fields
   const [companyWebsite, setCompanyWebsite] = useState('');
   const [companyPhone, setCompanyPhone] = useState('');
@@ -113,6 +115,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
       });
       if (!result.canceled && result.assets && result.assets.length > 0) {
         setPdfName(result.assets[0].name);
+        setPdfUri(result.assets[0].uri);
       }
     } catch (err) {
       console.log('Error picking document', err);
@@ -200,7 +203,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
     }
     
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -236,9 +239,9 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         }
       }
     });
-    setLoading(false);
 
     if (error) {
+      setLoading(false);
       setAlertConfig({
         visible: true,
         title: 'Error de Registro',
@@ -247,16 +250,81 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         type: 'destructive',
         onOk: () => {}
       });
-    } else {
-      setAlertConfig({
-        visible: true,
-        title: '¡Bienvenido!',
-        message: 'Cuenta creada con éxito. Hemos enviado un correo de verificación.',
-        icon: 'mail',
-        type: 'success',
-        onOk: () => navigation.navigate('Login')
-      });
+      return;
     }
+
+    // Post-signup Storage Uploading
+    if (data?.user) {
+      const userId = data.user.id;
+      let finalAvatarUrl = avatarUrl;
+      let finalResumeUrl = null;
+
+      // 1. Upload Avatar if selected and it is local
+      if (avatarUrl && !avatarUrl.startsWith('http')) {
+        try {
+          const publicAvatar = await uploadAvatar(avatarUrl, userId);
+          if (publicAvatar) {
+            finalAvatarUrl = publicAvatar;
+          }
+        } catch (uploadErr) {
+          console.log('Error uploading avatar post-signup:', uploadErr);
+        }
+      }
+
+      // 2. Upload Document (PDF Resume or brochure) if selected
+      if (pdfUri) {
+        try {
+          const publicDoc = await uploadDocument(pdfUri, userId, pdfName || 'CV.pdf');
+          if (publicDoc) {
+            finalResumeUrl = publicDoc;
+          }
+        } catch (uploadErr) {
+          console.log('Error uploading document post-signup:', uploadErr);
+        }
+      }
+
+      // 3. Update Profiles table with correct URLs and map candidate fields directly
+      try {
+        const updateData: any = {};
+        if (finalAvatarUrl) updateData.avatar_url = finalAvatarUrl;
+        if (finalResumeUrl) {
+          updateData.resume_url = finalResumeUrl;
+          updateData.pdf_name = pdfName;
+        }
+
+        // Also save candidate specific details to profiles directly in case trigger doesn't copy some metadata
+        if (localRole === 'candidate') {
+          updateData.experience_level = experienceLevel || undefined;
+          updateData.portfolio_url = candidatePortfolio || undefined;
+          updateData.linkedin_url = candidateLinkedIn || undefined;
+          updateData.birth_date = birthDate || undefined;
+          updateData.candidate_tags = [...candidateTags, ...customCandidateTags].join(', ') || undefined;
+          updateData.industry_interests = candidateSectors.join(', ') || undefined;
+        }
+
+        if (Object.keys(updateData).length > 0) {
+          const { error: profileUpdateError } = await supabase
+            .from('profiles')
+            .update(updateData)
+            .eq('id', userId);
+          if (profileUpdateError) {
+            console.log('Error updating profile with storage URLs:', profileUpdateError.message);
+          }
+        }
+      } catch (updateErr) {
+        console.log('Exception in profile update:', updateErr);
+      }
+    }
+
+    setLoading(false);
+    setAlertConfig({
+      visible: true,
+      title: '¡Bienvenido!',
+      message: 'Cuenta creada con éxito. Hemos enviado un correo de verificación.',
+      icon: 'mail',
+      type: 'success',
+      onOk: () => navigation.navigate('Login')
+    });
   };
 
   const totalSteps = 11;
