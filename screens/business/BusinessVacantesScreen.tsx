@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, StatusBar } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  StatusBar,
+} from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,27 +29,32 @@ export const BusinessVacantesScreen = ({ navigation }: any) => {
     if (!session?.user?.id) return;
     setLoading(true);
     try {
-      const { data: jobsData, error } = await supabase.from('jobs').select('*').eq('company_id', session.user.id).order('created_at', { ascending: false });
+      const { data: jobsData, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('company_id', session.user.id)
+        .order('created_at', { ascending: false });
       if (!error && jobsData && jobsData.length > 0) {
-        
         const jobIds = jobsData.map((j: any) => j.id);
-        const { data: appsData } = await supabase.from('applications').select('id, job_id, status').in('job_id', jobIds);
-        
+        const { data: appsData } = await supabase
+          .from('applications')
+          .select('id, job_id, status')
+          .in('job_id', jobIds);
+
         const mappedJobs = jobsData.map((j: any) => {
-            const jobApps = appsData?.filter((a: any) => a.job_id === j.id) || [];
-            return {
-               ...j,
-               postulaciones: jobApps.length,
-               newApplicationsCount: jobApps.filter((a: any) => a.status === 'pending').length
-            };
+          const jobApps = appsData?.filter((a: any) => a.job_id === j.id) || [];
+          return {
+            ...j,
+            postulaciones: jobApps.length,
+            newApplicationsCount: jobApps.filter((a: any) => a.status === 'pending').length,
+          };
         });
         setJobs(mappedJobs);
-
       } else {
         setJobs([]);
       }
     } catch {
-       // Error silenciado para limpieza de logs, puede añadirse notificación aquí si es necesario
+      // Error silenciado para limpieza de logs, puede añadirse notificación aquí si es necesario
       setJobs([]);
     } finally {
       setLoading(false);
@@ -57,35 +70,45 @@ export const BusinessVacantesScreen = ({ navigation }: any) => {
   const filteredJobs = React.useMemo(() => {
     if (!searchQuery.trim()) return jobs;
     const lowerQuery = searchQuery.toLowerCase();
-    return jobs.filter(job => 
-      job.title.toLowerCase().includes(lowerQuery) || 
-      job.location.toLowerCase().includes(lowerQuery)
+    return jobs.filter(
+      (job) =>
+        job.title.toLowerCase().includes(lowerQuery) ||
+        job.location.toLowerCase().includes(lowerQuery)
     );
   }, [searchQuery, jobs]);
 
   const renderJobItem = ({ item }: { item: any }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       activeOpacity={0.8}
       onPress={() => navigation.navigate('BusinessHome', { job: item })}
-      style={styles.jobCard}
-    >
+      style={styles.jobCard}>
       <View style={styles.cardHeader}>
         <View style={styles.titleInfo}>
           <Text style={styles.jobTitle}>{item.title}</Text>
           <Text style={styles.jobLocation}>{item.location}</Text>
         </View>
-        <View style={{flexDirection: 'row', alignItems: 'center', gap: 10}}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           {item.newApplicationsCount > 0 && (
-             <View style={{ backgroundColor: '#FF005C', width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{color: 'white', fontSize: 10, fontWeight: 'bold'}}>{item.newApplicationsCount}</Text>
-             </View>
+            <View
+              style={{
+                backgroundColor: '#FF005C',
+                width: 22,
+                height: 22,
+                borderRadius: 11,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+              <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>
+                {item.newApplicationsCount}
+              </Text>
+            </View>
           )}
           <View style={styles.statusBadge}>
             <Text style={styles.statusLabel}>ACTIVA</Text>
           </View>
         </View>
       </View>
-      
+
       <View style={styles.cardFooter}>
         <View style={styles.statItem}>
           <Ionicons name="people-outline" size={14} color="#FF005C" />
@@ -103,17 +126,13 @@ export const BusinessVacantesScreen = ({ navigation }: any) => {
     <View style={{ flex: 1, backgroundColor: '#050505' }}>
       <StatusBar barStyle="light-content" />
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-        
-        <ObsidianHeader 
-          title="Mis vacantes" 
-          subtitle="Management Console"
-        />
+        <ObsidianHeader title="Mis vacantes" subtitle="Management Console" />
 
         <View style={{ paddingHorizontal: 10, marginTop: 5, marginBottom: 10 }}>
-          <SearchBar 
-            value={searchQuery} 
-            onChangeText={setSearchQuery} 
-            placeholder="Buscar por título o ubicación..." 
+          <SearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Buscar por título o ubicación..."
           />
         </View>
 
@@ -137,11 +156,12 @@ export const BusinessVacantesScreen = ({ navigation }: any) => {
               <Ionicons name="briefcase-outline" size={40} color="#FF005C" />
             </View>
             <Text style={styles.emptyTitle}>No tienes vacantes aún</Text>
-            <Text style={styles.emptyText}>Empieza publicando tu primera oferta de empleo para atraer talento.</Text>
-            <TouchableOpacity 
+            <Text style={styles.emptyText}>
+              Empieza publicando tu primera oferta de empleo para atraer talento.
+            </Text>
+            <TouchableOpacity
               onPress={() => navigation.navigate('CreateVacante')}
-              style={styles.createBtn}
-            >
+              style={styles.createBtn}>
               <Text style={styles.createBtnText}>Publicar Vacante</Text>
             </TouchableOpacity>
           </View>
@@ -149,11 +169,10 @@ export const BusinessVacantesScreen = ({ navigation }: any) => {
       </SafeAreaView>
 
       {!loading && (
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={() => navigation.navigate('CreateVacante')}
           activeOpacity={0.9}
-          style={styles.fab}
-        >
+          style={styles.fab}>
           <Ionicons name="add" size={32} color="white" />
         </TouchableOpacity>
       )}
@@ -291,5 +310,5 @@ const styles = StyleSheet.create({
     elevation: 20,
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.1)',
-  }
+  },
 });

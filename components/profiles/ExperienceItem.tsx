@@ -21,7 +21,7 @@ interface ExperienceItemProps {
 
 export const ExperienceItem = ({ experience }: ExperienceItemProps) => {
   const { title, company, startDate, endDate, isCurrent, tags, logoUrl } = experience;
-  
+
   return (
     <View style={styles.card}>
       <View style={styles.logoContainer}>
@@ -31,7 +31,7 @@ export const ExperienceItem = ({ experience }: ExperienceItemProps) => {
           <MaterialCommunityIcons name="office-building" size={24} color="#475569" />
         )}
       </View>
-      
+
       <View style={styles.content}>
         <View style={styles.headerRow}>
           <View>
@@ -40,11 +40,11 @@ export const ExperienceItem = ({ experience }: ExperienceItemProps) => {
           </View>
           <MaterialCommunityIcons name="menu" size={20} color="#1e293b" />
         </View>
-        
+
         <Text style={styles.date}>
           {startDate} - {isCurrent ? 'Presente' : endDate}
         </Text>
-        
+
         {tags && tags.length > 0 && (
           <View style={styles.tagsContainer}>
             {tags.map((tag, idx) => (
@@ -129,5 +129,5 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontSize: 10,
     fontWeight: '800',
-  }
+  },
 });

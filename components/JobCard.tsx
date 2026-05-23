@@ -9,13 +9,13 @@ export interface JobData {
   companyDescription?: string;
   location: string;
   salary: string;
-  type: string; 
-  modality: string; 
+  type: string;
+  modality: string;
   postedAt: string;
   logoColor?: string;
   imageUrl?: string;
   tags?: string[];
-  
+
   // NEW Fields from Database
   description?: string;
   requirements?: string;
@@ -38,81 +38,77 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onPress, onInfoPress }) =
 
   return (
     <View style={styles.cardContainer}>
-      
       {/* Cover Image with dynamic gradient overlay */}
       <View style={styles.imageContainer}>
-        <Image 
-          source={{ uri: job.imageUrl || defaultImage }} 
+        <Image
+          source={{ uri: job.imageUrl || defaultImage }}
           style={styles.image}
           resizeMode="cover"
         />
-        
+
         {/* Darker Overlay for better text readability */}
         <View style={styles.overlay} />
 
         <View style={styles.cardHeader}>
-            <View style={styles.logoCircle}>
-                <Ionicons name="cube" size={24} color="#00A3FF" />
-            </View>
-            <View>
-                <Text style={styles.companyName}>{job.company}</Text>
-                <Text style={styles.companyDesc}>
-                  {job.companyIndustry ? `${job.companyIndustry} • ` : ''}
-                  {job.companyDescription || 'Empresa destacada'}
-                </Text>
-            </View>
+          <View style={styles.logoCircle}>
+            <Ionicons name="cube" size={24} color="#00A3FF" />
+          </View>
+          <View>
+            <Text style={styles.companyName}>{job.company}</Text>
+            <Text style={styles.companyDesc}>
+              {job.companyIndustry ? `${job.companyIndustry} • ` : ''}
+              {job.companyDescription || 'Empresa destacada'}
+            </Text>
+          </View>
         </View>
 
         {/* Badge Flotante "NEW MATCH" */}
         <View style={styles.badge}>
-           <Text style={styles.badgeText}>VACANTE DISPONIBLE</Text>
+          <Text style={styles.badgeText}>VACANTE DISPONIBLE</Text>
         </View>
       </View>
 
       {/* Obsidian Dark Content Area */}
       <View style={styles.contentArea}>
-          <View style={styles.titleRow}>
-             <Text style={styles.jobTitle} numberOfLines={1}>
-                {job.title}
-             </Text>
-             <TouchableOpacity 
-               onPress={onInfoPress}
-               style={styles.infoBtn}
-               activeOpacity={0.7}
-             >
-                 <Ionicons name="information-circle-outline" size={24} color="#00A3FF" />
-             </TouchableOpacity>
-          </View>
+        <View style={styles.titleRow}>
+          <Text style={styles.jobTitle} numberOfLines={1}>
+            {job.title}
+          </Text>
+          <TouchableOpacity onPress={onInfoPress} style={styles.infoBtn} activeOpacity={0.7}>
+            <Ionicons name="information-circle-outline" size={24} color="#00A3FF" />
+          </TouchableOpacity>
+        </View>
 
-          <View style={styles.locationRow}>
-              <Ionicons name="location" size={16} color="#475569" />
-              <Text style={styles.locationText}>
-                 {job.location} • {job.modality} • {job.type}
+        <View style={styles.locationRow}>
+          <Ionicons name="location" size={16} color="#475569" />
+          <Text style={styles.locationText}>
+            {job.location} • {job.modality} • {job.type}
+          </Text>
+        </View>
+
+        {/* Tags with Obsidian bordering */}
+        <View style={styles.tagsRow}>
+          {job.tags && job.tags.length > 0 ? (
+            job.tags.map((tag, index) => (
+              <View key={index} style={styles.tag}>
+                <Text style={styles.tagText}>{tag}</Text>
+              </View>
+            ))
+          ) : (
+            <View style={[styles.tag, { borderColor: 'transparent' }]}>
+              <Text style={[styles.tagText, { fontStyle: 'italic', opacity: 0.5 }]}>
+                Sin etiquetas específicas
               </Text>
-          </View>
+            </View>
+          )}
+        </View>
 
-          {/* Tags with Obsidian bordering */}
-          <View style={styles.tagsRow}>
-             {job.tags && job.tags.length > 0 ? (
-               job.tags.map((tag, index) => (
-                   <View key={index} style={styles.tag}>
-                       <Text style={styles.tagText}>{tag}</Text>
-                   </View>
-               ))
-             ) : (
-               <View style={[styles.tag, { borderColor: 'transparent' }]}>
-                 <Text style={[styles.tagText, { fontStyle: 'italic', opacity: 0.5 }]}>Sin etiquetas específicas</Text>
-               </View>
-             )}
-          </View>
-
-          {/* Futuristic Salary Display */}
-          <View style={styles.salaryContainer}>
-             <Text style={styles.salaryValue}>
-                {job.salary} <Text style={styles.salaryLabel}>/ mes</Text>
-             </Text>
-          </View>
-
+        {/* Futuristic Salary Display */}
+        <View style={styles.salaryContainer}>
+          <Text style={styles.salaryValue}>
+            {job.salary} <Text style={styles.salaryLabel}>/ mes</Text>
+          </Text>
+        </View>
       </View>
     </View>
   );
@@ -274,5 +270,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: '#475569',
-  }
+  },
 });

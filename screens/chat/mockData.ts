@@ -1,9 +1,4 @@
-import { 
-  BaseUser, 
-  MessageData, 
-  ConversationData, 
-  SHARED_CONVERSATIONS 
-} from '../../lib/data';
+import { BaseUser, MessageData, ConversationData, SHARED_CONVERSATIONS } from '../../lib/data';
 
 export type User = BaseUser;
 export type Message = MessageData;

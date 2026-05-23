@@ -31,11 +31,10 @@ export const pickAndOptimizeImage = async (): Promise<string | null> => {
   // -- OPTIMIZACIÓN (LA MAGIA) --
   // Reducimos el ancho máximo a 800px y la calidad a 70% (.jpg)
   // Esto puede convertir una foto de 5MB en una de 150KB.
-  const manipResult = await ImageManipulator.manipulateAsync(
-    uri,
-    [{ resize: { width: 800 } }],
-    { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
-  );
+  const manipResult = await ImageManipulator.manipulateAsync(uri, [{ resize: { width: 800 } }], {
+    compress: 0.7,
+    format: ImageManipulator.SaveFormat.JPEG,
+  });
 
   return manipResult.uri;
 };

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  Image, 
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
   StatusBar,
   Alert,
   Dimensions,
@@ -11,17 +11,17 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableWithoutFeedback,
-  Keyboard
+  Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring, 
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
   withTiming,
   interpolateColor,
-  withDelay
+  withDelay,
 } from 'react-native-reanimated';
 import { CustomInput } from '../components/CustomInput';
 import { CustomButton } from '../components/CustomButton';
@@ -47,11 +47,11 @@ export const LoginScreen = ({ navigation }: any) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   // Local role state for pure UI animation
   const [localRole, setLocalRole] = useState<'candidate' | 'company'>('candidate');
   const [alertConfig, setAlertConfig] = useState({ visible: false, title: '', message: '' });
-  
+
   // Shared values for animations
   const switchAnim = useSharedValue(0); // 0 for candidate, 1 for company
   const contentFade = useSharedValue(0);
@@ -74,7 +74,7 @@ export const LoginScreen = ({ navigation }: any) => {
     // Calculate a stretch effect based on the animation speed/position
     const isMoving = switchAnim.value > 0.1 && switchAnim.value < 0.9;
     const stretch = withSpring(isMoving ? 1.1 : 1, { damping: 10 });
-    
+
     // Calculate exact travel distance: (containerWidth - innerPaddingTotal) / 2
     // Inner padding is 12 (6 from each side)
     const travelDistance = (containerWidth - 12) / 2;
@@ -82,7 +82,7 @@ export const LoginScreen = ({ navigation }: any) => {
     return {
       transform: [
         { translateX: withSpring(switchAnim.value * travelDistance) },
-        { scaleX: stretch }
+        { scaleX: stretch },
       ],
       backgroundColor: interpolateColor(
         switchAnim.value,
@@ -90,11 +90,7 @@ export const LoginScreen = ({ navigation }: any) => {
         [COLORS.candidate, COLORS.company]
       ),
       // Add a dynamic glow effect
-      shadowColor: interpolateColor(
-        switchAnim.value,
-        [0, 1],
-        [COLORS.candidate, COLORS.company]
-      ),
+      shadowColor: interpolateColor(switchAnim.value, [0, 1], [COLORS.candidate, COLORS.company]),
       shadowOffset: { width: 0, height: 0 },
       shadowOpacity: 0.8,
       shadowRadius: 10,
@@ -103,11 +99,7 @@ export const LoginScreen = ({ navigation }: any) => {
 
   const animatedAccentStyle = useAnimatedStyle(() => {
     return {
-      color: interpolateColor(
-        switchAnim.value,
-        [0, 1],
-        [COLORS.candidate, COLORS.company]
-      ),
+      color: interpolateColor(switchAnim.value, [0, 1], [COLORS.candidate, COLORS.company]),
     };
   });
 
@@ -123,11 +115,11 @@ export const LoginScreen = ({ navigation }: any) => {
       setAlertConfig({
         visible: true,
         title: 'Datos Incompletos',
-        message: 'Por favor ingresa todos los datos para continuar.'
+        message: 'Por favor ingresa todos los datos para continuar.',
       });
       return;
     }
-    
+
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -139,7 +131,7 @@ export const LoginScreen = ({ navigation }: any) => {
       setAlertConfig({
         visible: true,
         title: 'Error de Acceso',
-        message: 'Credenciales incorrectas o problema de red. Por favor intenta de nuevo.'
+        message: 'Credenciales incorrectas o problema de red. Por favor intenta de nuevo.',
       });
     } else {
       // Sync global state only upon success
@@ -152,16 +144,15 @@ export const LoginScreen = ({ navigation }: any) => {
       <StatusBar barStyle="light-content" />
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <SafeAreaView style={styles.safeArea}>
-          <KeyboardAvoidingView 
+          <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={{ flex: 1, justifyContent: 'center' }}
-          >
+            style={{ flex: 1, justifyContent: 'center' }}>
             <Animated.View style={[styles.card, animatedCardStyle]}>
               {/* Logo section */}
               <View style={styles.logoContainer}>
-                <Image 
-                  source={require('../assets/favicon.png')} 
-                  style={styles.logo} 
+                <Image
+                  source={require('../assets/favicon.png')}
+                  style={styles.logo}
                   resizeMode="contain"
                 />
                 <Animated.Text style={[styles.title, animatedAccentStyle]}>
@@ -170,24 +161,29 @@ export const LoginScreen = ({ navigation }: any) => {
               </View>
 
               {/* Innovative Switcher */}
-              <View 
+              <View
                 style={styles.switcherContainer}
-                onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
-              >
+                onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}>
                 <Animated.View style={[styles.switcherPill, animatedSwitchStyle]} />
-                <TouchableOpacity 
-                   onPress={() => handleRoleChange('candidate')}
-                   style={styles.switcherButton}
-                >
-                  <Text style={[styles.switcherText, localRole === 'candidate' && styles.switcherTextActive]}>
+                <TouchableOpacity
+                  onPress={() => handleRoleChange('candidate')}
+                  style={styles.switcherButton}>
+                  <Text
+                    style={[
+                      styles.switcherText,
+                      localRole === 'candidate' && styles.switcherTextActive,
+                    ]}>
                     Candidato
                   </Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                   onPress={() => handleRoleChange('company')}
-                   style={styles.switcherButton}
-                >
-                  <Text style={[styles.switcherText, localRole === 'company' && styles.switcherTextActive]}>
+                <TouchableOpacity
+                  onPress={() => handleRoleChange('company')}
+                  style={styles.switcherButton}>
+                  <Text
+                    style={[
+                      styles.switcherText,
+                      localRole === 'company' && styles.switcherTextActive,
+                    ]}>
                     Empresa
                   </Text>
                 </TouchableOpacity>
@@ -202,7 +198,7 @@ export const LoginScreen = ({ navigation }: any) => {
                   iconName="email-outline"
                   keyboardType="email-address"
                 />
-                
+
                 <CustomInput
                   placeholder="Contraseña"
                   value={password}
@@ -215,20 +211,24 @@ export const LoginScreen = ({ navigation }: any) => {
                   <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
-                  onPress={handleLogin}
-                  disabled={loading}
-                  activeOpacity={0.8}
-                >
-                  <Animated.View style={[styles.mainButton, { 
-                    backgroundColor: interpolateColor(
-                      switchAnim.value,
-                      [0, 1],
-                      [COLORS.candidate, COLORS.company]
-                    )
-                  } as any]}>
+                <TouchableOpacity onPress={handleLogin} disabled={loading} activeOpacity={0.8}>
+                  <Animated.View
+                    style={[
+                      styles.mainButton,
+                      {
+                        backgroundColor: interpolateColor(
+                          switchAnim.value,
+                          [0, 1],
+                          [COLORS.candidate, COLORS.company]
+                        ),
+                      } as any,
+                    ]}>
                     <Text style={styles.buttonText}>
-                      {loading ? 'Accediendo...' : (localRole === 'company' ? 'Acceso Empresa' : 'Entrar')}
+                      {loading
+                        ? 'Accediendo...'
+                        : localRole === 'company'
+                          ? 'Acceso Empresa'
+                          : 'Entrar'}
                     </Text>
                   </Animated.View>
                 </TouchableOpacity>
@@ -242,8 +242,10 @@ export const LoginScreen = ({ navigation }: any) => {
 
                 <View style={styles.socialContainer}>
                   <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
-                    <Image 
-                      source={{ uri: 'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png' }} 
+                    <Image
+                      source={{
+                        uri: 'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png',
+                      }}
                       style={styles.socialIcon}
                     />
                     <Text style={styles.socialButtonText}>Google</Text>
@@ -259,8 +261,11 @@ export const LoginScreen = ({ navigation }: any) => {
               {/* Footer */}
               <View style={styles.footer}>
                 <Text style={styles.footerText}>¿Nuevo por aquí? </Text>
-                <TouchableOpacity onPress={() => navigation.navigate('Register', { initialRole: localRole })}>
-                  <Animated.Text style={[styles.linkText, animatedAccentStyle]}>Regístrate gratis</Animated.Text>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('Register', { initialRole: localRole })}>
+                  <Animated.Text style={[styles.linkText, animatedAccentStyle]}>
+                    Regístrate gratis
+                  </Animated.Text>
                 </TouchableOpacity>
               </View>
             </Animated.View>

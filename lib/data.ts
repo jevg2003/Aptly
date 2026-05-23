@@ -55,7 +55,13 @@ export interface TimelineStepData {
   status: TimelineStatus;
 }
 
-export type ApplicationStatus = 'En revisión' | 'Entrevista' | 'Finalizado' | 'Recibida' | 'Rechazado' | 'Aceptado';
+export type ApplicationStatus =
+  | 'En revisión'
+  | 'Entrevista'
+  | 'Finalizado'
+  | 'Recibida'
+  | 'Rechazado'
+  | 'Aceptado';
 
 export interface ApplicationData {
   id: string;
@@ -108,7 +114,7 @@ export const COMPANIES: Company[] = [
     type: 'company',
     isOnline: true,
     logoUri: 'https://via.placeholder.com/100x100.png?text=Exito',
-  }
+  },
 ];
 
 export const SHARED_APPLICATIONS: ApplicationData[] = [
@@ -123,13 +129,24 @@ export const SHARED_APPLICATIONS: ApplicationData[] = [
     subtitle: 'Analizando hoja de vida',
     buttonVariant: 'outline',
     buttonText: 'Ver detalles',
-    imageUri: 'https://images.unsplash.com/photo-1534723452862-4c874018d66d?q=80&w=600&auto=format&fit=crop',
+    imageUri:
+      'https://images.unsplash.com/photo-1534723452862-4c874018d66d?q=80&w=600&auto=format&fit=crop',
     logoUri: 'https://via.placeholder.com/100x100.png?text=D1',
     timeline: [
-        { id: 'ts1', title: 'Analizando hoja de vida', description: 'Tu perfil fue revisado.', status: 'completed' },
-        { id: 'ts2', title: 'Proceso de selección', description: 'Estamos coordinando entrevistas.', status: 'in_progress' },
-        { id: 'ts3', title: 'Resultado final', description: 'Pendiente.', status: 'pending' }
-    ]
+      {
+        id: 'ts1',
+        title: 'Analizando hoja de vida',
+        description: 'Tu perfil fue revisado.',
+        status: 'completed',
+      },
+      {
+        id: 'ts2',
+        title: 'Proceso de selección',
+        description: 'Estamos coordinando entrevistas.',
+        status: 'in_progress',
+      },
+      { id: 'ts3', title: 'Resultado final', description: 'Pendiente.', status: 'pending' },
+    ],
   },
   {
     id: 'app2',
@@ -142,12 +159,18 @@ export const SHARED_APPLICATIONS: ApplicationData[] = [
     subtitle: 'Proceso de selección',
     buttonVariant: 'outline',
     buttonText: 'Ver detalles',
-    imageUri: 'https://images.unsplash.com/photo-1604719312566-f4129e93f429?q=80&w=600&auto=format&fit=crop',
+    imageUri:
+      'https://images.unsplash.com/photo-1604719312566-f4129e93f429?q=80&w=600&auto=format&fit=crop',
     timeline: [
-        { id: 'ts1', title: 'Revisión de perfil', description: 'Perfil aprobado.', status: 'completed' },
-        { id: 'ts2', title: 'Entrevista', description: 'Programada.', status: 'in_progress' }
-    ]
-  }
+      {
+        id: 'ts1',
+        title: 'Revisión de perfil',
+        description: 'Perfil aprobado.',
+        status: 'completed',
+      },
+      { id: 'ts2', title: 'Entrevista', description: 'Programada.', status: 'in_progress' },
+    ],
+  },
 ];
 
 export const SHARED_CONVERSATIONS: ConversationData[] = [
@@ -159,17 +182,39 @@ export const SHARED_CONVERSATIONS: ConversationData[] = [
     timestamp: '10:30 AM',
     unreadCount: 1,
     messages: [
-      { id: 'm1', senderId: 'd1', text: 'Hola, hemos revisado tu perfil.', timestamp: '09:15 AM', type: 'text' },
-      { id: 'm2', senderId: 'me', text: '¡Hola! Muchas gracias.', timestamp: '09:22 AM', type: 'text' },
-      { 
-        id: 'm4', 
-        senderId: 'd1', 
-        type: 'map', 
-        timestamp: '09:46 AM', 
-        mapData: { title: 'Sede Principal D1', address: 'Av. Carrera 45 #108-27', imageUri: 'https://via.placeholder.com/300x150.png?text=Mapa' } 
+      {
+        id: 'm1',
+        senderId: 'd1',
+        text: 'Hola, hemos revisado tu perfil.',
+        timestamp: '09:15 AM',
+        type: 'text',
       },
-      { id: 'm5', senderId: 'd1', text: 'Gracias por su tiempo.', timestamp: '10:30 AM', type: 'text' }
-    ]
+      {
+        id: 'm2',
+        senderId: 'me',
+        text: '¡Hola! Muchas gracias.',
+        timestamp: '09:22 AM',
+        type: 'text',
+      },
+      {
+        id: 'm4',
+        senderId: 'd1',
+        type: 'map',
+        timestamp: '09:46 AM',
+        mapData: {
+          title: 'Sede Principal D1',
+          address: 'Av. Carrera 45 #108-27',
+          imageUri: 'https://via.placeholder.com/300x150.png?text=Mapa',
+        },
+      },
+      {
+        id: 'm5',
+        senderId: 'd1',
+        text: 'Gracias por su tiempo.',
+        timestamp: '10:30 AM',
+        type: 'text',
+      },
+    ],
   },
   {
     id: 'conv2',
@@ -178,6 +223,6 @@ export const SHARED_CONVERSATIONS: ConversationData[] = [
     lastMessage: 'Agendemos la llamada mañana.',
     timestamp: 'Ayer',
     unreadCount: 0,
-    messages: []
-  }
+    messages: [],
+  },
 ];

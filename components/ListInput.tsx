@@ -27,33 +27,33 @@ export const ListInput = ({ label, items, setItems, placeholder, iconName }: Lis
 
   return (
     <View className="mb-6">
-      <Text className="text-white font-bold mb-3 ml-1">{label}</Text>
-      
-      <View className="flex-row items-center bg-[#121214] rounded-2xl border border-white/5 px-4 h-14 mb-4">
-        {iconName && <Ionicons name={iconName} size={20} color="#64748b" style={{ marginRight: 12 }} />}
+      <Text className="mb-3 ml-1 font-bold text-white">{label}</Text>
+
+      <View className="mb-4 h-14 flex-row items-center rounded-2xl border border-white/5 bg-[#121214] px-4">
+        {iconName && (
+          <Ionicons name={iconName} size={20} color="#64748b" style={{ marginRight: 12 }} />
+        )}
         <TextInput
-          className="flex-1 text-white text-sm"
-          placeholder={placeholder || "Añadir elemento..."}
+          className="flex-1 text-sm text-white"
+          placeholder={placeholder || 'Añadir elemento...'}
           placeholderTextColor="#64748b"
           value={text}
           onChangeText={setText}
           onSubmitEditing={addItem}
         />
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={addItem}
-          className="w-8 h-8 rounded-full bg-[#FF005C] items-center justify-center"
-        >
+          className="h-8 w-8 items-center justify-center rounded-full bg-[#FF005C]">
           <Ionicons name="add" size={20} color="white" />
         </TouchableOpacity>
       </View>
 
       <View className="flex-row flex-wrap gap-2">
         {items.map((item, index) => (
-          <View 
-            key={index} 
-            className="flex-row items-center bg-[#1A1A1C] px-3 py-2 rounded-xl border border-white/5"
-          >
-            <Text className="text-slate-300 text-xs mr-2">{item}</Text>
+          <View
+            key={index}
+            className="flex-row items-center rounded-xl border border-white/5 bg-[#1A1A1C] px-3 py-2">
+            <Text className="mr-2 text-xs text-slate-300">{item}</Text>
             <TouchableOpacity onPress={() => removeItem(index)}>
               <Ionicons name="close-circle" size={16} color="#FF005C" />
             </TouchableOpacity>

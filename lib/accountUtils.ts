@@ -21,13 +21,13 @@ export const handleAccountSoftDelete = async (userId: string) => {
 
     if (chatRooms && chatRooms.length > 0) {
       // 3. Inject system message into each room
-      const messagesToInsert = chatRooms.map(room => ({
+      const messagesToInsert = chatRooms.map((room) => ({
         room_id: room.id,
         sender_id: userId,
         content: 'Este usuario ha eliminado su cuenta de Aptly. El proceso se da por cerrado.',
         type: 'system',
         is_system: true,
-        metadata: { action: 'account_deleted' }
+        metadata: { action: 'account_deleted' },
       }));
 
       await supabase.from('messages').insert(messagesToInsert);
@@ -36,7 +36,6 @@ export const handleAccountSoftDelete = async (userId: string) => {
     // 4. Sign out
     await supabase.auth.signOut();
     return true;
-
   } catch (error) {
     console.error('Error soft-deleting account:', error);
     throw error;

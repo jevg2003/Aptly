@@ -1,5 +1,8 @@
 const countriesData = require('./countries.json') as Record<string, string[]>;
-const abbreviationsData = require('./abbreviations.json') as { country: string; abbreviation: string }[];
+const abbreviationsData = require('./abbreviations.json') as {
+  country: string;
+  abbreviation: string;
+}[];
 
 export interface Country {
   name: string;
@@ -29,27 +32,27 @@ abbreviationsData.forEach((item) => {
 
 // Map of custom flags for countries that might have mismatching names in datasets
 const customFlags: Record<string, string> = {
-  'colombia': '🇨🇴',
-  'mexico': '🇲🇽',
-  'spain': '🇪🇸',
-  'espana': '🇪🇸',
+  colombia: '🇨🇴',
+  mexico: '🇲🇽',
+  spain: '🇪🇸',
+  espana: '🇪🇸',
   'united states': '🇺🇸',
-  'usa': '🇺🇸',
-  'argentina': '🇦🇷',
-  'chile': '🇨🇱',
-  'peru': '🇵🇪',
-  'ecuador': '🇪🇨',
-  'venezuela': '🇻🇪',
-  'uruguay': '🇺🇾',
+  usa: '🇺🇸',
+  argentina: '🇦🇷',
+  chile: '🇨🇱',
+  peru: '🇵🇪',
+  ecuador: '🇪🇨',
+  venezuela: '🇻🇪',
+  uruguay: '🇺🇾',
   'costa rica': '🇨🇷',
-  'panama': '🇵🇦',
+  panama: '🇵🇦',
 };
 
 // Generate list of all countries sorted alphabetically
 export const COUNTRIES: Country[] = Object.entries(countriesData)
   .map(([name, cities]) => {
     const lowerName = name.toLowerCase();
-    
+
     // Resolve flag (try custom, then ISO lookup, fallback to globe)
     let flag = '🌐';
     if (customFlags[lowerName]) {

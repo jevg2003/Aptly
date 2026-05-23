@@ -68,7 +68,12 @@ const CandidateTabBar = ({ state, descriptors, navigation }: any) => {
 
   const tabs = [
     { name: 'Inicio', icon: 'home', iconActive: 'home', label: 'Inicio' },
-    { name: 'Postulaciones', icon: 'briefcase-outline', iconActive: 'briefcase', label: 'Postulaciones' },
+    {
+      name: 'Postulaciones',
+      icon: 'briefcase-outline',
+      iconActive: 'briefcase',
+      label: 'Postulaciones',
+    },
     { name: 'Chat', icon: 'chatbubble-outline', iconActive: 'chatbubble', label: 'Chat' },
     { name: 'Profile', icon: 'person-outline', iconActive: 'person', label: 'Perfil' },
   ];
@@ -76,7 +81,7 @@ const CandidateTabBar = ({ state, descriptors, navigation }: any) => {
     <View style={tabStyles.bar}>
       {state.routes.map((route: any, index: number) => {
         const isFocused = state.index === index;
-        const tab = tabs.find(t => t.name === route.name) || tabs[0];
+        const tab = tabs.find((t) => t.name === route.name) || tabs[0];
         const iconName: any = isFocused ? tab.iconActive : tab.icon;
         const color = isFocused ? '#00A3FF' : '#475569';
         return (
@@ -84,8 +89,7 @@ const CandidateTabBar = ({ state, descriptors, navigation }: any) => {
             key={route.key}
             onPress={() => navigation.navigate(route.name)}
             style={tabStyles.tabBtn}
-            activeOpacity={0.7}
-          >
+            activeOpacity={0.7}>
             {isFocused && <View style={[tabStyles.glow, { shadowColor: '#00A3FF' }]} />}
             <Ionicons name={iconName} size={22} color={color} />
             <Text style={[tabStyles.label, { color }]}>{tab.label}</Text>
@@ -107,7 +111,13 @@ const BusinessTabBar = ({ state, descriptors, navigation }: any) => {
   const tabs = [
     { name: 'Vacantes', icon: 'layers-outline', iconActive: 'layers', label: 'Vacantes' },
     { name: 'Procesos', icon: 'git-network-outline', iconActive: 'git-network', label: 'Procesos' },
-    { name: 'Chat', icon: 'chatbubble-outline', iconActive: 'chatbubble', label: 'Chat', badge: totalUnreadCount },
+    {
+      name: 'Chat',
+      icon: 'chatbubble-outline',
+      iconActive: 'chatbubble',
+      label: 'Chat',
+      badge: totalUnreadCount,
+    },
     { name: 'Profile', icon: 'business-outline', iconActive: 'business', label: 'Empresa' },
   ];
 
@@ -115,23 +125,31 @@ const BusinessTabBar = ({ state, descriptors, navigation }: any) => {
     <View style={tabStyles.bar}>
       {state.routes.map((route: any, index: number) => {
         const isFocused = state.index === index;
-        const tab = tabs.find(t => t.name === route.name) || tabs[0];
+        const tab = tabs.find((t) => t.name === route.name) || tabs[0];
         const iconName: any = isFocused ? tab.iconActive : tab.icon;
         const color = isFocused ? '#FF005C' : '#475569';
-        
+
         return (
           <TouchableOpacity
             key={route.key}
             onPress={() => navigation.navigate(route.name)}
             style={tabStyles.tabBtn}
-            activeOpacity={0.7}
-          >
+            activeOpacity={0.7}>
             <View style={tabStyles.iconWrapper}>
-              {isFocused && <View style={[tabStyles.glow, { shadowColor: '#FF005C', backgroundColor: 'rgba(255, 0, 92, 0.08)' }]} />}
+              {isFocused && (
+                <View
+                  style={[
+                    tabStyles.glow,
+                    { shadowColor: '#FF005C', backgroundColor: 'rgba(255, 0, 92, 0.08)' },
+                  ]}
+                />
+              )}
               <Ionicons name={iconName} size={22} color={color} />
               {(tab as any).badge > 0 && (
                 <View style={tabStyles.badge}>
-                  <Text style={tabStyles.badgeText}>{(tab as any).badge > 99 ? '99+' : (tab as any).badge}</Text>
+                  <Text style={tabStyles.badgeText}>
+                    {(tab as any).badge > 99 ? '99+' : (tab as any).badge}
+                  </Text>
                 </View>
               )}
             </View>
@@ -200,15 +218,14 @@ const tabStyles = StyleSheet.create({
     color: 'white',
     fontSize: 8,
     fontWeight: '900',
-  }
+  },
 });
 
 export const MainTabNavigator = () => {
   return (
     <Tab.Navigator
       tabBar={(props) => <CandidateTabBar {...props} />}
-      screenOptions={{ headerShown: false }}
-    >
+      screenOptions={{ headerShown: false }}>
       <Tab.Screen name="Inicio" component={HomeScreen} />
       <Tab.Screen name="Postulaciones" component={ApplicationsNavigator} />
       <Tab.Screen name="Chat" component={ChatNavigator} />
@@ -222,8 +239,7 @@ export const BusinessTabNavigator = () => {
   return (
     <Tab.Navigator
       tabBar={(props) => <BusinessTabBar {...props} />}
-      screenOptions={{ headerShown: false }}
-    >
+      screenOptions={{ headerShown: false }}>
       <Tab.Screen name="Vacantes" component={BusinessVacantesNavigator} />
       <Tab.Screen name="Procesos" component={BusinessProcessNavigator} />
       <Tab.Screen name="Chat" component={BusinessChatNavigator} />
@@ -231,4 +247,3 @@ export const BusinessTabNavigator = () => {
     </Tab.Navigator>
   );
 };
-

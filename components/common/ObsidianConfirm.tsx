@@ -1,12 +1,12 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Modal, 
-  Animated, 
-  Dimensions 
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
@@ -34,7 +34,7 @@ export const ObsidianConfirm = ({
   confirmLabel = 'CONFIRMAR',
   cancelLabel = 'CANCELAR',
   type = 'info',
-  icon
+  icon,
 }: ObsidianConfirmProps) => {
   const [showModal, setShowModal] = React.useState(visible);
   const scaleAnim = React.useRef(new Animated.Value(0.9)).current;
@@ -72,18 +72,12 @@ export const ObsidianConfirm = ({
   return (
     <Modal transparent visible={showModal} animationType="none">
       <View style={styles.overlay}>
-        <TouchableOpacity 
-          style={StyleSheet.absoluteFill} 
-          activeOpacity={1} 
-          onPress={onCancel}
-        >
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onCancel}>
           <BlurView intensity={15} tint="dark" style={StyleSheet.absoluteFill} />
         </TouchableOpacity>
 
-        <Animated.View style={[
-          styles.content,
-          { opacity: opacityAnim, transform: [{ scale: scaleAnim }] }
-        ]}>
+        <Animated.View
+          style={[styles.content, { opacity: opacityAnim, transform: [{ scale: scaleAnim }] }]}>
           <View style={styles.header}>
             <View style={[styles.iconContainer, { backgroundColor: `${getAccentColor()}20` }]}>
               <Ionicons name={(icon as any) || defaultIcon()} size={32} color={getAccentColor()} />
@@ -94,19 +88,14 @@ export const ObsidianConfirm = ({
           <Text style={styles.message}>{message}</Text>
 
           <View style={styles.footer}>
-            <TouchableOpacity 
-              style={styles.cancelBtn} 
-              onPress={onCancel}
-              activeOpacity={0.7}
-            >
+            <TouchableOpacity style={styles.cancelBtn} onPress={onCancel} activeOpacity={0.7}>
               <Text style={styles.cancelBtnText}>{cancelLabel}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={[styles.confirmBtn, { backgroundColor: getAccentColor() }]} 
+            <TouchableOpacity
+              style={[styles.confirmBtn, { backgroundColor: getAccentColor() }]}
               onPress={onConfirm}
-              activeOpacity={0.8}
-            >
+              activeOpacity={0.8}>
               <Text style={styles.confirmBtnText}>{confirmLabel}</Text>
             </TouchableOpacity>
           </View>
@@ -195,5 +184,5 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: '900',
     fontSize: 13,
-  }
+  },
 });

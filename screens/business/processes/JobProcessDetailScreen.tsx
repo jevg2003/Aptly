@@ -1,5 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ObsidianHeader } from '../../../components/ObsidianHeader';
@@ -20,12 +28,12 @@ export const JobProcessDetailScreen = ({ route, navigation }: any) => {
       setLoading(true);
       // 1. Cerrar el Job
       await supabase.from('jobs').update({ status: 'closed' }).eq('id', job.id);
-      
+
       // 2. Notificar a los candidatos
       const companyName = job.company_name || 'La empresa';
       for (const cand of candidates) {
         const rejectionMsg = `Hola, ${companyName} ha cerrado el proceso para la vacante de ${job.title}. Agradecemos tu participación y te deseo lo mejor en tus futuras búsquedas.`;
-        
+
         // Buscar room
         const { data: room } = await supabase
           .from('chat_rooms')
@@ -39,7 +47,7 @@ export const JobProcessDetailScreen = ({ route, navigation }: any) => {
             content: rejectionMsg,
             sender_id: job.company_id,
             type: 'system',
-            is_system: true
+            is_system: true,
           });
         }
       }
@@ -57,9 +65,10 @@ export const JobProcessDetailScreen = ({ route, navigation }: any) => {
   const closeVacancy = () => {
     setConfirmData({
       title: 'CERRAR VACANTE',
-      message: '¿Estás seguro de cerrar esta vacante? Se notificará automáticamente a todos los candidatos en proceso.',
+      message:
+        '¿Estás seguro de cerrar esta vacante? Se notificará automáticamente a todos los candidatos en proceso.',
       onConfirm: closeVacancyActual,
-      type: 'danger'
+      type: 'danger',
     });
     setConfirmVisible(true);
   };
@@ -69,13 +78,15 @@ export const JobProcessDetailScreen = ({ route, navigation }: any) => {
       setLoading(true);
       const { data, error } = await supabase
         .from('applications')
-        .select(`
+        .select(
+          `
           id,
           status,
           current_stage,
           profiles!applications_candidate_id_fkey(id, full_name, avatar_url, professional_title),
           chat_rooms(id)
-        `)
+        `
+        )
         .eq('job_id', job.id)
         .eq('status', 'interview');
 
@@ -94,24 +105,27 @@ export const JobProcessDetailScreen = ({ route, navigation }: any) => {
 
   const renderCandidate = ({ item }: { item: any }) => {
     const profile = Array.isArray(item.profiles) ? item.profiles[0] : item.profiles;
-    
+
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.candidateCard}
         onPress={() => navigation.navigate('CandidatePipeline', { application: item, job })}
-        activeOpacity={0.8}
-      >
-        <Image 
-          source={{ uri: profile?.avatar_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80' }} 
-          style={styles.avatar} 
+        activeOpacity={0.8}>
+        <Image
+          source={{
+            uri:
+              profile?.avatar_url ||
+              'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80',
+          }}
+          style={styles.avatar}
         />
         <View style={styles.candidateInfo}>
           <Text style={styles.candidateName}>{profile?.full_name || 'Candidato'}</Text>
           <Text style={styles.candidateRole}>{profile?.professional_title || 'Aplicante'}</Text>
-          
+
           <View style={styles.stageIndicator}>
-             <View style={styles.pulse} />
-             <Text style={styles.stageText}>{item.current_stage || 'Nueva Postulación'}</Text>
+            <View style={styles.pulse} />
+            <Text style={styles.stageText}>{item.current_stage || 'Nueva Postulación'}</Text>
           </View>
         </View>
         <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.2)" />
@@ -122,15 +136,30 @@ export const JobProcessDetailScreen = ({ route, navigation }: any) => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-        <ObsidianHeader 
-          title="Candidatos" 
+        <ObsidianHeader
+          title="Candidatos"
           subtitle={job.title.toUpperCase()}
           leftIcon="arrow-back"
           onLeftPress={() => navigation.goBack()}
         />
-        
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 10 }}>
-          <Text style={{ flex: 1, textAlign: 'center', fontSize: 14, fontWeight: '900', color: 'white', textTransform: 'uppercase', letterSpacing: 1 }}>
+
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: 20,
+            paddingBottom: 10,
+          }}>
+          <Text
+            style={{
+              flex: 1,
+              textAlign: 'center',
+              fontSize: 14,
+              fontWeight: '900',
+              color: 'white',
+              textTransform: 'uppercase',
+              letterSpacing: 1,
+            }}>
             Estado de Aplicación
           </Text>
           <TouchableOpacity onPress={closeVacancy} style={{ padding: 4 }}>
@@ -146,18 +175,20 @@ export const JobProcessDetailScreen = ({ route, navigation }: any) => {
           <FlatList
             data={candidates}
             renderItem={renderCandidate}
-            keyExtractor={item => item.id}
+            keyExtractor={(item) => item.id}
             contentContainerStyle={styles.list}
             ListEmptyComponent={
               <View style={styles.empty}>
                 <Ionicons name="people-outline" size={48} color="rgba(255,255,255,0.1)" />
-                <Text style={styles.emptyText}>No hay candidatos en proceso para esta vacante.</Text>
+                <Text style={styles.emptyText}>
+                  No hay candidatos en proceso para esta vacante.
+                </Text>
               </View>
             }
           />
         )}
 
-        <ObsidianConfirm 
+        <ObsidianConfirm
           visible={confirmVisible}
           title={confirmData?.title || ''}
           message={confirmData?.message || ''}
@@ -195,16 +226,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
-    alignSelf: 'flex-start'
+    alignSelf: 'flex-start',
   },
   pulse: {
     width: 6,
     height: 6,
     borderRadius: 3,
     backgroundColor: '#FF005C',
-    marginRight: 6
+    marginRight: 6,
   },
   stageText: { color: 'white', fontSize: 10, fontWeight: '800' },
   empty: { flex: 1, alignItems: 'center', paddingTop: 100 },
-  emptyText: { color: '#64748b', marginTop: 10, fontSize: 14, textAlign: 'center' }
+  emptyText: { color: '#64748b', marginTop: 10, fontSize: 14, textAlign: 'center' },
 });

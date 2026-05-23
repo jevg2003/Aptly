@@ -8,42 +8,44 @@ interface ApplicationCardProps {
 }
 
 export const ApplicationCard = ({ application, onPress }: ApplicationCardProps) => {
-  const { companyName, status, statusColor, subtitle, buttonVariant, buttonText, imageUri } = application;
-  
+  const { companyName, status, statusColor, subtitle, buttonVariant, buttonText, imageUri } =
+    application;
+
   return (
-    <TouchableOpacity 
-      style={styles.card} 
-      onPress={onPress}
-      activeOpacity={0.8}
-    >
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
       <View style={styles.leftContent}>
         <View>
           <View style={styles.statusRow}>
-             <View style={[styles.statusDot, { backgroundColor: status === 'Entrevista' ? '#00A3FF' : '#475569' }]} />
-             <Text style={styles.statusText}>{status}</Text>
+            <View
+              style={[
+                styles.statusDot,
+                { backgroundColor: status === 'Entrevista' ? '#00A3FF' : '#475569' },
+              ]}
+            />
+            <Text style={styles.statusText}>{status}</Text>
           </View>
-          
+
           <Text style={styles.companyName}>{companyName}</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
         </View>
 
-        <View 
+        <View
           style={[
-            styles.actionBtn, 
-            buttonVariant === 'filled' ? styles.btnFilled : styles.btnGhost
-          ]}
-        >
-          <Text style={[
-            styles.btnText,
-            buttonVariant === 'filled' ? styles.textWhite : styles.textBlue
+            styles.actionBtn,
+            buttonVariant === 'filled' ? styles.btnFilled : styles.btnGhost,
           ]}>
+          <Text
+            style={[
+              styles.btnText,
+              buttonVariant === 'filled' ? styles.textWhite : styles.textBlue,
+            ]}>
             {buttonText}
           </Text>
         </View>
       </View>
-      
+
       <View style={styles.imageContainer}>
-         <Image source={{ uri: imageUri }} style={styles.image} resizeMode="cover" />
+        <Image source={{ uri: imageUri }} style={styles.image} resizeMode="cover" />
       </View>
     </TouchableOpacity>
   );
@@ -131,5 +133,5 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
-  }
+  },
 });

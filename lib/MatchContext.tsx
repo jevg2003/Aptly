@@ -30,7 +30,8 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
       companyName: job.company || job.companyName,
       role: job.title || job.role,
       matchDate: 'Recién ahora',
-      imageUrl: job.imageUrl || 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=800&q=80',
+      imageUrl:
+        job.imageUrl || 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=800&q=80',
       unread: true,
       salary: job.salary || '$2M - $3M COP',
       location: job.location || 'Colombia',
@@ -39,17 +40,13 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
       postedAt: job.postedAt || 'Hoy',
     };
 
-    setMatches(prev => {
-      if (prev.find(m => m.id === newMatch.id)) return prev;
+    setMatches((prev) => {
+      if (prev.find((m) => m.id === newMatch.id)) return prev;
       return [newMatch, ...prev];
     });
   };
 
-  return (
-    <MatchContext.Provider value={{ matches, addMatch }}>
-      {children}
-    </MatchContext.Provider>
-  );
+  return <MatchContext.Provider value={{ matches, addMatch }}>{children}</MatchContext.Provider>;
 };
 
 export const useMatches = () => {

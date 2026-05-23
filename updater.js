@@ -2,19 +2,29 @@ const fs = require('fs');
 
 let content = fs.readFileSync('c:/Trabajos/Aptly/screens/RegisterScreen.tsx', 'utf8');
 
-content = content.replace("const totalSteps = localRole === 'company' ? 4 : 3;", "const totalSteps = localRole === 'company' ? 6 : 3;");
+content = content.replace(
+  "const totalSteps = localRole === 'company' ? 4 : 3;",
+  "const totalSteps = localRole === 'company' ? 6 : 3;"
+);
 
-content = content.replace("const [selectedSectors, setSelectedSectors] = useState<string[]>([]);", 
-`const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
+content = content.replace(
+  'const [selectedSectors, setSelectedSectors] = useState<string[]>([]);',
+  `const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
   const [businessArea, setBusinessArea] = useState('');
   const [customSector, setCustomSector] = useState('');
-  const [isOtherSector, setIsOtherSector] = useState(false);`);
+  const [isOtherSector, setIsOtherSector] = useState(false);`
+);
 
-content = content.replace(/const isCompanyIncomplete =[^;]+;/, 
-`const finalSector = isOtherSector ? customSector : selectedSectors[0];
-    const isCompanyIncomplete = localRole === 'company' && (!companyName || !taxId || !creationDate || !businessArea || !finalSector);`);
+content = content.replace(
+  /const isCompanyIncomplete =[^;]+;/,
+  `const finalSector = isOtherSector ? customSector : selectedSectors[0];
+    const isCompanyIncomplete = localRole === 'company' && (!companyName || !taxId || !creationDate || !businessArea || !finalSector);`
+);
 
-content = content.replace(/industry: selectedSectors\.join\(\', \'\)/, 'business_area: businessArea,\n          industry: finalSector');
+content = content.replace(
+  /industry: selectedSectors\.join\(\', \'\)/,
+  'business_area: businessArea,\n          industry: finalSector'
+);
 
 const oldHandleNext = `    if (localRole === 'company') {
       if (companyStep === 1) {
@@ -60,16 +70,16 @@ const newHandleNext = `    if (localRole === 'company') {
 content = content.replace(oldHandleNext, newHandleNext);
 
 const startStr = "{localRole === 'company' && (";
-const endStr = "                )}";
+const endStr = '                )}';
 
 // Splitting logic to ensure correct JSX replacement
 const preCompanyIndex = content.indexOf(startStr);
 const postCompanyIndex = content.indexOf(endStr, preCompanyIndex) + endStr.length;
 
 if (preCompanyIndex !== -1 && postCompanyIndex !== -1) {
-    const pre = content.substring(0, preCompanyIndex);
-    const post = content.substring(postCompanyIndex);
-    const newSteps = `{localRole === 'company' && (
+  const pre = content.substring(0, preCompanyIndex);
+  const post = content.substring(postCompanyIndex);
+  const newSteps = `{localRole === 'company' && (
                   <>
                     {companyStep === 1 && (
                       <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
@@ -196,7 +206,7 @@ if (preCompanyIndex !== -1 && postCompanyIndex !== -1) {
                     )}
                   </>
                 )}`;
-    content = pre + newSteps + post;
+  content = pre + newSteps + post;
 }
 
 const additionalStyles = `  socialBtn: { flex: 1, flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.05)', paddingVertical: 12, borderRadius: 12, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
@@ -212,7 +222,7 @@ const additionalStyles = `  socialBtn: { flex: 1, flexDirection: 'row', backgrou
   areaTextActive: { color: 'white', fontWeight: '800' },
 });`;
 
-content = content.replace("});", additionalStyles);
+content = content.replace('});', additionalStyles);
 
 fs.writeFileSync('c:/Trabajos/Aptly/screens/RegisterScreen.tsx', content);
-console.log("Success");
+console.log('Success');

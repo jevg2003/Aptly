@@ -11,7 +11,9 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [isBusiness, setIsBusiness] = useState(false);
-  const [currentScreen, setCurrentScreen] = useState<'welcome' | 'login' | 'register' | 'home'>('welcome');
+  const [currentScreen, setCurrentScreen] = useState<'welcome' | 'login' | 'register' | 'home'>(
+    'welcome'
+  );
 
   return (
     <AppContext.Provider value={{ isBusiness, setIsBusiness, currentScreen, setCurrentScreen }}>

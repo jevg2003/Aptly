@@ -1,18 +1,18 @@
 import React, { useRef, useState } from 'react';
-import { 
-  View, 
-  Text, 
-  Modal as RNModal, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Dimensions, 
+import {
+  View,
+  Text,
+  Modal as RNModal,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
   ScrollView,
   Image,
   Platform,
   PanResponder,
   Animated,
   Linking,
-  Alert
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -38,7 +38,7 @@ interface ObsidianDetailModalProps {
   jobBenefits?: string;
   jobType?: string;
   jobModality?: string;
-  
+
   companyBio?: string;
   companyIndustry?: string;
   companyBusinessArea?: string;
@@ -134,28 +134,19 @@ export const ObsidianDetailModal: React.FC<ObsidianDetailModalProps> = ({
   const handleOpenLink = (url?: string) => {
     if (!url) return;
     const cleanUrl = url.startsWith('http') ? url : `https://${url}`;
-    Linking.canOpenURL(cleanUrl).then(supported => {
+    Linking.canOpenURL(cleanUrl).then((supported) => {
       if (supported) {
         Linking.openURL(cleanUrl);
       } else {
-        Alert.alert("Enlace inválido", "No se puede abrir la dirección proporcionada: " + url);
+        Alert.alert('Enlace inválido', 'No se puede abrir la dirección proporcionada: ' + url);
       }
     });
   };
 
   return (
-    <RNModal
-      transparent
-      visible={isVisible}
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <RNModal transparent visible={isVisible} animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <TouchableOpacity 
-          style={StyleSheet.absoluteFill} 
-          onPress={onClose} 
-          activeOpacity={1}
-        >
+        <TouchableOpacity style={StyleSheet.absoluteFill} onPress={onClose} activeOpacity={1}>
           {Platform.OS === 'ios' ? (
             <BlurView intensity={35} tint="dark" style={StyleSheet.absoluteFill} />
           ) : (
@@ -172,32 +163,57 @@ export const ObsidianDetailModal: React.FC<ObsidianDetailModalProps> = ({
           {/* Job vs Company Tab Switcher (Only if it's a job detail modal) */}
           {isJobDetail && (
             <View style={styles.tabBar}>
-              <TouchableOpacity 
-                style={[styles.tabButton, activeTab === 'job' && { borderBottomColor: accentColor }]}
-                onPress={() => setActiveTab('job')}
-              >
-                <Ionicons name="briefcase" size={18} color={activeTab === 'job' ? accentColor : '#64748b'} style={{ marginRight: 6 }} />
-                <Text style={[styles.tabText, activeTab === 'job' ? { color: '#FFFFFF', fontWeight: '800' } : { color: '#64748b' }]}>
+              <TouchableOpacity
+                style={[
+                  styles.tabButton,
+                  activeTab === 'job' && { borderBottomColor: accentColor },
+                ]}
+                onPress={() => setActiveTab('job')}>
+                <Ionicons
+                  name="briefcase"
+                  size={18}
+                  color={activeTab === 'job' ? accentColor : '#64748b'}
+                  style={{ marginRight: 6 }}
+                />
+                <Text
+                  style={[
+                    styles.tabText,
+                    activeTab === 'job'
+                      ? { color: '#FFFFFF', fontWeight: '800' }
+                      : { color: '#64748b' },
+                  ]}>
                   El Puesto
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
-                style={[styles.tabButton, activeTab === 'company' && { borderBottomColor: accentColor }]}
-                onPress={() => setActiveTab('company')}
-              >
-                <Ionicons name="business" size={18} color={activeTab === 'company' ? accentColor : '#64748b'} style={{ marginRight: 6 }} />
-                <Text style={[styles.tabText, activeTab === 'company' ? { color: '#FFFFFF', fontWeight: '800' } : { color: '#64748b' }]}>
+              <TouchableOpacity
+                style={[
+                  styles.tabButton,
+                  activeTab === 'company' && { borderBottomColor: accentColor },
+                ]}
+                onPress={() => setActiveTab('company')}>
+                <Ionicons
+                  name="business"
+                  size={18}
+                  color={activeTab === 'company' ? accentColor : '#64748b'}
+                  style={{ marginRight: 6 }}
+                />
+                <Text
+                  style={[
+                    styles.tabText,
+                    activeTab === 'company'
+                      ? { color: '#FFFFFF', fontWeight: '800' }
+                      : { color: '#64748b' },
+                  ]}>
                   La Empresa
                 </Text>
               </TouchableOpacity>
             </View>
           )}
 
-          <ScrollView 
+          <ScrollView
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
-          >
+            contentContainerStyle={styles.scrollContent}>
             {imageUrl && (
               <Image source={{ uri: imageUrl }} style={styles.coverImage} resizeMode="cover" />
             )}
@@ -205,7 +221,9 @@ export const ObsidianDetailModal: React.FC<ObsidianDetailModalProps> = ({
             {/* General Header */}
             <View style={styles.header}>
               <Text style={styles.title}>{title}</Text>
-              {subtitle && <Text style={[styles.subtitle, { color: accentColor }]}>{subtitle}</Text>}
+              {subtitle && (
+                <Text style={[styles.subtitle, { color: accentColor }]}>{subtitle}</Text>
+              )}
             </View>
 
             {/* ========================================================
@@ -216,25 +234,41 @@ export const ObsidianDetailModal: React.FC<ObsidianDetailModalProps> = ({
                 {/* Meta Rows */}
                 <View style={styles.metaRow}>
                   {location && (
-                    <View style={[styles.metaItem, { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` }]}>
+                    <View
+                      style={[
+                        styles.metaItem,
+                        { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` },
+                      ]}>
                       <Ionicons name="location-outline" size={16} color={accentColor} />
                       <Text style={styles.metaText}>{location}</Text>
                     </View>
                   )}
                   {jobModality && (
-                    <View style={[styles.metaItem, { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` }]}>
+                    <View
+                      style={[
+                        styles.metaItem,
+                        { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` },
+                      ]}>
                       <Ionicons name="home-outline" size={16} color={accentColor} />
                       <Text style={styles.metaText}>{jobModality}</Text>
                     </View>
                   )}
                   {jobType && (
-                    <View style={[styles.metaItem, { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` }]}>
+                    <View
+                      style={[
+                        styles.metaItem,
+                        { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` },
+                      ]}>
                       <Ionicons name="time-outline" size={16} color={accentColor} />
                       <Text style={styles.metaText}>{jobType}</Text>
                     </View>
                   )}
                   {salary && (
-                    <View style={[styles.metaItem, { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` }]}>
+                    <View
+                      style={[
+                        styles.metaItem,
+                        { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` },
+                      ]}>
                       <Ionicons name="cash-outline" size={16} color={accentColor} />
                       <Text style={styles.metaText}>{salary}</Text>
                     </View>
@@ -247,7 +281,15 @@ export const ObsidianDetailModal: React.FC<ObsidianDetailModalProps> = ({
                     <Text style={styles.sectionTitle}>Requisitos clave</Text>
                     <View style={styles.tagsContainer}>
                       {tags.map((tag, i) => (
-                        <View key={i} style={[styles.tag, { backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.08)' }]}>
+                        <View
+                          key={i}
+                          style={[
+                            styles.tag,
+                            {
+                              backgroundColor: 'rgba(255,255,255,0.03)',
+                              borderColor: 'rgba(255,255,255,0.08)',
+                            },
+                          ]}>
                           <Text style={[styles.tagText, { color: '#cbd5e1' }]}>{tag}</Text>
                         </View>
                       ))}
@@ -289,25 +331,41 @@ export const ObsidianDetailModal: React.FC<ObsidianDetailModalProps> = ({
                 {/* Meta Rows for Company */}
                 <View style={styles.metaRow}>
                   {companyIndustry && (
-                    <View style={[styles.metaItem, { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` }]}>
+                    <View
+                      style={[
+                        styles.metaItem,
+                        { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` },
+                      ]}>
                       <Ionicons name="prism-outline" size={16} color={accentColor} />
                       <Text style={styles.metaText}>{companyIndustry}</Text>
                     </View>
                   )}
                   {companyBusinessArea && (
-                    <View style={[styles.metaItem, { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` }]}>
+                    <View
+                      style={[
+                        styles.metaItem,
+                        { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` },
+                      ]}>
                       <Ionicons name="options-outline" size={16} color={accentColor} />
                       <Text style={styles.metaText}>{companyBusinessArea}</Text>
                     </View>
                   )}
                   {companyCreationDate && (
-                    <View style={[styles.metaItem, { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` }]}>
+                    <View
+                      style={[
+                        styles.metaItem,
+                        { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` },
+                      ]}>
                       <Ionicons name="calendar-outline" size={16} color={accentColor} />
                       <Text style={styles.metaText}>Fundación: {companyCreationDate}</Text>
                     </View>
                   )}
                   {companyPhone && (
-                    <View style={[styles.metaItem, { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` }]}>
+                    <View
+                      style={[
+                        styles.metaItem,
+                        { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` },
+                      ]}>
                       <Ionicons name="call-outline" size={16} color={accentColor} />
                       <Text style={styles.metaText}>{companyPhone}</Text>
                     </View>
@@ -318,7 +376,8 @@ export const ObsidianDetailModal: React.FC<ObsidianDetailModalProps> = ({
                 <View style={styles.contentSection}>
                   <Text style={styles.sectionTitle}>Sobre la Empresa</Text>
                   <Text style={styles.contentText}>
-                    {companyBio || 'Esta empresa destaca en su sector impulsando el talento local con altos estándares.'}
+                    {companyBio ||
+                      'Esta empresa destaca en su sector impulsando el talento local con altos estándares.'}
                   </Text>
                 </View>
 
@@ -328,7 +387,15 @@ export const ObsidianDetailModal: React.FC<ObsidianDetailModalProps> = ({
                     <Text style={styles.sectionTitle}>Cultura & Valores</Text>
                     <View style={styles.tagsContainer}>
                       {companyTags.map((tag, i) => (
-                        <View key={i} style={[styles.tag, { backgroundColor: `${accentColor}10`, borderColor: `${accentColor}25` }]}>
+                        <View
+                          key={i}
+                          style={[
+                            styles.tag,
+                            {
+                              backgroundColor: `${accentColor}10`,
+                              borderColor: `${accentColor}25`,
+                            },
+                          ]}>
                           <Text style={[styles.tagText, { color: accentColor }]}>{tag}</Text>
                         </View>
                       ))}
@@ -346,25 +413,41 @@ export const ObsidianDetailModal: React.FC<ObsidianDetailModalProps> = ({
                 {/* Meta Rows for Candidate */}
                 <View style={styles.metaRow}>
                   {location && (
-                    <View style={[styles.metaItem, { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` }]}>
+                    <View
+                      style={[
+                        styles.metaItem,
+                        { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` },
+                      ]}>
                       <Ionicons name="location-outline" size={16} color={accentColor} />
                       <Text style={styles.metaText}>{location}</Text>
                     </View>
                   )}
                   {candidateExperienceLevel && (
-                    <View style={[styles.metaItem, { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` }]}>
+                    <View
+                      style={[
+                        styles.metaItem,
+                        { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` },
+                      ]}>
                       <Ionicons name="trending-up-outline" size={16} color={accentColor} />
                       <Text style={styles.metaText}>{candidateExperienceLevel}</Text>
                     </View>
                   )}
                   {candidateBirthDate && (
-                    <View style={[styles.metaItem, { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` }]}>
+                    <View
+                      style={[
+                        styles.metaItem,
+                        { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` },
+                      ]}>
                       <Ionicons name="calendar-clear-outline" size={16} color={accentColor} />
                       <Text style={styles.metaText}>Nacimiento: {candidateBirthDate}</Text>
                     </View>
                   )}
                   {candidatePhone && (
-                    <View style={[styles.metaItem, { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` }]}>
+                    <View
+                      style={[
+                        styles.metaItem,
+                        { backgroundColor: `${accentColor}0d`, borderColor: `${accentColor}20` },
+                      ]}>
                       <Ionicons name="call-outline" size={16} color={accentColor} />
                       <Text style={styles.metaText}>{candidatePhone}</Text>
                     </View>
@@ -375,20 +458,31 @@ export const ObsidianDetailModal: React.FC<ObsidianDetailModalProps> = ({
                 {(candidateLinkedinUrl || candidatePortfolioUrl) && (
                   <View style={styles.linksContainer}>
                     {candidateLinkedinUrl && (
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={[styles.linkButton, { backgroundColor: '#0077B5' }]}
-                        onPress={() => handleOpenLink(candidateLinkedinUrl)}
-                      >
-                        <Ionicons name="logo-linkedin" size={18} color="white" style={{ marginRight: 8 }} />
+                        onPress={() => handleOpenLink(candidateLinkedinUrl)}>
+                        <Ionicons
+                          name="logo-linkedin"
+                          size={18}
+                          color="white"
+                          style={{ marginRight: 8 }}
+                        />
                         <Text style={styles.linkButtonText}>Ver LinkedIn</Text>
                       </TouchableOpacity>
                     )}
                     {candidatePortfolioUrl && (
-                      <TouchableOpacity 
-                        style={[styles.linkButton, { backgroundColor: '#1A1A1C', borderWidth: 1, borderColor: '#334155' }]}
-                        onPress={() => handleOpenLink(candidatePortfolioUrl)}
-                      >
-                        <Ionicons name="globe-outline" size={18} color="white" style={{ marginRight: 8 }} />
+                      <TouchableOpacity
+                        style={[
+                          styles.linkButton,
+                          { backgroundColor: '#1A1A1C', borderWidth: 1, borderColor: '#334155' },
+                        ]}
+                        onPress={() => handleOpenLink(candidatePortfolioUrl)}>
+                        <Ionicons
+                          name="globe-outline"
+                          size={18}
+                          color="white"
+                          style={{ marginRight: 8 }}
+                        />
                         <Text style={styles.linkButtonText}>Ver Portafolio</Text>
                       </TouchableOpacity>
                     )}
@@ -399,7 +493,9 @@ export const ObsidianDetailModal: React.FC<ObsidianDetailModalProps> = ({
                 <View style={styles.contentSection}>
                   <Text style={styles.sectionTitle}>Biografía / Presentación</Text>
                   <Text style={styles.contentText}>
-                    {candidateBio || content || 'El candidato no ha proporcionado una presentación detallada aún.'}
+                    {candidateBio ||
+                      content ||
+                      'El candidato no ha proporcionado una presentación detallada aún.'}
                   </Text>
                 </View>
 
@@ -409,7 +505,15 @@ export const ObsidianDetailModal: React.FC<ObsidianDetailModalProps> = ({
                     <Text style={styles.sectionTitle}>Habilidades / Habilidades Técnicas</Text>
                     <View style={styles.tagsContainer}>
                       {candidateTags.map((tag, i) => (
-                        <View key={i} style={[styles.tag, { backgroundColor: `${accentColor}12`, borderColor: `${accentColor}25` }]}>
+                        <View
+                          key={i}
+                          style={[
+                            styles.tag,
+                            {
+                              backgroundColor: `${accentColor}12`,
+                              borderColor: `${accentColor}25`,
+                            },
+                          ]}>
                           <Text style={[styles.tagText, { color: accentColor }]}>{tag}</Text>
                         </View>
                       ))}
@@ -423,7 +527,15 @@ export const ObsidianDetailModal: React.FC<ObsidianDetailModalProps> = ({
                     <Text style={styles.sectionTitle}>Sectores de Interés</Text>
                     <View style={styles.tagsContainer}>
                       {candidateIndustryInterests.map((tag, i) => (
-                        <View key={i} style={[styles.tag, { backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.08)' }]}>
+                        <View
+                          key={i}
+                          style={[
+                            styles.tag,
+                            {
+                              backgroundColor: 'rgba(255,255,255,0.03)',
+                              borderColor: 'rgba(255,255,255,0.08)',
+                            },
+                          ]}>
                           <Text style={[styles.tagText, { color: '#cbd5e1' }]}>{tag}</Text>
                         </View>
                       ))}
@@ -434,8 +546,13 @@ export const ObsidianDetailModal: React.FC<ObsidianDetailModalProps> = ({
             )}
           </ScrollView>
 
-          <TouchableOpacity style={[styles.closeBtn, { backgroundColor: `${accentColor}26`, borderColor: `${accentColor}4d` }]} onPress={onClose}>
-             <Ionicons name="close" size={28} color="white" />
+          <TouchableOpacity
+            style={[
+              styles.closeBtn,
+              { backgroundColor: `${accentColor}26`, borderColor: `${accentColor}4d` },
+            ]}
+            onPress={onClose}>
+            <Ionicons name="close" size={28} color="white" />
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -601,6 +718,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     zIndex: 20,
-  }
+  },
 });
-

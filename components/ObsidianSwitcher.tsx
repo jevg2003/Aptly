@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring, 
-  interpolateColor 
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  interpolateColor,
 } from 'react-native-reanimated';
 
 interface ObsidianSwitcherProps {
@@ -18,7 +18,7 @@ export const ObsidianSwitcher: React.FC<ObsidianSwitcherProps> = ({
   options,
   activeOption,
   onOptionChange,
-  accentColor = '#00A3FF' // Default to Candidate blue
+  accentColor = '#00A3FF', // Default to Candidate blue
 }) => {
   const [containerWidth, setContainerWidth] = useState(0);
   const activeIndex = options.indexOf(activeOption);
@@ -31,16 +31,13 @@ export const ObsidianSwitcher: React.FC<ObsidianSwitcherProps> = ({
   const animatedPillStyle = useAnimatedStyle(() => {
     const isMoving = switchAnim.value % 1 !== 0; // Simplified moving check
     const stretch = withSpring(isMoving ? 1.05 : 1, { damping: 10 });
-    
+
     // Calculate position: (containerWidth - padding) / numOptions
     const itemWidth = (containerWidth - 12) / options.length;
 
     return {
       width: itemWidth,
-      transform: [
-        { translateX: switchAnim.value * itemWidth },
-        { scaleX: stretch }
-      ],
+      transform: [{ translateX: switchAnim.value * itemWidth }, { scaleX: stretch }],
       backgroundColor: accentColor,
       shadowColor: accentColor,
       shadowOffset: { width: 0, height: 0 },
@@ -50,22 +47,15 @@ export const ObsidianSwitcher: React.FC<ObsidianSwitcherProps> = ({
   });
 
   return (
-    <View 
-      style={styles.container}
-      onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
-    >
+    <View style={styles.container} onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}>
       <Animated.View style={[styles.pill, animatedPillStyle]} />
       {options.map((option, index) => (
         <TouchableOpacity
           key={option}
           onPress={() => onOptionChange(option)}
           style={styles.optionButton}
-          activeOpacity={0.7}
-        >
-          <Text style={[
-            styles.optionText,
-            activeOption === option && styles.optionTextActive
-          ]}>
+          activeOpacity={0.7}>
+          <Text style={[styles.optionText, activeOption === option && styles.optionTextActive]}>
             {option}
           </Text>
         </TouchableOpacity>
@@ -109,5 +99,5 @@ const styles = StyleSheet.create({
   optionTextActive: {
     color: '#FFFFFF',
     fontWeight: '800',
-  }
+  },
 });
