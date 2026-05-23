@@ -334,10 +334,7 @@ export const HomeScreen = ({ navigation }: any) => {
 
   useEffect(() => {
     checkProfile();
-    if (session?.user?.id) {
-      fetchJobs();
-    }
-  }, [checkProfile, fetchJobs, session?.user?.id]);
+  }, [session?.user?.id]);
 
   const handleAction = async (type: 'reject' | 'match' | 'superlike') => {
     const currentJob = jobs[currentIndex];
@@ -508,7 +505,10 @@ export const HomeScreen = ({ navigation }: any) => {
       <OnboardingCandidate
         userId={session.user.id}
         session={session}
-        onComplete={() => setShowOnboarding(false)}
+        onComplete={() => {
+          setShowOnboarding(false);
+          checkProfile();
+        }}
       />
     );
   }
@@ -570,7 +570,7 @@ export const HomeScreen = ({ navigation }: any) => {
                 <TouchableOpacity
                   onPress={() => handleAction('match')}
                   style={[styles.actionBtn, styles.matchBtn]}>
-                  <Ionicons name="heart" size={32} color="#FFFFFF" />
+                  <Ionicons name="thumbs-up" size={28} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
             </View>
