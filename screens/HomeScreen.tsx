@@ -36,6 +36,9 @@ import { ObsidianSwitcher } from '../components/ObsidianSwitcher';
 import { ObsidianModal } from '../components/ObsidianModal';
 import { ObsidianDetailModal } from '../components/ObsidianDetailModal';
 import { OnboardingCandidate } from './profiles/OnboardingCandidate';
+import { SearchableSelect } from '../components/SearchableSelect';
+import { calculateMatchScore } from '../lib/matchingEngine';
+import { COUNTRIES } from '../lib/countries';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
@@ -54,12 +57,18 @@ export const HomeScreen = ({ navigation }: any) => {
   // Swipe State
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  const [candidateProfile, setCandidateProfile] = useState<any>(null);
+
   // Filter State
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [activeFilters, setActiveFilters] = useState({
     modality: '', // 'Remoto', 'Presencial', 'Híbrido'
     type: '', // 'Tiempo Completo', 'Medio Tiempo', 'Práctica', 'Freelance'
     location: '', // search query
+    country: '', // selected country
+    city: '', // selected city
+    jobTitle: '', // search query
+    selectedTag: '', // selected tag/skill
   });
 
   // Animation Shared Values
@@ -134,10 +143,15 @@ export const HomeScreen = ({ navigation }: any) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, candidate_tags, professional_title, location, experience_level, industry_interests')
         .eq('id', session.user.id)
         .single();
-      if (!data && !error) setShowOnboarding(true);
+      if (data) {
+        setCandidateProfile(data);
+        await fetchJobs(data);
+      } else if (!error) {
+        setShowOnboarding(true);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -145,7 +159,7 @@ export const HomeScreen = ({ navigation }: any) => {
     }
   }, [session]);
 
-  const fetchJobs = useCallback(async () => {
+  const fetchJobs = useCallback(async (currentCandidateProfile = candidateProfile) => {
     try {
       setLoadingJobs(true);
       // Fetch active jobs and include company info by joining the profiles table
@@ -198,16 +212,63 @@ export const HomeScreen = ({ navigation }: any) => {
         };
       });
       
-      // Randomize the order a bit for a better swipe experience
-      const shuffled = mappedJobs.sort(() => 0.5 - Math.random());
-      setAllJobs(shuffled);
-      setJobs(shuffled);
+      let scoredJobs = mappedJobs;
+      if (currentCandidateProfile) {
+        let candTags: string[] = [];
+        if (currentCandidateProfile.candidate_tags) {
+          if (typeof currentCandidateProfile.candidate_tags === 'string') {
+            candTags = currentCandidateProfile.candidate_tags.split(',').map((t: string) => t.trim()).filter(Boolean);
+          } else if (Array.isArray(currentCandidateProfile.candidate_tags)) {
+            candTags = currentCandidateProfile.candidate_tags;
+          }
+        }
+
+        let indInterests: string[] = [];
+        if (currentCandidateProfile.industry_interests) {
+          if (typeof currentCandidateProfile.industry_interests === 'string') {
+            indInterests = currentCandidateProfile.industry_interests.split(',').map((t: string) => t.trim()).filter(Boolean);
+          } else if (Array.isArray(currentCandidateProfile.industry_interests)) {
+            indInterests = currentCandidateProfile.industry_interests;
+          }
+        }
+
+        scoredJobs = mappedJobs.map(job => {
+          const score = calculateMatchScore({
+            tags: candTags,
+            professionalTitle: currentCandidateProfile.professional_title || '',
+            location: currentCandidateProfile.location || '',
+            experienceLevel: currentCandidateProfile.experience_level || '',
+            industryInterests: indInterests
+          }, {
+            tags: job.tags || [],
+            title: job.title || '',
+            location: job.location || '',
+            modality: job.modality || '',
+            description: job.description || '',
+            requirements: job.requirements || ''
+          });
+
+          return {
+            ...job,
+            matchScore: score,
+            candidateTags: candTags
+          };
+        });
+
+        // Sort by match score in descending order!
+        scoredJobs.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+      } else {
+        scoredJobs = mappedJobs.sort(() => 0.5 - Math.random());
+      }
+      
+      setAllJobs(scoredJobs);
+      setJobs(scoredJobs);
     } catch (err) {
       console.error('Error fetching jobs:', err);
     } finally {
       setLoadingJobs(false);
     }
-  }, []);
+  }, [candidateProfile]);
 
   const applyFilters = (newFilters = activeFilters) => {
     let filtered = [...allJobs];
@@ -230,15 +291,38 @@ export const HomeScreen = ({ navigation }: any) => {
       );
     }
 
+    if (newFilters.selectedTag) {
+      filtered = filtered.filter(job => 
+        job.tags?.some(tag => tag.toLowerCase() === newFilters.selectedTag.toLowerCase())
+      );
+    }
+
+    // Custom cargo search prioritization sorting
+    filtered.sort((a, b) => {
+      if (newFilters.jobTitle) {
+        const aTitleMatch = a.title.toLowerCase().includes(newFilters.jobTitle.toLowerCase()) ? 1 : 0;
+        const bTitleMatch = b.title.toLowerCase().includes(newFilters.jobTitle.toLowerCase()) ? 1 : 0;
+        if (aTitleMatch !== bTitleMatch) {
+          return bTitleMatch - aTitleMatch; // Matched job title first
+        }
+      }
+      
+      // Fallback to match score
+      return (b.matchScore || 0) - (a.matchScore || 0);
+    });
+
     setJobs(filtered);
     setCurrentIndex(0); // Reset swipe card index to 0
     setFilterModalVisible(false);
   };
 
   const clearFilters = () => {
-    const defaultFilters = { modality: '', type: '', location: '' };
+    const defaultFilters = { modality: '', type: '', location: '', country: '', city: '', jobTitle: '', selectedTag: '' };
     setActiveFilters(defaultFilters);
-    setJobs(allJobs);
+    
+    // Sort allJobs back to matchScore order
+    const resetJobs = [...allJobs].sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+    setJobs(resetJobs);
     setCurrentIndex(0);
     setFilterModalVisible(false);
   };
@@ -364,6 +448,14 @@ export const HomeScreen = ({ navigation }: any) => {
       transform: [{ scale }, { rotate: '12deg' }]
     };
   });
+
+  const uniqueTitles = React.useMemo(() => {
+    return Array.from(new Set(allJobs.map(j => j.title).filter(Boolean))).sort();
+  }, [allJobs]);
+
+  const uniqueTags = React.useMemo(() => {
+    return Array.from(new Set(allJobs.flatMap(j => j.tags || []).filter(Boolean))).sort();
+  }, [allJobs]);
 
   if (checkingProfile) {
     return (
@@ -580,22 +672,79 @@ export const HomeScreen = ({ navigation }: any) => {
                         ))}
                       </ScrollView>
 
-                      <Text style={styles.filterSectionTitle}>Ubicación (Ciudad o País)</Text>
-                      <View style={styles.inputWrapper}>
-                        <Ionicons name="location-outline" size={20} color="#64748B" style={styles.inputIcon} />
-                        <TextInput
-                          style={styles.filterInput}
-                          placeholder="Ej. Bogotá, Cali, Colombia..."
-                          placeholderTextColor="#475569"
-                          value={activeFilters.location}
-                          onChangeText={(text) => setActiveFilters({ ...activeFilters, location: text })}
-                        />
-                        {activeFilters.location !== '' && (
-                          <TouchableOpacity onPress={() => setActiveFilters({ ...activeFilters, location: '' })}>
-                            <Ionicons name="close-circle" size={18} color="#64748B" />
+                      <Text style={styles.filterSectionTitle}>Buscar por Cargo / Trabajo</Text>
+                      <SearchableSelect
+                        placeholder="Seleccionar cargo..."
+                        value={activeFilters.jobTitle}
+                        onSelect={(val) => setActiveFilters({ ...activeFilters, jobTitle: val })}
+                        options={uniqueTitles}
+                        iconName="briefcase-outline"
+                        compact={true}
+                        role="candidate"
+                        hideIcon={false}
+                      />
+
+                      <Text style={styles.filterSectionTitle}>País</Text>
+                      <SearchableSelect
+                        placeholder="Selecciona el País"
+                        value={activeFilters.country}
+                        onSelect={(country) => {
+                          setActiveFilters({
+                            ...activeFilters,
+                            country: country,
+                            city: '',
+                            location: country
+                          });
+                        }}
+                        options={COUNTRIES.map(c => ({ name: c.name, flag: c.flag }))}
+                        iconName="earth"
+                        role="candidate"
+                        compact={true}
+                      />
+
+                      <Text style={styles.filterSectionTitle}>Ciudad</Text>
+                      <SearchableSelect
+                        placeholder="Selecciona la Ciudad"
+                        value={activeFilters.city}
+                        onSelect={(city) => {
+                          setActiveFilters({
+                            ...activeFilters,
+                            city: city,
+                            location: `${city}, ${activeFilters.country}`
+                          });
+                        }}
+                        options={activeFilters.country ? COUNTRIES.find(c => c.name === activeFilters.country)?.cities || [] : []}
+                        iconName="city"
+                        role="candidate"
+                        disabled={!activeFilters.country}
+                        compact={true}
+                      />
+
+                      <Text style={styles.filterSectionTitle}>Filtrar por Habilidad / Etiqueta</Text>
+                      <ScrollView 
+                        horizontal 
+                        showsHorizontalScrollIndicator={false} 
+                        contentContainerStyle={styles.horizontalChipsScroll}
+                        style={styles.horizontalScrollWrapper}
+                      >
+                        {['', ...uniqueTags].map((tag) => (
+                          <TouchableOpacity
+                            key={tag}
+                            onPress={() => setActiveFilters({ ...activeFilters, selectedTag: tag })}
+                            style={[
+                              styles.filterChip,
+                              activeFilters.selectedTag === tag && styles.activeFilterChip
+                            ]}
+                          >
+                            <Text style={[
+                              styles.filterChipText,
+                              activeFilters.selectedTag === tag && styles.activeFilterChipText
+                            ]}>
+                              {tag === '' ? 'Todas' : tag}
+                            </Text>
                           </TouchableOpacity>
-                        )}
-                      </View>
+                        ))}
+                      </ScrollView>
                     </ScrollView>
 
                     <View style={styles.filterActions}>

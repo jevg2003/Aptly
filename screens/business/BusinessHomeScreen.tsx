@@ -26,6 +26,7 @@ import { supabase } from '../../lib/supabase';
 import { ObsidianHeader } from '../../components/ObsidianHeader';
 import { ObsidianModal } from '../../components/ObsidianModal';
 import { ObsidianDetailModal } from '../../components/ObsidianDetailModal';
+import { calculateMatchScore } from '../../lib/matchingEngine';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
@@ -48,6 +49,7 @@ interface CandidateData {
   birthDate?: string;
   industryInterests?: string[];
   candidateTags?: string[];
+  matchScore?: number;
 }
 
 const MOCK_CANDIDATES: CandidateData[] = [
@@ -147,6 +149,30 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
            console.warn('Error parsing candidate fields:', e);
          }
 
+          let jobTagsArray: string[] = [];
+          if (job?.tags) {
+            if (typeof job.tags === 'string') {
+              jobTagsArray = job.tags.split(',').map((t: string) => t.trim()).filter(Boolean);
+            } else if (Array.isArray(job.tags)) {
+              jobTagsArray = job.tags;
+            }
+          }
+
+          const score = calculateMatchScore({
+            tags: candTags,
+            professionalTitle: profile?.professional_title || '',
+            location: profile?.location || '',
+            experienceLevel: profile?.experience_level || '',
+            industryInterests: indInterests
+          }, {
+            tags: jobTagsArray,
+            title: job?.title || '',
+            location: job?.location || '',
+            modality: job?.modality || '',
+            description: job?.description || '',
+            requirements: job?.requirements || ''
+          });
+
          return {
             applicationId: app.id,
             id: profile?.id || Math.random().toString(),
@@ -165,9 +191,13 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
             linkedinUrl: profile?.linkedin_url || '',
             birthDate: profile?.birth_date || '',
             industryInterests: indInterests,
-            candidateTags: candTags
+            candidateTags: candTags,
+            matchScore: score
          };
       });
+
+      // Sort by match score in descending order so the best candidates appear first!
+      mapped.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
 
       setCandidates(mapped);
     } catch (err) {
@@ -355,42 +385,67 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
   const currentCandidate = filteredCandidates[currentIndex];
   const nextCandidate = filteredCandidates[currentIndex + 1];
 
-  const CandidateCard = ({ candidate }: { candidate: CandidateData }) => (
-    <View style={styles.candidateCard}>
-      <Image source={{ uri: candidate.imageUrl }} style={styles.candidateImage} resizeMode="cover" />
-      <View style={styles.candidateOverlay}>
-        <View style={styles.availabilityRow}>
-            <View style={styles.availabilityBadge}>
-                <Text style={styles.availabilityText}>DISPONIBLE</Text>
-            </View>
-            <Text style={styles.infoText}>{candidate.availability}</Text>
-        </View>
+  const CandidateCard = ({ candidate }: { candidate: CandidateData }) => {
+    let jobTagsArray: string[] = [];
+    if (job?.tags) {
+      if (typeof job.tags === 'string') {
+        jobTagsArray = job.tags.split(',').map((t: string) => t.trim()).filter(Boolean);
+      } else if (Array.isArray(job.tags)) {
+        jobTagsArray = job.tags;
+      }
+    }
+    const normalizedJobTags = jobTagsArray.map(jt => jt.toLowerCase().trim());
 
-        <View style={styles.nameRow}>
-            <Text style={styles.candidateName}>{candidate.name}, {candidate.age}</Text>
-            <TouchableOpacity 
-              onPress={() => setDetailModalVisible(true)}
-              style={styles.infoBtn}
-            >
-                <Ionicons name="information-circle-outline" size={24} color="#FF005C" />
-            </TouchableOpacity>
-        </View>
+    return (
+      <View style={styles.candidateCard}>
+        <Image source={{ uri: candidate.imageUrl }} style={styles.candidateImage} resizeMode="cover" />
+        
+        {/* Glowing Premium Match Score Badge for Recruiters */}
+        {candidate.matchScore !== undefined && (
+          <View style={styles.matchScoreBadge}>
+             <Ionicons name="sparkles" size={12} color="#FFFFFF" style={{ marginRight: 4 }} />
+             <Text style={styles.matchScoreBadgeText}>{candidate.matchScore}% APTO</Text>
+          </View>
+        )}
 
-        <View style={styles.candidateLocation}>
-            <Ionicons name="location" size={14} color="#FF005C" />
-            <Text style={styles.locationLabel}>{candidate.location}</Text>
-        </View>
+        <View style={styles.candidateOverlay}>
+          <View style={styles.availabilityRow}>
+              <View style={styles.availabilityBadge}>
+                  <Text style={styles.availabilityText}>DISPONIBLE</Text>
+              </View>
+              <Text style={styles.infoText}>{candidate.availability}</Text>
+          </View>
 
-        <View style={styles.candidateTags}>
-            {candidate.tags.map((tag, idx) => (
-                <View key={idx} style={styles.candidateTag}>
-                    <Text style={styles.tagLabel}>{tag}</Text>
-                </View>
-            ))}
+          <View style={styles.nameRow}>
+              <Text style={styles.candidateName}>{candidate.name}, {candidate.age}</Text>
+              <TouchableOpacity 
+                onPress={() => setDetailModalVisible(true)}
+                style={styles.infoBtn}
+              >
+                  <Ionicons name="information-circle-outline" size={24} color="#FF005C" />
+              </TouchableOpacity>
+          </View>
+
+          <View style={styles.candidateLocation}>
+              <Ionicons name="location" size={14} color="#FF005C" />
+              <Text style={styles.locationLabel}>{candidate.location}</Text>
+          </View>
+
+          <View style={styles.candidateTags}>
+              {candidate.tags.map((tag, idx) => {
+                  const isMatch = normalizedJobTags.includes(tag.toLowerCase().trim()) ||
+                                  normalizedJobTags.some(jt => jt.includes(tag.toLowerCase().trim()) || tag.toLowerCase().trim().includes(jt));
+                  return (
+                      <View key={idx} style={[styles.candidateTag, isMatch && styles.candidateMatchingTag]}>
+                          <Text style={[styles.tagLabel, isMatch && styles.candidateMatchingTagLabel]}>{tag}</Text>
+                      </View>
+                  );
+              })}
+          </View>
         </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: '#050505' }}>
@@ -607,6 +662,39 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  candidateMatchingTag: {
+    backgroundColor: 'rgba(255, 0, 92, 0.15)',
+    borderColor: 'rgba(255, 0, 92, 0.45)',
+    borderWidth: 1.2,
+  },
+  candidateMatchingTagLabel: {
+    color: '#FF005C',
+    fontWeight: '800',
+  },
+  matchScoreBadge: {
+    position: 'absolute',
+    top: 24,
+    right: 24,
+    backgroundColor: 'rgba(255, 0, 92, 0.95)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#FF005C',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.6,
+    shadowRadius: 8,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: '#FF005C',
+  },
+  matchScoreBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1,
   },
   tagLabel: {
     color: '#FFFFFF',
