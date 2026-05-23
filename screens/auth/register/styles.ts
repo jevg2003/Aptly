@@ -80,11 +80,11 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   nextBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 32,
+    width: 56,
     height: 56,
     borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   nextBtnText: {
     color: '#FFF',

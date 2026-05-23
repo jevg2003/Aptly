@@ -4,7 +4,8 @@ import {
   Text,
   TouchableOpacity,
   Image,
-  TextInput
+  TextInput,
+  ScrollView
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { CustomInput } from '../../../../components/CustomInput';
@@ -33,7 +34,6 @@ interface CandidateStepsProps {
   candidateLocation: string;
   setCandidateLocation: (val: string) => void;
   birthDate: string;
-  setShowDatePicker: (val: boolean) => void;
   profession: string;
   setProfession: (val: string) => void;
   experienceLevel: string;
@@ -62,6 +62,23 @@ interface CandidateStepsProps {
   pdfName: string | null;
   pickDocument: () => void;
   showAlert: (msg: string) => void;
+
+  // New properties
+  nationalId: string;
+  setNationalId: (val: string) => void;
+  getNationalIdLabel: (country: string) => string;
+  birthYear: string;
+  setBirthYear: (val: string) => void;
+  birthMonth: string;
+  setBirthMonth: (val: string) => void;
+  birthDay: string;
+  setBirthDay: (val: string) => void;
+  getDaysInMonth: (month: string, year: string) => string[];
+  sectorsList: string[];
+  customSector: string;
+  setCustomSector: (val: string) => void;
+  candidateTagsByCategory: Record<string, string[]>;
+  addCustomCandidateTag: () => void;
 }
 
 const SECTORS = [
@@ -88,7 +105,6 @@ export const CandidateSteps = ({
   candidateLocation,
   setCandidateLocation,
   birthDate,
-  setShowDatePicker,
   profession,
   setProfession,
   experienceLevel,
@@ -116,7 +132,22 @@ export const CandidateSteps = ({
   setCandidatePortfolio,
   pdfName,
   pickDocument,
-  showAlert
+  showAlert,
+  nationalId,
+  setNationalId,
+  getNationalIdLabel,
+  birthYear,
+  setBirthYear,
+  birthMonth,
+  setBirthMonth,
+  birthDay,
+  setBirthDay,
+  getDaysInMonth,
+  sectorsList,
+  customSector,
+  setCustomSector,
+  candidateTagsByCategory,
+  addCustomCandidateTag
 }: CandidateStepsProps) => {
   return (
     <>
@@ -163,29 +194,8 @@ export const CandidateSteps = ({
 
       {candidateStep === 3 && (
         <View style={styles.stepContainer}>
-          <Text style={styles.questionTitle}>¿Cómo te llamas y cómo te verán las empresas?</Text>
-          
-          <View style={{ alignItems: 'center', marginBottom: 20, marginTop: 20 }}>
-            <TouchableOpacity onPress={pickImage} style={[styles.avatarPicker, { borderColor: COLORS.candidate, backgroundColor: 'rgba(0,163,255,0.05)' }]}>
-              {avatarUrl ? (
-                <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
-              ) : (
-                <View style={styles.avatarPlaceholder}>
-                  <MaterialCommunityIcons name="camera-plus" size={32} color={COLORS.candidate} />
-                  <Text style={{ color: COLORS.textSecondary, fontSize: 13, marginTop: 4 }}>Tu foto</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
-
-          <CustomInput placeholder="Nombre y Apellidos" value={fullName} onChangeText={setFullName} iconName="account-outline" role="candidate" />
-        </View>
-      )}
-
-      {candidateStep === 4 && (
-        <View style={styles.stepContainer}>
-          <Text style={styles.questionTitle}>Datos básicos</Text>
-          <Text style={styles.questionSubtitle}>Cuéntanos un poco más sobre ti.</Text>
+          <Text style={styles.questionTitle}>Datos de Identificación</Text>
+          <Text style={styles.questionSubtitle}>Selecciona tu ubicación e ingresa tu información personal.</Text>
           
           <SearchableSelect
             placeholder="Selecciona tu País"
@@ -194,6 +204,7 @@ export const CandidateSteps = ({
               setSelectedCountry(country);
               setSelectedCity('');
               setCandidateLocation('');
+              setNationalId('');
             }}
             options={COUNTRIES.map(c => ({ name: c.name, flag: c.flag }))}
             iconName="earth"
@@ -212,21 +223,104 @@ export const CandidateSteps = ({
             disabled={!selectedCountry}
             role="candidate"
           />
-          
-          <TouchableOpacity 
-            activeOpacity={0.8} 
-            onPress={() => {
-              setShowDatePicker(true);
-            }}
-            style={styles.dateSelector}
-          >
-            <MaterialCommunityIcons name="calendar" size={20} color={birthDate ? COLORS.candidate : "#64748b"} />
-            <Text style={[styles.dateText, !birthDate && styles.datePlaceholder]}>
-              {birthDate || 'Fecha de Nacimiento (DD/MM/AAAA)'}
-            </Text>
-          </TouchableOpacity>
+
+          <CustomInput 
+            placeholder="Nombre y Apellidos Completos" 
+            value={fullName} 
+            onChangeText={setFullName} 
+            iconName="account-outline" 
+            role="candidate" 
+          />
+
+          <CustomInput 
+            placeholder={selectedCountry ? getNationalIdLabel(selectedCountry) : 'Selecciona tu país primero'} 
+            value={nationalId} 
+            onChangeText={setNationalId} 
+            iconName="card-account-details-outline" 
+            role="candidate"
+            editable={!!selectedCountry}
+          />
+
+          <View style={{ alignItems: 'center', marginBottom: 10, marginTop: 15 }}>
+            <TouchableOpacity onPress={pickImage} style={[styles.avatarPicker, { borderColor: COLORS.candidate, backgroundColor: 'rgba(0,163,255,0.05)' }]}>
+              {avatarUrl ? (
+                <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <MaterialCommunityIcons name="camera-plus" size={32} color={COLORS.candidate} />
+                  <Text style={{ color: COLORS.textSecondary, fontSize: 13, marginTop: 4 }}>Tu foto</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       )}
+
+      {candidateStep === 4 && (() => {
+        const currentYear = new Date().getFullYear();
+        const years = Array.from({ length: currentYear - 1920 + 1 }, (_, i) => (currentYear - i).toString());
+        const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        const days = birthMonth ? getDaysInMonth(birthMonth, birthYear) : [];
+
+        return (
+          <View style={styles.stepContainer}>
+            <Text style={styles.questionTitle}>Fecha de Nacimiento</Text>
+            <Text style={styles.questionSubtitle}>Por favor ingresa tu fecha de nacimiento usando los selectores horizontales (Año, Mes, Día).</Text>
+            
+            <View style={{ flexDirection: 'row', gap: 6, width: '100%', marginTop: 20 }}>
+              <SearchableSelect
+                placeholder="Año"
+                value={birthYear}
+                onSelect={(val) => {
+                  setBirthYear(val);
+                  setBirthDay('');
+                }}
+                options={years}
+                containerStyle={{ flex: 1 }}
+                role="candidate"
+                compact
+                hideIcon
+              />
+
+              <SearchableSelect
+                placeholder="Mes"
+                value={birthMonth}
+                onSelect={(val) => {
+                  setBirthMonth(val);
+                  setBirthDay('');
+                }}
+                options={months}
+                containerStyle={{ flex: 1.3 }}
+                role="candidate"
+                disabled={!birthYear}
+                compact
+                hideIcon
+              />
+
+              <SearchableSelect
+                placeholder="Día"
+                value={birthDay}
+                onSelect={setBirthDay}
+                options={days}
+                containerStyle={{ flex: 0.9 }}
+                role="candidate"
+                disabled={!birthMonth}
+                compact
+                hideIcon
+              />
+            </View>
+            
+            {birthDate ? (
+              <View style={{ marginTop: 24, padding: 16, backgroundColor: 'rgba(0,163,255,0.03)', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(0,163,255,0.1)', flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <MaterialCommunityIcons name="check-circle-outline" size={20} color={COLORS.candidate} />
+                <Text style={{ color: '#FFF', fontSize: 15, fontWeight: '600' }}>
+                  Fecha seleccionada: {birthDate}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        );
+      })()}
 
       {candidateStep === 5 && (
         <View style={styles.stepContainer}>
@@ -362,18 +456,23 @@ export const CandidateSteps = ({
       {candidateStep === 6 && (
         <View style={styles.stepContainer}>
           <Text style={styles.questionTitle}>¿Qué sectores te interesan?</Text>
-          <Text style={styles.questionSubtitle}>Selecciona las industrias en las que te gustaría trabajar.</Text>
+          <Text style={styles.questionSubtitle}>Selecciona las industrias en las que te gustaría trabajar. Los sectores se sincronizan globalmente.</Text>
           <View style={styles.sectorsContainer}>
             <View style={styles.sectorsGrid}>
-              {SECTORS.map(sector => {
+              {sectorsList.map(sector => {
                 const isSelected = candidateSectors.includes(sector);
                 return (
                   <TouchableOpacity 
                     key={sector}
                     style={[styles.sectorTag, isSelected && styles.sectorTagCandidateActive]}
                     onPress={() => {
-                      if (isSelected) setCandidateSectors(prev => prev.filter(s => s !== sector));
-                      else setCandidateSectors(prev => [...prev, sector]);
+                      if (sector === 'Otro') {
+                        if (isSelected) setCandidateSectors(prev => prev.filter(s => s !== 'Otro'));
+                        else setCandidateSectors(prev => [...prev, 'Otro']);
+                      } else {
+                        if (isSelected) setCandidateSectors(prev => prev.filter(s => s !== sector));
+                        else setCandidateSectors(prev => [...prev, sector]);
+                      }
                     }}
                   >
                     <Text style={[styles.sectorTagText, isSelected && styles.sectorTagTextActive]}>{sector}</Text>
@@ -381,20 +480,70 @@ export const CandidateSteps = ({
                 );
               })}
             </View>
+
+            {candidateSectors.includes('Otro') && (
+              <View style={{ marginTop: 20 }}>
+                <CustomInput 
+                  placeholder="Escribe tu sector de interés" 
+                  value={customSector} 
+                  onChangeText={setCustomSector} 
+                  iconName="pencil" 
+                  role="candidate" 
+                />
+              </View>
+            )}
           </View>
         </View>
       )}
 
       {candidateStep === 7 && (
         <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
-          <Text style={styles.questionTitle}>Tus Habilidades (Opcional)</Text>
-          <Text style={styles.questionSubtitle}>Añade habilidades clave, idiomas o herramientas que dominas.</Text>
+          <Text style={styles.questionTitle}>Tus Habilidades y Aptitudes</Text>
+          <Text style={styles.questionSubtitle}>Selecciona habilidades de las categorías o añade las tuyas. Se sincronizarán automáticamente.</Text>
           
-          <View style={{ marginTop: 10 }}>
+          <ScrollView style={{ flex: 1, maxHeight: 320 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            {Object.entries(candidateTagsByCategory).map(([category, tags]) => {
+              if (category === 'Recomendadas por IA' && tags.length === 0) return null;
+              
+              return (
+                <View key={category} style={{ marginBottom: 20 }}>
+                  <Text style={styles.sectorsLabel}>
+                    {category === 'Recomendadas por IA' ? '✨ ' + category : category}
+                  </Text>
+                  <View style={styles.sectorsGrid}>
+                    {tags.map(tag => {
+                      const isSelected = customCandidateTags.includes(tag);
+                      return (
+                        <TouchableOpacity 
+                          key={tag}
+                          style={[
+                            styles.sectorTag, 
+                            isSelected && styles.sectorTagCandidateActive,
+                            category === 'Recomendadas por IA' && isSelected && { borderColor: COLORS.candidate }
+                          ]}
+                          onPress={() => {
+                            if (isSelected) setCustomCandidateTags(prev => prev.filter(t => t !== tag));
+                            else setCustomCandidateTags(prev => [...prev, tag]);
+                          }}
+                        >
+                          <Text style={[styles.sectorTagText, isSelected && styles.sectorTagTextActive]}>
+                            {category === 'Recomendadas por IA' ? '✨ ' + tag : tag}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              );
+            })}
+          </ScrollView>
+
+          <View style={{ marginTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)', paddingTop: 15 }}>
+            <Text style={styles.sectorsLabel}>¿Habilidad personalizada? Agrégala para uso común:</Text>
             <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
               <View style={{ flex: 1 }}>
                 <CustomInput 
-                  placeholder="Ej: React, Inglés C1, Liderazgo..." 
+                  placeholder="Ej. React, Liderazgo, Francés..." 
                   value={customCandidateTagInput} 
                   onChangeText={setCustomCandidateTagInput} 
                   iconName="tag-plus-outline" 
@@ -403,90 +552,59 @@ export const CandidateSteps = ({
               </View>
               <TouchableOpacity 
                 style={{ backgroundColor: COLORS.candidate, height: 50, width: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', marginTop: -15 }}
-                onPress={() => {
-                  if (customCandidateTagInput.trim() && !customCandidateTags.includes(customCandidateTagInput.trim())) {
-                    setCustomCandidateTags(prev => [...prev, customCandidateTagInput.trim()]);
-                    setCustomCandidateTagInput('');
-                  }
-                }}
+                onPress={addCustomCandidateTag}
               >
                 <MaterialCommunityIcons name="plus" size={24} color="#FFF" />
               </TouchableOpacity>
             </View>
-            
-            {customCandidateTags.length > 0 && (
-              <View style={[styles.sectorsGrid, { marginTop: 10 }]}>
-                {customCandidateTags.map(tag => (
-                  <TouchableOpacity 
-                    key={tag}
-                    style={[styles.sectorTag, styles.sectorTagCandidateActive]}
-                    onPress={() => setCustomCandidateTags(prev => prev.filter(t => t !== tag))}
-                  >
-                    <Text style={{ color: COLORS.candidate, fontSize: 13, fontWeight: '600' }}>{tag} ✕</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
           </View>
-          <TouchableOpacity onPress={() => setCandidateStep(8)} style={{ alignSelf: 'center', marginTop: 32, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-            <Text style={{ color: '#64748b', fontSize: 13, fontWeight: '600' }}>Omitir este paso</Text>
-          </TouchableOpacity>
         </View>
       )}
 
       {candidateStep === 8 && (
         <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
-          <Text style={styles.questionTitle}>Sobre ti (Opcional)</Text>
-          <Text style={styles.questionSubtitle}>Escribe un breve resumen profesional que las empresas verán en tu perfil.</Text>
+          <Text style={styles.questionTitle}>Enlaces y Contacto</Text>
+          <Text style={styles.questionSubtitle}>El número celular es obligatorio para que las empresas puedan contactarte.</Text>
 
-          <View style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(0,163,255,0.2)', borderRadius: 20, padding: 16, minHeight: 160, marginBottom: 20 }}>
-            <TextInput
-              multiline
-              numberOfLines={7}
-              style={{ color: '#FFF', fontSize: 15, lineHeight: 24, textAlignVertical: 'top' }}
-              value={candidateBio}
-              onChangeText={setCandidateBio}
-              placeholder="Ej. Soy un profesional apasionado por el desarrollo web con 3 años de experiencia..."
-              placeholderTextColor="#475569"
-            />
+          <View style={{ gap: 16 }}>
+            <View>
+              <Text style={styles.sectorsLabel}>Celular / Teléfono (Obligatorio)</Text>
+              <CustomInput 
+                placeholder="+57 300 000 0000" 
+                value={candidatePhone} 
+                onChangeText={setCandidatePhone} 
+                iconName="phone-outline" 
+                role="candidate" 
+              />
+            </View>
+            <View>
+              <Text style={styles.sectorsLabel}>LinkedIn (Opcional)</Text>
+              <CustomInput 
+                placeholder="https://linkedin.com/in/tu-perfil" 
+                value={candidateLinkedIn} 
+                onChangeText={setCandidateLinkedIn} 
+                iconName="linkedin" 
+                role="candidate" 
+              />
+            </View>
+            <View>
+              <Text style={styles.sectorsLabel}>Sitio Web / Portafolio (Opcional)</Text>
+              <CustomInput 
+                placeholder="https://tu-portafolio.com" 
+                value={candidatePortfolio} 
+                onChangeText={setCandidatePortfolio} 
+                iconName="web" 
+                role="candidate" 
+              />
+            </View>
           </View>
-
-          <TouchableOpacity onPress={() => setCandidateStep(9)} style={{ alignSelf: 'center', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-            <Text style={{ color: '#64748b', fontSize: 13, fontWeight: '600' }}>Omitir este paso</Text>
-          </TouchableOpacity>
         </View>
       )}
 
       {candidateStep === 9 && (
         <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
-          <Text style={styles.questionTitle}>Enlaces y Contacto (Opcional)</Text>
-          <Text style={styles.questionSubtitle}>Añade tus enlaces para que las empresas puedan conocer más sobre tu trabajo.</Text>
-
-          <View style={{ gap: 16 }}>
-            <View>
-              <Text style={styles.sectorsLabel}>Teléfono</Text>
-              <CustomInput placeholder="+57 300 000 0000" value={candidatePhone} onChangeText={setCandidatePhone} iconName="phone-outline" role="candidate" />
-            </View>
-            <View>
-              <Text style={styles.sectorsLabel}>LinkedIn</Text>
-              <CustomInput placeholder="https://linkedin.com/in/tu-perfil" value={candidateLinkedIn} onChangeText={setCandidateLinkedIn} iconName="linkedin" role="candidate" />
-            </View>
-            <View>
-              <Text style={styles.sectorsLabel}>Portafolio / GitHub / Sitio Web</Text>
-              <CustomInput placeholder="https://tu-portafolio.com" value={candidatePortfolio} onChangeText={setCandidatePortfolio} iconName="web" role="candidate" />
-            </View>
-          </View>
-
-          <TouchableOpacity onPress={() => setCandidateStep(10)} style={{ alignSelf: 'center', marginTop: 32, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-            <Text style={{ color: '#64748b', fontSize: 13, fontWeight: '600' }}>Omitir este paso</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {candidateStep === 10 && (
-        <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
           <Text style={styles.questionTitle}>Vista Previa y Currículum</Text>
-          <Text style={styles.questionSubtitle}>Así se verá tu perfil principal.</Text>
+          <Text style={styles.questionSubtitle}>Así se verá tu perfil principal para las empresas.</Text>
           
           <View style={[styles.previewCard, { borderColor: 'rgba(0,163,255,0.1)' }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
@@ -526,6 +644,50 @@ export const CandidateSteps = ({
                 )}
               </View>
             </View>
+
+            {candidateSectors && candidateSectors.length > 0 && (
+              <View style={{ marginTop: 12 }}>
+                <Text style={{ color: COLORS.textSecondary, fontSize: 10, fontWeight: '800', textTransform: 'uppercase', marginBottom: 8 }}>Sectores de Interés</Text>
+                <View style={styles.sectorsGrid}>
+                  {candidateSectors.map(sector => (
+                    <View key={sector} style={[styles.sectorTag, { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.08)' }]}>
+                      <Text style={{ color: '#E2E8F0', fontSize: 11, fontWeight: '600' }}>{sector}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {candidateBio ? (
+              <View style={{ marginTop: 12, backgroundColor: 'rgba(0,163,255,0.04)', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(0,163,255,0.1)' }}>
+                <Text style={{ color: COLORS.textSecondary, fontSize: 10, fontWeight: '800', textTransform: 'uppercase', marginBottom: 4 }}>Sobre Mí</Text>
+                <Text style={{ color: '#FFF', fontSize: 12, lineHeight: 18 }}>{candidateBio}</Text>
+              </View>
+            ) : null}
+
+            {(candidatePhone || candidateLinkedIn || candidatePortfolio) && (
+              <View style={{ marginTop: 12, backgroundColor: 'rgba(255,255,255,0.02)', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', gap: 8 }}>
+                <Text style={{ color: COLORS.textSecondary, fontSize: 10, fontWeight: '800', textTransform: 'uppercase', marginBottom: 2 }}>Contacto y Enlaces</Text>
+                {candidatePhone ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <MaterialCommunityIcons name="phone-outline" size={14} color={COLORS.candidate} />
+                    <Text style={{ color: '#FFF', fontSize: 12, marginLeft: 8 }}>{candidatePhone}</Text>
+                  </View>
+                ) : null}
+                {candidateLinkedIn ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <MaterialCommunityIcons name="linkedin" size={14} color={COLORS.candidate} />
+                    <Text style={{ color: COLORS.candidate, fontSize: 12, marginLeft: 8, textDecorationLine: 'underline' }}>{candidateLinkedIn}</Text>
+                  </View>
+                ) : null}
+                {candidatePortfolio ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <MaterialCommunityIcons name="web" size={14} color={COLORS.candidate} />
+                    <Text style={{ color: COLORS.candidate, fontSize: 12, marginLeft: 8, textDecorationLine: 'underline' }}>{candidatePortfolio}</Text>
+                  </View>
+                ) : null}
+              </View>
+            )}
           </View>
 
           <Text style={[styles.questionSubtitle, { marginTop: 24, marginBottom: 12 }]}>Añadir Currículum (Opcional)</Text>
@@ -543,18 +705,18 @@ export const CandidateSteps = ({
         </View>
       )}
 
-      {candidateStep === 11 && (
+      {candidateStep === 10 && (
         <View style={[styles.stepContainer, { justifyContent: 'center', alignItems: 'center' }]}>
           <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(0,163,255,0.1)', justifyContent: 'center', alignItems: 'center', marginBottom: 32 }}>
             <MaterialCommunityIcons name="account-check" size={60} color={COLORS.candidate} />
           </View>
           <Text style={[styles.questionTitle, { textAlign: 'center' }]}>¡Todo listo!</Text>
           <Text style={[styles.questionSubtitle, { textAlign: 'center', fontSize: 16, lineHeight: 24 }]}>
-            Tu perfil está configurado.
+            Tu perfil de candidato ha sido configurado con éxito.
           </Text>
           <View style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border, marginTop: 10 }}>
             <Text style={{ color: '#FFF', textAlign: 'center', lineHeight: 22 }}>
-              Al crear tu cuenta, podrás empezar a buscar oportunidades y hacer match con las mejores empresas.
+              Al finalizar, se enviará un correo de confirmación y podrás empezar a buscar vacantes que coincidan con tu perfil acreditado por la IA.
             </Text>
           </View>
         </View>

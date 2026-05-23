@@ -29,11 +29,13 @@ interface SearchableSelectProps {
   value: string;
   onSelect: (value: string) => void;
   options: (string | Option)[];
-  iconName: keyof typeof MaterialCommunityIcons.glyphMap;
+  iconName?: keyof typeof MaterialCommunityIcons.glyphMap;
   disabled?: boolean;
   role?: 'candidate' | 'company';
   label?: string;
   containerStyle?: StyleProp<ViewStyle>;
+  hideIcon?: boolean;
+  compact?: boolean;
 }
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -48,6 +50,8 @@ export const SearchableSelect = ({
   role = 'candidate',
   label,
   containerStyle,
+  hideIcon = false,
+  compact = false,
 }: SearchableSelectProps) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -112,19 +116,23 @@ export const SearchableSelect = ({
         onPress={handleOpen}
         style={[
           styles.trigger,
+          compact && { paddingHorizontal: 10, paddingVertical: 10, borderRadius: 16 },
           { opacity: disabled ? 0.5 : 1 },
           modalVisible ? { borderColor: activeColor } : { borderColor: 'rgba(255, 255, 255, 0.05)' },
         ]}
       >
         <View style={styles.leftContainer}>
-          <MaterialCommunityIcons
-            name={iconName}
-            size={20}
-            color={modalVisible ? activeColor : '#64748b'}
-          />
+          {!hideIcon && iconName && (
+            <MaterialCommunityIcons
+              name={iconName}
+              size={20}
+              color={modalVisible ? activeColor : '#64748b'}
+            />
+          )}
           <Text
             style={[
               styles.triggerText,
+              compact && { marginLeft: hideIcon ? 2 : 6, fontSize: 14 },
               !value && styles.placeholderText,
             ]}
             numberOfLines={1}
@@ -134,8 +142,9 @@ export const SearchableSelect = ({
         </View>
         <MaterialCommunityIcons
           name="chevron-down"
-          size={20}
+          size={compact ? 16 : 20}
           color="#64748b"
+          style={compact && { marginLeft: 2 }}
         />
       </TouchableOpacity>
 

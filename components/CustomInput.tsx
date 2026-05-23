@@ -14,6 +14,7 @@ interface CustomInputProps {
   numberOfLines?: number;
   className?: string;
   role?: 'candidate' | 'company';
+  editable?: boolean;
 }
 
 export const CustomInput = ({
@@ -27,6 +28,7 @@ export const CustomInput = ({
   numberOfLines = 1,
   className = '',
   role = 'candidate',
+  editable = true,
 }: CustomInputProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -65,6 +67,7 @@ export const CustomInput = ({
         multiline={multiline}
         numberOfLines={numberOfLines}
         textAlignVertical={multiline ? 'top' : 'center'}
+        editable={editable}
       />
       {isPassword && (
         <TouchableOpacity 

@@ -38,7 +38,6 @@ interface CompanyStepsProps {
   taxId: string;
   setTaxId: (val: string) => void;
   creationDate: string;
-  setShowDatePicker: (val: boolean) => void;
   businessArea: string;
   setBusinessArea: (val: string) => void;
   selectedSectors: string[];
@@ -59,6 +58,17 @@ interface CompanyStepsProps {
   pickDocument: () => void;
   setCompanyStep: (val: number) => void;
   showAlert: (msg: string) => void;
+
+  // New properties
+  creationYear: string;
+  setCreationYear: (val: string) => void;
+  creationMonth: string;
+  setCreationMonth: (val: string) => void;
+  creationDay: string;
+  setCreationDay: (val: string) => void;
+  getDaysInMonth: (month: string, year: string) => string[];
+  getCompanyIdLabel: (country: string) => string;
+  sectorsList: string[];
 }
 
 const TAG_CATEGORIES = {
@@ -94,7 +104,6 @@ export const CompanySteps = ({
   taxId,
   setTaxId,
   creationDate,
-  setShowDatePicker,
   businessArea,
   setBusinessArea,
   selectedSectors,
@@ -114,7 +123,16 @@ export const CompanySteps = ({
   pdfName,
   pickDocument,
   setCompanyStep,
-  showAlert
+  showAlert,
+  creationYear,
+  setCreationYear,
+  creationMonth,
+  setCreationMonth,
+  creationDay,
+  setCreationDay,
+  getDaysInMonth,
+  getCompanyIdLabel,
+  sectorsList
 }: CompanyStepsProps) => {
   return (
     <>
@@ -210,27 +228,81 @@ export const CompanySteps = ({
         </View>
       )}
 
-      {companyStep === 4 && (
-        <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
-          <Text style={styles.questionTitle}>Identidad corporativa</Text>
-          <Text style={styles.questionSubtitle}>Ingresa el ID fiscal y el año en que se fundó la empresa.</Text>
-          
-          <CustomInput placeholder="NIT / ID Fiscal" value={taxId} onChangeText={setTaxId} iconName="card-account-details-outline" role="company" />
-          
-          <TouchableOpacity 
-            activeOpacity={0.8} 
-            onPress={() => {
-              setShowDatePicker(true);
-            }}
-            style={styles.dateSelector}
-          >
-            <MaterialCommunityIcons name="calendar" size={20} color={creationDate ? COLORS.company : "#64748b"} />
-            <Text style={[styles.dateText, !creationDate && styles.datePlaceholder]}>
-              {creationDate || 'Fecha de creación (DD/MM/AAAA)'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      {companyStep === 4 && (() => {
+        const currentYear = new Date().getFullYear();
+        const years = Array.from({ length: currentYear - 1800 + 1 }, (_, i) => (currentYear - i).toString());
+        const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        const days = creationMonth ? getDaysInMonth(creationMonth, creationYear) : [];
+
+        return (
+          <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
+            <Text style={styles.questionTitle}>Identidad corporativa</Text>
+            <Text style={styles.questionSubtitle}>Ingresa el ID fiscal y la fecha en que se fundó la empresa.</Text>
+            
+            <CustomInput 
+              placeholder={getCompanyIdLabel(selectedCompanyCountry)} 
+              value={taxId} 
+              onChangeText={setTaxId} 
+              iconName="card-account-details-outline" 
+              role="company" 
+            />
+
+            <Text style={[styles.sectorsLabel, { marginTop: 15, marginBottom: 8 }]}>Fecha de Creación / Fundación:</Text>
+            
+            <View style={{ flexDirection: 'row', gap: 6, width: '100%' }}>
+              <SearchableSelect
+                placeholder="Año"
+                value={creationYear}
+                onSelect={(val) => {
+                  setCreationYear(val);
+                  setCreationDay('');
+                }}
+                options={years}
+                containerStyle={{ flex: 1 }}
+                role="company"
+                compact
+                hideIcon
+              />
+
+              <SearchableSelect
+                placeholder="Mes"
+                value={creationMonth}
+                onSelect={(val) => {
+                  setCreationMonth(val);
+                  setCreationDay('');
+                }}
+                options={months}
+                containerStyle={{ flex: 1.3 }}
+                role="company"
+                disabled={!creationYear}
+                compact
+                hideIcon
+              />
+
+              <SearchableSelect
+                placeholder="Día"
+                value={creationDay}
+                onSelect={setCreationDay}
+                options={days}
+                containerStyle={{ flex: 0.9 }}
+                role="company"
+                disabled={!creationMonth}
+                compact
+                hideIcon
+              />
+            </View>
+
+            {creationDate ? (
+              <View style={{ marginTop: 24, padding: 16, backgroundColor: 'rgba(255,0,92,0.03)', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,0,92,0.1)', flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <MaterialCommunityIcons name="check-circle-outline" size={20} color={COLORS.company} />
+                <Text style={{ color: '#FFF', fontSize: 15, fontWeight: '600' }}>
+                  Fecha seleccionada: {creationDate}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        );
+      })()}
 
       {companyStep === 5 && (
         <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
@@ -256,10 +328,10 @@ export const CompanySteps = ({
       {companyStep === 6 && (
         <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
           <Text style={styles.questionTitle}>¿Qué sector destaca más?</Text>
-          <Text style={styles.questionSubtitle}>Elige un sector o añade el tuyo.</Text>
+          <Text style={styles.questionSubtitle}>Elige un sector o añade el tuyo. Se sincronizan globalmente con candidatos.</Text>
           <View style={styles.sectorsContainer}>
             <View style={styles.sectorsGrid}>
-              {['Tecnología', 'Salud', 'Finanzas', 'Construcción', 'Comercio', 'Supermercados', 'Restaurantes', 'Firma de Abogados', 'Educación', 'Otro'].map(sector => {
+              {sectorsList.map(sector => {
                 const isSelected = selectedSectors.includes(sector) || (sector === 'Otro' && isOtherSector);
                 return (
                   <TouchableOpacity 
@@ -389,11 +461,11 @@ export const CompanySteps = ({
       {companyStep === 9 && (
         <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
           <Text style={styles.questionTitle}>Información de Contacto</Text>
-          <Text style={styles.questionSubtitle}>Opcional – Ayuda a los candidatos a encontrarte y contactarte más fácil. Puedes omitir este paso.</Text>
+          <Text style={styles.questionSubtitle}>El teléfono de contacto es obligatorio para que los candidatos puedan comunicarse con tu empresa.</Text>
 
           <View style={{ gap: 16 }}>
             <View>
-              <Text style={styles.sectorsLabel}>Sitio Web</Text>
+              <Text style={styles.sectorsLabel}>Sitio Web (Opcional)</Text>
               <CustomInput 
                 placeholder="https://tuempresa.com" 
                 value={companyWebsite} 
@@ -404,7 +476,7 @@ export const CompanySteps = ({
             </View>
 
             <View>
-              <Text style={styles.sectorsLabel}>Teléfono de Contacto</Text>
+              <Text style={styles.sectorsLabel}>Teléfono de Contacto (Obligatorio)</Text>
               <CustomInput 
                 placeholder="+57 300 000 0000" 
                 value={companyPhone} 
@@ -415,7 +487,7 @@ export const CompanySteps = ({
             </View>
 
             <View style={{ gap: 8 }}>
-              <Text style={styles.sectorsLabel}>Ubicación Principal</Text>
+              <Text style={styles.sectorsLabel}>Ubicación Principal (Opcional)</Text>
               <SearchableSelect
                 placeholder="Selecciona el País de la empresa"
                 value={selectedCompanyCountry}
@@ -443,13 +515,6 @@ export const CompanySteps = ({
               />
             </View>
           </View>
-
-          <TouchableOpacity
-            onPress={() => setCompanyStep(10)}
-            style={{ alignSelf: 'center', marginTop: 32, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}
-          >
-            <Text style={{ color: '#64748b', fontSize: 13, fontWeight: '600' }}>Omitir este paso</Text>
-          </TouchableOpacity>
         </View>
       )}
 
