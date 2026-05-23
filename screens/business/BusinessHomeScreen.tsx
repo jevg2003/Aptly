@@ -157,56 +157,53 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
           console.warn('Error parsing candidate fields:', e);
         }
 
-          let jobTagsArray: string[] = [];
-          if (job?.tags) {
-            if (typeof job.tags === 'string') {
-              jobTagsArray = job.tags.split(',').map((t: string) => t.trim()).filter(Boolean);
-            } else if (Array.isArray(job.tags)) {
-              jobTagsArray = job.tags;
-            }
+        let jobTagsArray: string[] = [];
+        if (job?.tags) {
+          if (typeof job.tags === 'string') {
+            jobTagsArray = job.tags.split(',').map((t: string) => t.trim()).filter(Boolean);
+          } else if (Array.isArray(job.tags)) {
+            jobTagsArray = job.tags;
           }
+        }
 
-          const score = calculateMatchScore({
-            tags: candTags,
-            professionalTitle: profile?.professional_title || '',
-            location: profile?.location || '',
-            experienceLevel: profile?.experience_level || '',
-            industryInterests: indInterests
-          }, {
-            tags: jobTagsArray,
-            title: job?.title || '',
-            location: job?.location || '',
-            modality: job?.modality || '',
-            description: job?.description || '',
-            requirements: job?.requirements || ''
-          });
+        const score = calculateMatchScore({
+          tags: candTags,
+          professionalTitle: profile?.professional_title || '',
+          location: profile?.location || '',
+          experienceLevel: profile?.experience_level || '',
+          industryInterests: indInterests
+        }, {
+          tags: jobTagsArray,
+          title: job?.title || '',
+          location: job?.location || '',
+          modality: job?.modality || '',
+          description: job?.description || '',
+          requirements: job?.requirements || ''
+        });
 
-         return {
-            applicationId: app.id,
-            id: profile?.id || Math.random().toString(),
-            name: profile?.full_name || 'Candidato',
-            age: 26, // Fallback if age is not calculated
-            location: profile?.location || 'Colombia',
-            availability: 'Tiempo Completo',
-            role: profile?.professional_title || 'Aplicante General',
-            tags: candTags.length > 0 ? candTags : ['Entusiasta', 'Proactivo'],
-            imageUrl: profile?.avatar_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
-            // New rich fields
-            phone: profile?.phone || '',
-            bio: profile?.bio || '',
-            experienceLevel: profile?.experience_level || '',
-            portfolioUrl: profile?.portfolio_url || '',
-            linkedinUrl: profile?.linkedin_url || '',
-            birthDate: profile?.birth_date || '',
-            industryInterests: indInterests,
-            candidateTags: candTags,
-            matchScore: score
+        return {
+          applicationId: app.id,
+          id: profile?.id || Math.random().toString(),
+          name: profile?.full_name || 'Candidato',
+          age: 26,
+          location: profile?.location || 'Colombia',
+          availability: 'Tiempo Completo',
+          role: profile?.professional_title || 'Aplicante General',
+          tags: candTags.length > 0 ? candTags : ['Entusiasta', 'Proactivo'],
+          imageUrl: profile?.avatar_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
+          phone: profile?.phone || '',
+          bio: profile?.bio || '',
+          experienceLevel: profile?.experience_level || '',
+          portfolioUrl: profile?.portfolio_url || '',
+          linkedinUrl: profile?.linkedin_url || '',
+          birthDate: profile?.birth_date || '',
+          industryInterests: indInterests,
+          candidateTags: candTags,
+          matchScore: score
         };
       });
 
-      // Sort by match score in descending order so the best candidates appear first!
       mapped.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
-
       setCandidates(mapped);
     } catch (err) {
       console.error('Error fetching candidates:', err);
