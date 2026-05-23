@@ -17,7 +17,13 @@ import { RestoreAccountScreen } from '../screens/auth/RestoreAccountScreen';
 
 const Stack = createNativeStackNavigator();
 
-export const RootNavigator = ({ session, isDeleted }: { session: Session | null, isDeleted?: boolean }) => {
+export const RootNavigator = ({
+  session,
+  isDeleted,
+}: {
+  session: Session | null;
+  isDeleted?: boolean;
+}) => {
   const role = session?.user?.user_metadata?.role || 'candidate';
 
   return (
@@ -27,13 +33,12 @@ export const RootNavigator = ({ session, isDeleted }: { session: Session | null,
           <NotificationBanner />
           <ObsidianToast />
           <MatchProvider>
-            <Stack.Navigator 
-              screenOptions={{ 
+            <Stack.Navigator
+              screenOptions={{
                 headerShown: false,
                 animation: 'fade_from_bottom',
-                contentStyle: { backgroundColor: '#050505' } // Force darkest background
-              }}
-            >
+                contentStyle: { backgroundColor: '#050505' }, // Force darkest background
+              }}>
               {!session ? (
                 <>
                   <Stack.Screen name="Welcome">
@@ -46,7 +51,7 @@ export const RootNavigator = ({ session, isDeleted }: { session: Session | null,
                 <Stack.Screen name="RestoreAccount" component={RestoreAccountScreen} />
               ) : (
                 <Stack.Screen name="Main">
-                  {() => role === 'company' ? <BusinessTabNavigator /> : <MainTabNavigator />}
+                  {() => (role === 'company' ? <BusinessTabNavigator /> : <MainTabNavigator />)}
                 </Stack.Screen>
               )}
             </Stack.Navigator>

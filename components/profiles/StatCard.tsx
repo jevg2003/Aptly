@@ -47,5 +47,5 @@ const styles = StyleSheet.create({
     color: '#475569',
     marginTop: 2,
     textAlign: 'center',
-  }
+  },
 });

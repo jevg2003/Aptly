@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+  useCallback,
+  useRef,
+} from 'react';
 import { supabase } from './supabase';
 import { SessionContext } from './SessionContext';
 
@@ -34,7 +42,11 @@ export interface BusinessConversation {
 
 interface BusinessChatContextType {
   conversations: BusinessConversation[];
-  sendMessage: (convId: string, text: string, options?: { type?: string, metadata?: any, replyToId?: string }) => Promise<void>;
+  sendMessage: (
+    convId: string,
+    text: string,
+    options?: { type?: string; metadata?: any; replyToId?: string }
+  ) => Promise<void>;
   markAsRead: (convId: string) => Promise<void>;
   deleteMessage: (messageId: string, forEveryone: boolean) => Promise<void>;
   loading: boolean;
@@ -85,7 +97,8 @@ export const BusinessChatProvider = ({ children }: { children: ReactNode }) => {
 
       const { data: rooms, error: roomsError } = await supabase
         .from('chat_rooms')
-        .select(`
+        .select(
+          `
           id,
           candidate_id,
           application_id,
@@ -94,51 +107,63 @@ export const BusinessChatProvider = ({ children }: { children: ReactNode }) => {
             job:jobs(id, title)
           ),
           candidate:profiles!chat_rooms_candidate_id_fkey(id, full_name, avatar_url, deleted_at)
-        `)
+        `
+        )
         .eq('company_id', userId);
 
       if (roomsError) throw roomsError;
 
       // N queries de mensajes — solo ocurre en la carga inicial
-      const mappedRooms = await Promise.all((rooms || []).map(async (room) => {
-        const { data: messages } = await supabase
-          .from('messages')
-          .select('id, content, sender_id, created_at, is_read, type, metadata, reply_to_id, deleted_at, is_system')
-          .eq('room_id', room.id)
-          .order('created_at', { ascending: true });
+      const mappedRooms = await Promise.all(
+        (rooms || []).map(async (room) => {
+          const { data: messages } = await supabase
+            .from('messages')
+            .select(
+              'id, content, sender_id, created_at, is_read, type, metadata, reply_to_id, deleted_at, is_system'
+            )
+            .eq('room_id', room.id)
+            .order('created_at', { ascending: true });
 
-        const profileData = room.candidate;
-        const profile: any = Array.isArray(profileData) ? profileData[0] : profileData;
+          const profileData = room.candidate;
+          const profile: any = Array.isArray(profileData) ? profileData[0] : profileData;
 
-        const appData: any = room.application;
-        const application = Array.isArray(appData) ? appData[0] : appData;
-        const job = application?.job;
-        const jobTitle = Array.isArray(job) ? job[0]?.title : job?.title;
-        const jobId = Array.isArray(job) ? job[0]?.id : job?.id;
+          const appData: any = room.application;
+          const application = Array.isArray(appData) ? appData[0] : appData;
+          const job = application?.job;
+          const jobTitle = Array.isArray(job) ? job[0]?.title : job?.title;
+          const jobId = Array.isArray(job) ? job[0]?.id : job?.id;
 
-        const formattedMessages = (messages || []).map(m => formatMessage(m, userId));
-        const lastMsg = formattedMessages.length > 0 ? formattedMessages[formattedMessages.length - 1] : null;
-        const unreadCount = (messages || []).filter(m => !m.is_read && m.sender_id !== userId).length;
+          const formattedMessages = (messages || []).map((m) => formatMessage(m, userId));
+          const lastMsg =
+            formattedMessages.length > 0 ? formattedMessages[formattedMessages.length - 1] : null;
+          const unreadCount = (messages || []).filter(
+            (m) => !m.is_read && m.sender_id !== userId
+          ).length;
 
-        return {
-          id: room.id,
-          applicationId: room.application_id,
-          jobTitle: jobTitle || 'Ninguna vacante',
-          jobId: jobId,
-          participant: {
-            id: profile?.id || room.candidate_id,
-            name: profile?.deleted_at ? 'Usuario Eliminado' : (profile?.full_name || 'Candidato'),
-            avatar: profile?.deleted_at ? null : (profile?.avatar_url || null),
-            isOnline: true,
-            role: 'Candidato',
-            deletedAt: profile?.deleted_at || null,
-          },
-          messages: formattedMessages,
-          lastMessage: lastMsg ? (lastMsg.deletedAt ? 'Mensaje eliminado' : lastMsg.text) : 'Sin mensajes aún',
-          timestamp: lastMsg?.timestamp || 'Ahora',
-          unreadCount,
-        };
-      }));
+          return {
+            id: room.id,
+            applicationId: room.application_id,
+            jobTitle: jobTitle || 'Ninguna vacante',
+            jobId: jobId,
+            participant: {
+              id: profile?.id || room.candidate_id,
+              name: profile?.deleted_at ? 'Usuario Eliminado' : profile?.full_name || 'Candidato',
+              avatar: profile?.deleted_at ? null : profile?.avatar_url || null,
+              isOnline: true,
+              role: 'Candidato',
+              deletedAt: profile?.deleted_at || null,
+            },
+            messages: formattedMessages,
+            lastMessage: lastMsg
+              ? lastMsg.deletedAt
+                ? 'Mensaje eliminado'
+                : lastMsg.text
+              : 'Sin mensajes aún',
+            timestamp: lastMsg?.timestamp || 'Ahora',
+            unreadCount,
+          };
+        })
+      );
 
       setConversations(mappedRooms);
     } catch (err) {
@@ -158,73 +183,85 @@ export const BusinessChatProvider = ({ children }: { children: ReactNode }) => {
 
     const subscription = supabase
       .channel(`business-chat:${session.user.id}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
-        const newMsg = payload.new as any;
-        const userId = userIdRef.current;
-        if (!userId) return;
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages' },
+        (payload) => {
+          const newMsg = payload.new as any;
+          const userId = userIdRef.current;
+          if (!userId) return;
 
-        // Notificación solo si el mensaje viene de otro
-        if (newMsg.sender_id !== userId) {
-          setNotification({
-            visible: true,
-            title: 'Nuevo Mensaje',
-            body: newMsg.content.substring(0, 50) + (newMsg.content.length > 50 ? '...' : ''),
-          });
-        }
-
-        // ✅ Insertar el mensaje en la conversación correcta SIN llamar a Supabase
-        const formatted = formatMessage(newMsg, userId);
-        setConversations(prev => prev.map(conv => {
-          if (conv.id !== newMsg.room_id) return conv;
-          
-          const isFromMe = newMsg.sender_id === userId;
-          let updatedMessages = [...conv.messages];
-
-          if (isFromMe) {
-            // Buscamos si existe un mensaje temporal que coincida en contenido para REEMPLAZARLO
-            const tempIdx = [...updatedMessages].reverse().findIndex(m => 
-              m.id.startsWith('temp-') && m.text === newMsg.content
-            );
-
-            if (tempIdx !== -1) {
-              // Reemplazar el temporal con el real (que tiene el ID definitivo de la DB)
-              const actualIdx = updatedMessages.length - 1 - tempIdx;
-              updatedMessages[actualIdx] = formatted;
-            } else if (!updatedMessages.some(m => m.id === newMsg.id)) {
-              updatedMessages.push(formatted);
-            }
-          } else {
-            // Si es de otro, solo evitamos duplicados por ID
-            if (!updatedMessages.some(m => m.id === newMsg.id)) {
-              updatedMessages.push(formatted);
-            }
+          // Notificación solo si el mensaje viene de otro
+          if (newMsg.sender_id !== userId) {
+            setNotification({
+              visible: true,
+              title: 'Nuevo Mensaje',
+              body: newMsg.content.substring(0, 50) + (newMsg.content.length > 50 ? '...' : ''),
+            });
           }
 
-          return {
-            ...conv,
-            messages: updatedMessages,
-            lastMessage: newMsg.deleted_at ? 'Mensaje eliminado' : newMsg.content,
-            timestamp: formatted.timestamp,
-            unreadCount: !isFromMe ? conv.unreadCount + 1 : conv.unreadCount,
-          };
-        }));
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
-        const updated = payload.new as any;
-        const userId = userIdRef.current;
-        if (!userId) return;
+          // ✅ Insertar el mensaje en la conversación correcta SIN llamar a Supabase
+          const formatted = formatMessage(newMsg, userId);
+          setConversations((prev) =>
+            prev.map((conv) => {
+              if (conv.id !== newMsg.room_id) return conv;
 
-        // ✅ Actualizar el mensaje en memoria (ej: borrado, leído) SIN query
-        setConversations(prev => prev.map(conv => {
-          if (conv.id !== updated.room_id) return conv;
-          return {
-            ...conv,
-            messages: conv.messages.map(m =>
-              m.id === updated.id ? formatMessage(updated, userId) : m
-            ),
-          };
-        }));
-      })
+              const isFromMe = newMsg.sender_id === userId;
+              let updatedMessages = [...conv.messages];
+
+              if (isFromMe) {
+                // Buscamos si existe un mensaje temporal que coincida en contenido para REEMPLAZARLO
+                const tempIdx = [...updatedMessages]
+                  .reverse()
+                  .findIndex((m) => m.id.startsWith('temp-') && m.text === newMsg.content);
+
+                if (tempIdx !== -1) {
+                  // Reemplazar el temporal con el real (que tiene el ID definitivo de la DB)
+                  const actualIdx = updatedMessages.length - 1 - tempIdx;
+                  updatedMessages[actualIdx] = formatted;
+                } else if (!updatedMessages.some((m) => m.id === newMsg.id)) {
+                  updatedMessages.push(formatted);
+                }
+              } else {
+                // Si es de otro, solo evitamos duplicados por ID
+                if (!updatedMessages.some((m) => m.id === newMsg.id)) {
+                  updatedMessages.push(formatted);
+                }
+              }
+
+              return {
+                ...conv,
+                messages: updatedMessages,
+                lastMessage: newMsg.deleted_at ? 'Mensaje eliminado' : newMsg.content,
+                timestamp: formatted.timestamp,
+                unreadCount: !isFromMe ? conv.unreadCount + 1 : conv.unreadCount,
+              };
+            })
+          );
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'messages' },
+        (payload) => {
+          const updated = payload.new as any;
+          const userId = userIdRef.current;
+          if (!userId) return;
+
+          // ✅ Actualizar el mensaje en memoria (ej: borrado, leído) SIN query
+          setConversations((prev) =>
+            prev.map((conv) => {
+              if (conv.id !== updated.room_id) return conv;
+              return {
+                ...conv,
+                messages: conv.messages.map((m) =>
+                  m.id === updated.id ? formatMessage(updated, userId) : m
+                ),
+              };
+            })
+          );
+        }
+      )
       .subscribe();
 
     return () => {
@@ -235,53 +272,69 @@ export const BusinessChatProvider = ({ children }: { children: ReactNode }) => {
   // ─────────────────────────────────────────────────────────────────────────
   // ENVIAR MENSAJE — Optimistic Update
   // ─────────────────────────────────────────────────────────────────────────
-  const sendMessage = useCallback(async (convId: string, text: string, options?: { type?: string, metadata?: any, replyToId?: string }) => {
-    const userId = userIdRef.current;
-    if (!userId) return;
+  const sendMessage = useCallback(
+    async (
+      convId: string,
+      text: string,
+      options?: { type?: string; metadata?: any; replyToId?: string }
+    ) => {
+      const userId = userIdRef.current;
+      if (!userId) return;
 
-    const { type = 'text', metadata = {}, replyToId = null } = options || {};
+      const { type = 'text', metadata = {}, replyToId = null } = options || {};
 
-    // Mostrar el mensaje inmediatamente en la UI
-    const tempId = `temp-${Date.now()}`;
-    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      // Mostrar el mensaje inmediatamente en la UI
+      const tempId = `temp-${Date.now()}`;
+      const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    setConversations(prev => prev.map(conv => {
-      if (conv.id !== convId) return conv;
-      return {
-        ...conv,
-        messages: [...conv.messages, {
-          id: tempId,
-          text,
-          senderId: 'me',
-          timestamp,
-          type: type as any,
-          metadata,
-          replyToId: replyToId as any,
-        }],
-        lastMessage: type === 'text' ? text : `[${type.toUpperCase()}]`,
-        timestamp,
-      };
-    }));
+      setConversations((prev) =>
+        prev.map((conv) => {
+          if (conv.id !== convId) return conv;
+          return {
+            ...conv,
+            messages: [
+              ...conv.messages,
+              {
+                id: tempId,
+                text,
+                senderId: 'me',
+                timestamp,
+                type: type as any,
+                metadata,
+                replyToId: replyToId as any,
+              },
+            ],
+            lastMessage: type === 'text' ? text : `[${type.toUpperCase()}]`,
+            timestamp,
+          };
+        })
+      );
 
-    try {
-      const { error } = await supabase.from('messages').insert([{
-        room_id: convId,
-        content: text,
-        sender_id: userId,
-        type,
-        metadata,
-        reply_to_id: replyToId,
-      }]);
+      try {
+        const { error } = await supabase.from('messages').insert([
+          {
+            room_id: convId,
+            content: text,
+            sender_id: userId,
+            type,
+            metadata,
+            reply_to_id: replyToId,
+          },
+        ]);
 
-      if (error) throw error;
-    } catch (err) {
-      console.error('Error sending message:', err);
-      setConversations(prev => prev.map(conv => {
-        if (conv.id !== convId) return conv;
-        return { ...conv, messages: conv.messages.filter(m => m.id !== tempId) };
-      }));
-    }
-  }, []);
+        if (error) throw error;
+      } catch (err) {
+        console.error('Error sending message:', err);
+        setConversations((prev) =>
+          prev.map((conv) => {
+            if (conv.id !== convId) return conv;
+            return { ...conv, messages: conv.messages.filter((m) => m.id !== tempId) };
+          })
+        );
+      }
+    },
+    []
+  );
 
   // ─────────────────────────────────────────────────────────────────────────
   // BORRAR MENSAJE
@@ -292,20 +345,26 @@ export const BusinessChatProvider = ({ children }: { children: ReactNode }) => {
 
     // ✅ Si el ID es temporal (aún no guardado en DB), solo borrar localmente
     if (messageId.startsWith('temp-')) {
-      setConversations(prev => prev.map(conv => ({
-        ...conv,
-        messages: conv.messages.filter(m => m.id !== messageId)
-      })));
+      setConversations((prev) =>
+        prev.map((conv) => ({
+          ...conv,
+          messages: conv.messages.filter((m) => m.id !== messageId),
+        }))
+      );
       return;
     }
 
     if (forEveryone) {
-      setConversations(prev => prev.map(conv => ({
-        ...conv,
-        messages: conv.messages.map(m =>
-          m.id === messageId ? { ...m, text: 'Este mensaje fue eliminado', deletedAt: new Date().toISOString() } : m
-        ),
-      })));
+      setConversations((prev) =>
+        prev.map((conv) => ({
+          ...conv,
+          messages: conv.messages.map((m) =>
+            m.id === messageId
+              ? { ...m, text: 'Este mensaje fue eliminado', deletedAt: new Date().toISOString() }
+              : m
+          ),
+        }))
+      );
 
       try {
         const { error } = await supabase
@@ -327,12 +386,14 @@ export const BusinessChatProvider = ({ children }: { children: ReactNode }) => {
     if (!userId) return;
 
     // Actualización local inmediata
-    setConversations(prev => prev.map(conv => {
-      if (conv.id === convId && conv.unreadCount > 0) {
-        return { ...conv, unreadCount: 0 };
-      }
-      return conv;
-    }));
+    setConversations((prev) =>
+      prev.map((conv) => {
+        if (conv.id === convId && conv.unreadCount > 0) {
+          return { ...conv, unreadCount: 0 };
+        }
+        return conv;
+      })
+    );
 
     try {
       const { error } = await supabase
@@ -350,17 +411,18 @@ export const BusinessChatProvider = ({ children }: { children: ReactNode }) => {
   const totalUnreadCount = conversations.reduce((acc, conv) => acc + (conv.unreadCount || 0), 0);
 
   return (
-    <BusinessChatContext.Provider value={{
-      conversations,
-      sendMessage,
-      markAsRead,
-      deleteMessage,
-      loading,
-      totalUnreadCount,
-      notification,
-      setNotification,
-      refreshConversations: fetchConversations,
-    }}>
+    <BusinessChatContext.Provider
+      value={{
+        conversations,
+        sendMessage,
+        markAsRead,
+        deleteMessage,
+        loading,
+        totalUnreadCount,
+        notification,
+        setNotification,
+        refreshConversations: fetchConversations,
+      }}>
       {children}
     </BusinessChatContext.Provider>
   );

@@ -82,9 +82,10 @@ export const SearchableSelect = ({
       return parsedOptions;
     }
     const normalizedQuery = normalizeText(searchQuery);
-    return parsedOptions.filter((opt) =>
-      normalizeText(opt.name).includes(normalizedQuery) ||
-      (opt.subtext && normalizeText(opt.subtext).includes(normalizedQuery))
+    return parsedOptions.filter(
+      (opt) =>
+        normalizeText(opt.name).includes(normalizedQuery) ||
+        (opt.subtext && normalizeText(opt.subtext).includes(normalizedQuery))
     );
   }, [parsedOptions, searchQuery]);
 
@@ -118,9 +119,10 @@ export const SearchableSelect = ({
           styles.trigger,
           compact && { paddingHorizontal: 10, paddingVertical: 10, borderRadius: 16 },
           { opacity: disabled ? 0.5 : 1 },
-          modalVisible ? { borderColor: activeColor } : { borderColor: 'rgba(255, 255, 255, 0.05)' },
-        ]}
-      >
+          modalVisible
+            ? { borderColor: activeColor }
+            : { borderColor: 'rgba(255, 255, 255, 0.05)' },
+        ]}>
         <View style={styles.leftContainer}>
           {!hideIcon && iconName && (
             <MaterialCommunityIcons
@@ -135,8 +137,7 @@ export const SearchableSelect = ({
               compact && { marginLeft: hideIcon ? 2 : 6, fontSize: 14 },
               !value && styles.placeholderText,
             ]}
-            numberOfLines={1}
-          >
+            numberOfLines={1}>
             {value || placeholder}
           </Text>
         </View>
@@ -148,12 +149,7 @@ export const SearchableSelect = ({
         />
       </TouchableOpacity>
 
-      <Modal
-        visible={modalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={handleClose}
-      >
+      <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={handleClose}>
         <TouchableWithoutFeedback onPress={handleClose}>
           <View style={styles.overlay}>
             {Platform.OS === 'ios' ? (
@@ -165,8 +161,7 @@ export const SearchableSelect = ({
             <TouchableWithoutFeedback>
               <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                style={styles.modalContent}
-              >
+                style={styles.modalContent}>
                 <View style={styles.modalCard}>
                   {/* Header */}
                   <View style={styles.modalHeader}>
@@ -174,8 +169,7 @@ export const SearchableSelect = ({
                     <TouchableOpacity
                       onPress={handleClose}
                       style={styles.closeButton}
-                      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                    >
+                      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
                       <MaterialCommunityIcons name="close" size={22} color="#94a3b8" />
                     </TouchableOpacity>
                   </View>
@@ -196,8 +190,7 @@ export const SearchableSelect = ({
                     {searchQuery.length > 0 && (
                       <TouchableOpacity
                         onPress={() => setSearchQuery('')}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                         <MaterialCommunityIcons name="close-circle" size={18} color="#64748b" />
                       </TouchableOpacity>
                     )}
@@ -230,24 +223,22 @@ export const SearchableSelect = ({
                           style={[
                             styles.optionItem,
                             isSelected && { backgroundColor: 'rgba(255, 255, 255, 0.05)' },
-                          ]}
-                        >
+                          ]}>
                           <View style={styles.optionLeft}>
-                            {item.flag ? (
-                              <Text style={styles.flagText}>{item.flag}</Text>
-                            ) : null}
+                            {item.flag ? <Text style={styles.flagText}>{item.flag}</Text> : null}
                             <View style={{ flex: 1 }}>
                               <Text
                                 style={[
                                   styles.optionText,
                                   isSelected && { color: activeColor, fontWeight: '600' },
                                 ]}
-                                numberOfLines={1}
-                              >
+                                numberOfLines={1}>
                                 {item.name}
                               </Text>
                               {item.subtext ? (
-                                <Text style={{ color: '#64748b', fontSize: 13, marginTop: 2 }} numberOfLines={1}>
+                                <Text
+                                  style={{ color: '#64748b', fontSize: 13, marginTop: 2 }}
+                                  numberOfLines={1}>
                                   {item.subtext}
                                 </Text>
                               ) : null}

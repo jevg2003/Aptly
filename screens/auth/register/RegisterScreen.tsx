@@ -9,7 +9,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Text,
-  ActivityIndicator
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -17,7 +17,7 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withTiming
+  withTiming,
 } from 'react-native-reanimated';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -80,7 +80,6 @@ export const RegisterScreen = ({ navigation, route }: any) => {
   const [pdfName, setPdfName] = useState<string | null>(null);
   const [pdfUri, setPdfUri] = useState<string | null>(null);
 
-
   // AI Assessment states
   const [showAiAssessment, setShowAiAssessment] = useState(false);
   const [aiAssessed, setAiAssessed] = useState(false);
@@ -98,17 +97,44 @@ export const RegisterScreen = ({ navigation, route }: any) => {
 
   // Shared sectors list from database
   const [sectorsList, setSectorsList] = useState<string[]>([
-    'Tecnología', 'Salud', 'Finanzas', 'Construcción', 'Comercio',
-    'Manufactura', 'Servicios', 'Marketing', 'Educación', 'Restaurantes',
-    'Supermercados', 'Firma de Abogados', 'Otro'
+    'Tecnología',
+    'Salud',
+    'Finanzas',
+    'Construcción',
+    'Comercio',
+    'Manufactura',
+    'Servicios',
+    'Marketing',
+    'Educación',
+    'Restaurantes',
+    'Supermercados',
+    'Firma de Abogados',
+    'Otro',
   ]);
 
   // Categorized tags/skills for candidate
   const [candidateTagsByCategory, setCandidateTagsByCategory] = useState<Record<string, string[]>>({
-    'Habilidades Blandas': ['Responsable', 'Tolerante', 'Empatía', 'Proactivo', 'Trabajo en Equipo', 'Liderazgo', 'Pensamiento Crítico', 'Puntualidad'],
-    'Habilidades Técnicas': ['Programación', 'Diseño UI/UX', 'Redacción Jurídica', 'Gastronomía/Cocina', 'Contabilidad', 'Gestión de Proyectos', 'Ventas'],
-    'Idiomas': ['Inglés A2', 'Inglés B2', 'Inglés C1', 'Español Nativo', 'Portugués', 'Francés'],
-    'Recomendadas por IA': []
+    'Habilidades Blandas': [
+      'Responsable',
+      'Tolerante',
+      'Empatía',
+      'Proactivo',
+      'Trabajo en Equipo',
+      'Liderazgo',
+      'Pensamiento Crítico',
+      'Puntualidad',
+    ],
+    'Habilidades Técnicas': [
+      'Programación',
+      'Diseño UI/UX',
+      'Redacción Jurídica',
+      'Gastronomía/Cocina',
+      'Contabilidad',
+      'Gestión de Proyectos',
+      'Ventas',
+    ],
+    Idiomas: ['Inglés A2', 'Inglés B2', 'Inglés C1', 'Español Nativo', 'Portugués', 'Francés'],
+    'Recomendadas por IA': [],
   });
 
   // Candidate Split Dates States
@@ -144,14 +170,23 @@ export const RegisterScreen = ({ navigation, route }: any) => {
     message: '',
     icon: 'info' as any,
     type: 'info' as any,
-    onOk: () => {}
+    onOk: () => {},
   });
 
   // Month mapping to two digits
   const MONTH_MAP: Record<string, string> = {
-    'Enero': '01', 'Febrero': '02', 'Marzo': '03', 'Abril': '04',
-    'Mayo': '05', 'Junio': '06', 'Julio': '07', 'Agosto': '08',
-    'Septiembre': '09', 'Octubre': '10', 'Noviembre': '11', 'Diciembre': '12'
+    Enero: '01',
+    Febrero: '02',
+    Marzo: '03',
+    Abril: '04',
+    Mayo: '05',
+    Junio: '06',
+    Julio: '07',
+    Agosto: '08',
+    Septiembre: '09',
+    Octubre: '10',
+    Noviembre: '11',
+    Diciembre: '12',
   };
 
   // Helper for dynamic day counts based on month and leap year
@@ -159,7 +194,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
     const year = parseInt(yearStr) || new Date().getFullYear();
     let maxDays = 31;
     if (monthName === 'Febrero') {
-      const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+      const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
       maxDays = isLeapYear ? 29 : 28;
     } else if (['Abril', 'Junio', 'Septiembre', 'Noviembre'].includes(monthName)) {
       maxDays = 30;
@@ -174,11 +209,23 @@ export const RegisterScreen = ({ navigation, route }: any) => {
     if (lower.includes('colombia')) return 'Cédula de Ciudadanía (C.C.)';
     if (lower.includes('mexico') || lower.includes('méxico')) return 'Clave CURP / RFC';
     if (lower.includes('chile')) return 'Rol Único Tributario (RUT)';
-    if (lower.includes('argentina') || lower.includes('peru') || lower.includes('perú') || lower.includes('espana') || lower.includes('españa')) return 'Documento Nacional de Identidad (DNI)';
+    if (
+      lower.includes('argentina') ||
+      lower.includes('peru') ||
+      lower.includes('perú') ||
+      lower.includes('espana') ||
+      lower.includes('españa')
+    )
+      return 'Documento Nacional de Identidad (DNI)';
     if (lower.includes('venezuela')) return 'Cédula de Identidad (C.I.)';
     if (lower.includes('ecuador')) return 'Cédula de Ciudadanía';
     if (lower.includes('uruguay')) return 'Cédula de Identidad';
-    if (lower.includes('united states') || lower.includes('estados unidos') || lower.includes('usa')) return 'Social Security Number (SSN)';
+    if (
+      lower.includes('united states') ||
+      lower.includes('estados unidos') ||
+      lower.includes('usa')
+    )
+      return 'Social Security Number (SSN)';
     if (lower.includes('brazil') || lower.includes('brasil')) return 'CPF';
     return 'Documento de Identidad';
   };
@@ -191,7 +238,12 @@ export const RegisterScreen = ({ navigation, route }: any) => {
     if (lower.includes('chile')) return 'RUT de la Empresa';
     if (lower.includes('argentina')) return 'CUIT';
     if (lower.includes('espana') || lower.includes('españa')) return 'CIF de la Empresa';
-    if (lower.includes('united states') || lower.includes('estados unidos') || lower.includes('usa')) return 'EIN / Employer Identification Number';
+    if (
+      lower.includes('united states') ||
+      lower.includes('estados unidos') ||
+      lower.includes('usa')
+    )
+      return 'EIN / Employer Identification Number';
     if (lower.includes('brazil') || lower.includes('brasil')) return 'CNPJ';
     return 'NIT / ID Fiscal';
   };
@@ -205,8 +257,8 @@ export const RegisterScreen = ({ navigation, route }: any) => {
           .select('name')
           .order('name', { ascending: true });
         if (data && !error) {
-          const names = data.map(item => item.name);
-          setSectorsList([...names.filter(n => n !== 'Otro'), 'Otro']);
+          const names = data.map((item) => item.name);
+          setSectorsList([...names.filter((n) => n !== 'Otro'), 'Otro']);
         }
       } catch (err) {
         console.log('Error fetching sectors:', err);
@@ -221,37 +273,58 @@ export const RegisterScreen = ({ navigation, route }: any) => {
       try {
         const { data, error } = await supabase.from('job_tags').select('name');
         if (data && !error) {
-          setCandidateTagsByCategory(prev => {
+          setCandidateTagsByCategory((prev) => {
             const categorized = {
               'Habilidades Blandas': [...prev['Habilidades Blandas']],
               'Habilidades Técnicas': [...prev['Habilidades Técnicas']],
-              'Idiomas': [...prev['Idiomas']],
-              'Recomendadas por IA': [...prev['Recomendadas por IA']]
+              Idiomas: [...prev['Idiomas']],
+              'Recomendadas por IA': [...prev['Recomendadas por IA']],
             };
-            data.forEach(item => {
+            data.forEach((item) => {
               const name = item.name;
               if (
                 categorized['Habilidades Blandas'].includes(name) ||
                 categorized['Habilidades Técnicas'].includes(name) ||
                 categorized['Idiomas'].includes(name) ||
                 categorized['Recomendadas por IA'].includes(name)
-              ) return;
+              )
+                return;
 
               const lower = name.toLowerCase();
               if (
-                lower.includes('responsable') || lower.includes('tolerante') || lower.includes('empatia') ||
-                lower.includes('proactivo') || lower.includes('equipo') || lower.includes('liderazgo') ||
-                lower.includes('critico') || lower.includes('puntual') || lower.includes('comunicacion') ||
-                lower.includes('resiliencia') || lower.includes('asertivo') || lower.includes('creativo') ||
-                lower.includes('resolución') || lower.includes('honestidad') || lower.includes('disciplina')
+                lower.includes('responsable') ||
+                lower.includes('tolerante') ||
+                lower.includes('empatia') ||
+                lower.includes('proactivo') ||
+                lower.includes('equipo') ||
+                lower.includes('liderazgo') ||
+                lower.includes('critico') ||
+                lower.includes('puntual') ||
+                lower.includes('comunicacion') ||
+                lower.includes('resiliencia') ||
+                lower.includes('asertivo') ||
+                lower.includes('creativo') ||
+                lower.includes('resolución') ||
+                lower.includes('honestidad') ||
+                lower.includes('disciplina')
               ) {
                 categorized['Habilidades Blandas'].push(name);
               } else if (
-                lower.includes('ingles') || lower.includes('english') || lower.includes('espanol') ||
-                lower.includes('spanish') || lower.includes('portugues') || lower.includes('portuguese') ||
-                lower.includes('frances') || lower.includes('french') || lower.includes('idioma') ||
-                lower.includes('a1') || lower.includes('a2') || lower.includes('b1') ||
-                lower.includes('b2') || lower.includes('c1') || lower.includes('c2')
+                lower.includes('ingles') ||
+                lower.includes('english') ||
+                lower.includes('espanol') ||
+                lower.includes('spanish') ||
+                lower.includes('portugues') ||
+                lower.includes('portuguese') ||
+                lower.includes('frances') ||
+                lower.includes('french') ||
+                lower.includes('idioma') ||
+                lower.includes('a1') ||
+                lower.includes('a2') ||
+                lower.includes('b1') ||
+                lower.includes('b2') ||
+                lower.includes('c1') ||
+                lower.includes('c2')
               ) {
                 categorized['Idiomas'].push(name);
               } else {
@@ -280,7 +353,11 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         .maybeSingle();
       if (!data) {
         await supabase.from('business_sectors').insert({ name: trimmed });
-        setSectorsList(prev => [trimmed, ...prev.filter(s => s !== trimmed && s !== 'Otro'), 'Otro']);
+        setSectorsList((prev) => [
+          trimmed,
+          ...prev.filter((s) => s !== trimmed && s !== 'Otro'),
+          'Otro',
+        ]);
       }
     } catch (e) {
       console.log('Error inserting sector:', e);
@@ -310,7 +387,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
     const trimmed = customCandidateTagInput.trim();
     if (!trimmed) return;
     if (!customCandidateTags.includes(trimmed)) {
-      setCustomCandidateTags(prev => [...prev, trimmed]);
+      setCustomCandidateTags((prev) => [...prev, trimmed]);
       setCustomCandidateTagInput('');
       await handleInsertTag(trimmed);
 
@@ -318,26 +395,46 @@ export const RegisterScreen = ({ navigation, route }: any) => {
       const lower = trimmed.toLowerCase();
       let cat = 'Habilidades Técnicas';
       if (
-        lower.includes('responsable') || lower.includes('tolerante') || lower.includes('empatia') ||
-        lower.includes('proactivo') || lower.includes('equipo') || lower.includes('liderazgo') ||
-        lower.includes('critico') || lower.includes('puntual') || lower.includes('comunicacion') ||
-        lower.includes('resiliencia') || lower.includes('asertivo') || lower.includes('creativo') ||
-        lower.includes('resolución') || lower.includes('honestidad') || lower.includes('disciplina')
+        lower.includes('responsable') ||
+        lower.includes('tolerante') ||
+        lower.includes('empatia') ||
+        lower.includes('proactivo') ||
+        lower.includes('equipo') ||
+        lower.includes('liderazgo') ||
+        lower.includes('critico') ||
+        lower.includes('puntual') ||
+        lower.includes('comunicacion') ||
+        lower.includes('resiliencia') ||
+        lower.includes('asertivo') ||
+        lower.includes('creativo') ||
+        lower.includes('resolución') ||
+        lower.includes('honestidad') ||
+        lower.includes('disciplina')
       ) {
         cat = 'Habilidades Blandas';
       } else if (
-        lower.includes('ingles') || lower.includes('english') || lower.includes('espanol') ||
-        lower.includes('spanish') || lower.includes('portugues') || lower.includes('portuguese') ||
-        lower.includes('frances') || lower.includes('french') || lower.includes('idioma') ||
-        lower.includes('a1') || lower.includes('a2') || lower.includes('b1') ||
-        lower.includes('b2') || lower.includes('c1') || lower.includes('c2')
+        lower.includes('ingles') ||
+        lower.includes('english') ||
+        lower.includes('espanol') ||
+        lower.includes('spanish') ||
+        lower.includes('portugues') ||
+        lower.includes('portuguese') ||
+        lower.includes('frances') ||
+        lower.includes('french') ||
+        lower.includes('idioma') ||
+        lower.includes('a1') ||
+        lower.includes('a2') ||
+        lower.includes('b1') ||
+        lower.includes('b2') ||
+        lower.includes('c1') ||
+        lower.includes('c2')
       ) {
         cat = 'Idiomas';
       }
 
-      setCandidateTagsByCategory(prev => ({
+      setCandidateTagsByCategory((prev) => ({
         ...prev,
-        [cat]: [...prev[cat].filter(t => t !== trimmed), trimmed]
+        [cat]: [...prev[cat].filter((t) => t !== trimmed), trimmed],
       }));
     }
   };
@@ -345,7 +442,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
   // Parse location strings
   useEffect(() => {
     if (candidateLocation && candidateLocation.includes(',')) {
-      const parts = candidateLocation.split(',').map(s => s.trim());
+      const parts = candidateLocation.split(',').map((s) => s.trim());
       if (parts.length === 2) {
         setSelectedCity(parts[0]);
         setSelectedCountry(parts[1]);
@@ -355,13 +452,13 @@ export const RegisterScreen = ({ navigation, route }: any) => {
 
   useEffect(() => {
     if (companyLocation && companyLocation.includes(',')) {
-      const parts = companyLocation.split(',').map(s => s.trim());
+      const parts = companyLocation.split(',').map((s) => s.trim());
       if (parts.length === 2) {
         setSelectedCompanyCity(parts[0]);
         setSelectedCompanyCountry(parts[1]);
       }
     }
-  }, [companyLocation]);  // Dynamically sync and concatenate candidate birthDate
+  }, [companyLocation]); // Dynamically sync and concatenate candidate birthDate
   useEffect(() => {
     if (birthDay && birthMonth && birthYear) {
       const dd = birthDay.padStart(2, '0');
@@ -400,7 +497,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: 'application/pdf',
-        copyToCacheDirectory: true
+        copyToCacheDirectory: true,
       });
       if (!result.canceled && result.assets && result.assets.length > 0) {
         setPdfName(result.assets[0].name);
@@ -410,7 +507,6 @@ export const RegisterScreen = ({ navigation, route }: any) => {
       console.log('Error picking document', err);
     }
   };
-
 
   // Keyboard show/hide listeners
   useEffect(() => {
@@ -434,12 +530,12 @@ export const RegisterScreen = ({ navigation, route }: any) => {
     contentFade.value = withTiming(1, { duration: 800 });
     cardTranslateY.value = withSpring(0, { damping: 15 });
     progressAnim.value = withTiming(currentStep / totalSteps, { duration: 300 });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     progressAnim.value = withTiming(currentStep / totalSteps, { duration: 300 });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep]);
 
   useEffect(() => {
@@ -451,7 +547,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
 
     stepTranslateX.value = withSpring(0, { damping: 16, stiffness: 110 });
     stepOpacity.value = withTiming(1, { duration: 250 });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep]);
 
   const animatedCardStyle = useAnimatedStyle(() => {
@@ -476,8 +572,12 @@ export const RegisterScreen = ({ navigation, route }: any) => {
 
   const handleRegister = async () => {
     const finalSector = isOtherSector ? customSector : selectedSectors[0];
-    const isCompanyIncomplete = localRole === 'company' && (!companyName || !taxId || !creationDate || !businessArea || !finalSector);
-    const isCandidateIncomplete = localRole === 'candidate' && (!fullName || !birthDate || !profession || candidateSectors.length === 0 || !nationalId);
+    const isCompanyIncomplete =
+      localRole === 'company' &&
+      (!companyName || !taxId || !creationDate || !businessArea || !finalSector);
+    const isCandidateIncomplete =
+      localRole === 'candidate' &&
+      (!fullName || !birthDate || !profession || candidateSectors.length === 0 || !nationalId);
 
     if (!email || !password || isCompanyIncomplete || isCandidateIncomplete) {
       setAlertConfig({
@@ -486,7 +586,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         message: 'Por favor completa todos los campos para continuar.',
         icon: 'edit-3',
         type: 'info',
-        onOk: () => {}
+        onOk: () => {},
       });
       return;
     }
@@ -497,7 +597,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         message: 'Las contraseñas no coinciden. Por favor verifica.',
         icon: 'shield-off',
         type: 'destructive',
-        onOk: () => {}
+        onOk: () => {},
       });
       return;
     }
@@ -507,38 +607,41 @@ export const RegisterScreen = ({ navigation, route }: any) => {
       email,
       password,
       options: {
-        data: localRole === 'company' ? {
-          full_name: companyName,
-          role: 'company',
-          tax_id: taxId,
-          creation_date: creationDate,
-          business_area: businessArea,
-          industry: finalSector,
-          company_tags: [...selectedTags, ...customTags].join(', '),
-          pdf_name: pdfName,
-          avatar_url: avatarUrl,
-          website: companyWebsite || undefined,
-          phone: companyPhone || undefined,
-          location: companyLocation || undefined,
-          bio: companyCulture || undefined,
-        } : {
-          full_name: fullName,
-          role: 'candidate',
-          birth_date: birthDate,
-          profession: profession,
-          industry_interests: candidateSectors.join(', '),
-          avatar_url: avatarUrl,
-          location: candidateLocation || undefined,
-          experience_level: experienceLevel || undefined,
-          candidate_tags: [...customCandidateTags].join(', '),
-          bio: candidateBio || undefined,
-          phone: candidatePhone || undefined,
-          portfolio_url: candidatePortfolio || undefined,
-          linkedin_url: candidateLinkedIn || undefined,
-          resume_name: pdfName || undefined,
-          tax_id: nationalId || undefined,
-        }
-      }
+        data:
+          localRole === 'company'
+            ? {
+                full_name: companyName,
+                role: 'company',
+                tax_id: taxId,
+                creation_date: creationDate,
+                business_area: businessArea,
+                industry: finalSector,
+                company_tags: [...selectedTags, ...customTags].join(', '),
+                pdf_name: pdfName,
+                avatar_url: avatarUrl,
+                website: companyWebsite || undefined,
+                phone: companyPhone || undefined,
+                location: companyLocation || undefined,
+                bio: companyCulture || undefined,
+              }
+            : {
+                full_name: fullName,
+                role: 'candidate',
+                birth_date: birthDate,
+                profession: profession,
+                industry_interests: candidateSectors.join(', '),
+                avatar_url: avatarUrl,
+                location: candidateLocation || undefined,
+                experience_level: experienceLevel || undefined,
+                candidate_tags: [...customCandidateTags].join(', '),
+                bio: candidateBio || undefined,
+                phone: candidatePhone || undefined,
+                portfolio_url: candidatePortfolio || undefined,
+                linkedin_url: candidateLinkedIn || undefined,
+                resume_name: pdfName || undefined,
+                tax_id: nationalId || undefined,
+              },
+      },
     });
 
     if (error) {
@@ -549,7 +652,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         message: error.message,
         icon: 'alert-circle',
         type: 'destructive',
-        onOk: () => {}
+        onOk: () => {},
       });
       return;
     }
@@ -632,7 +735,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
       message: 'Cuenta creada con éxito. Hemos enviado un correo de verificación.',
       icon: 'mail',
       type: 'success',
-      onOk: () => navigation.navigate('Login')
+      onOk: () => navigation.navigate('Login'),
     });
   };
 
@@ -670,7 +773,9 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         case 5:
           return !!profession && !!experienceLevel;
         case 6:
-          return candidateSectors.includes('Otro') ? customSector.trim().length > 0 : candidateSectors.length > 0;
+          return candidateSectors.includes('Otro')
+            ? customSector.trim().length > 0
+            : candidateSectors.length > 0;
         case 8:
           return !!candidatePhone && candidatePhone.trim().length >= 6;
         default:
@@ -680,7 +785,14 @@ export const RegisterScreen = ({ navigation, route }: any) => {
   };
 
   const showAlert = (msg: string) => {
-    setAlertConfig({ visible: true, title: 'Datos Incompletos', message: msg, icon: 'edit-3', type: 'info', onOk: () => {} });
+    setAlertConfig({
+      visible: true,
+      title: 'Datos Incompletos',
+      message: msg,
+      icon: 'edit-3',
+      type: 'info',
+      onOk: () => {},
+    });
   };
 
   const handleNext = async () => {
@@ -689,8 +801,10 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         if (!email) return showAlert('Por favor, ingresa tu correo.');
         setCompanyStep(2);
       } else if (companyStep === 2) {
-        if (!password || password.length < 6) return showAlert('La contraseña debe tener al menos 6 caracteres para ser segura.');
-        if (password !== confirmPassword) return showAlert('Las contraseñas no coinciden. Por favor verifica.');
+        if (!password || password.length < 6)
+          return showAlert('La contraseña debe tener al menos 6 caracteres para ser segura.');
+        if (password !== confirmPassword)
+          return showAlert('Las contraseñas no coinciden. Por favor verifica.');
         setCompanyStep(3);
       } else if (companyStep === 3) {
         if (!companyName) return showAlert('Por favor, ingresa el nombre de la empresa.');
@@ -726,12 +840,15 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         if (!email) return showAlert('Por favor, ingresa tu correo.');
         setCandidateStep(2);
       } else if (candidateStep === 2) {
-        if (!password || password.length < 6) return showAlert('La contraseña debe tener al menos 6 caracteres para ser segura.');
-        if (password !== confirmPassword) return showAlert('Las contraseñas no coinciden. Por favor verifica.');
+        if (!password || password.length < 6)
+          return showAlert('La contraseña debe tener al menos 6 caracteres para ser segura.');
+        if (password !== confirmPassword)
+          return showAlert('Las contraseñas no coinciden. Por favor verifica.');
         setCandidateStep(3);
       } else if (candidateStep === 3) {
         if (!fullName) return showAlert('Por favor, ingresa tu nombre completo.');
-        if (!selectedCountry || !selectedCity) return showAlert('Por favor, selecciona tu país y ciudad.');
+        if (!selectedCountry || !selectedCity)
+          return showAlert('Por favor, selecciona tu país y ciudad.');
         if (!nationalId) return showAlert('Por favor, ingresa tu documento de identidad.');
         setCandidateStep(4);
       } else if (candidateStep === 4) {
@@ -742,11 +859,12 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         if (!experienceLevel) return showAlert('Por favor, selecciona tu nivel de experiencia.');
         setCandidateStep(6);
       } else if (candidateStep === 6) {
-        if (candidateSectors.length === 0) return showAlert('Selecciona al menos un sector de interés.');
+        if (candidateSectors.length === 0)
+          return showAlert('Selecciona al menos un sector de interés.');
         if (candidateSectors.includes('Otro')) {
           if (!customSector.trim()) return showAlert('Por favor, escribe tu sector personalizado.');
           await handleInsertSector(customSector);
-          setCandidateSectors(prev => prev.map(s => s === 'Otro' ? customSector.trim() : s));
+          setCandidateSectors((prev) => prev.map((s) => (s === 'Otro' ? customSector.trim() : s)));
         }
         setCandidateStep(7);
       } else if (candidateStep === 7) {
@@ -778,18 +896,22 @@ export const RegisterScreen = ({ navigation, route }: any) => {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.progressBarContainer}>
-            <Animated.View style={[
-              styles.progressBarFill,
-              animatedProgressStyle,
-              { backgroundColor: accentColor }
-            ]} />
+            <Animated.View
+              style={[
+                styles.progressBarFill,
+                animatedProgressStyle,
+                { backgroundColor: accentColor },
+              ]}
+            />
           </View>
 
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={{ flex: 1 }}
-          >
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            style={{ flex: 1 }}>
+            <ScrollView
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled">
               <Animated.View style={[animatedCardStyle, { flex: 1 }]}>
                 <Animated.View style={[animatedStepStyle, { flex: 1 }]}>
                   {localRole === 'candidate' ? (
@@ -927,8 +1049,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                   style={[styles.nextBtn, { backgroundColor: accentColor }]}
                   onPress={handleNext}
                   disabled={loading}
-                  activeOpacity={0.8}
-                >
+                  activeOpacity={0.8}>
                   {loading ? (
                     <ActivityIndicator size="small" color="#FFFFFF" />
                   ) : currentStep === totalSteps ? (
@@ -961,37 +1082,35 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                 setExperienceLevel(`${tier} (IA: ${score}%)`);
                 setAiAssessed(true);
                 setAssessmentResult({ score, tier, feedback, autogeneratedBio, recommendedSkills });
-                
+
                 if (autogeneratedBio) {
                   setCandidateBio(autogeneratedBio);
                 }
-                
+
                 if (recommendedSkills && recommendedSkills.length > 0) {
-                  setCustomCandidateTags(prev => {
+                  setCustomCandidateTags((prev) => {
                     const next = [...prev];
-                    recommendedSkills.forEach(skill => {
+                    recommendedSkills.forEach((skill) => {
                       if (!next.includes(skill)) {
                         next.push(skill);
                       }
                     });
                     return next;
                   });
-                  setCandidateTagsByCategory(prev => ({
+                  setCandidateTagsByCategory((prev) => ({
                     ...prev,
-                    'Recomendadas por IA': [...new Set([...recommendedSkills])]
+                    'Recomendadas por IA': [...new Set([...recommendedSkills])],
                   }));
                 }
-                
+
                 const newTag = `IA: ${score}%`;
                 if (!customCandidateTags.includes(newTag)) {
-                  setCustomCandidateTags(prev => [...prev, newTag]);
+                  setCustomCandidateTags((prev) => [...prev, newTag]);
                 }
                 setShowAiAssessment(false);
                 setCandidateStep(6);
               }}
             />
-
-
           </KeyboardAvoidingView>
         </SafeAreaView>
       </TouchableWithoutFeedback>

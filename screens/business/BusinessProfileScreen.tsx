@@ -1,15 +1,15 @@
 import React, { useState, useCallback } from 'react';
-import { 
-  View, 
-  Text, 
-  ScrollView, 
-  TouchableOpacity, 
-  Image, 
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Image,
   StatusBar,
   RefreshControl,
   StyleSheet,
   ActivityIndicator,
-  Alert
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Ionicons, Feather } from '@expo/vector-icons';
@@ -51,7 +51,7 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
     if (!session?.user?.id) return;
     try {
       setUploadingImage(true);
-      
+
       const localUri = await pickAndOptimizeImage();
       if (!localUri) return;
 
@@ -59,7 +59,6 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
       if (!publicUrl) throw new Error('Error al subir la imagen al servidor.');
 
       await updateProfile({ avatar_url: publicUrl });
-      
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Hubo un problema actualizando el logo.');
     } finally {
@@ -71,28 +70,27 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
     if (!session?.user?.id) return;
     try {
       if (profile.full_name === 'TechFlow Solutions' && session.user.user_metadata?.full_name) {
-          updateProfile({ full_name: session.user.user_metadata.full_name });
+        updateProfile({ full_name: session.user.user_metadata.full_name });
       }
-      
+
       // Fetch Active Jobs
       const { data: jobsData, count: jobsCountRes } = await supabase
-         .from('jobs')
-         .select('*', { count: 'exact' })
-         .eq('company_id', session.user.id)
-         .order('created_at', { ascending: false })
-         .limit(3);
-         
+        .from('jobs')
+        .select('*', { count: 'exact' })
+        .eq('company_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(3);
+
       setJobsCount(jobsCountRes || 0);
       setRecentJobs(jobsData || []);
 
       // Fetch Applications (Candidates interested)
       const { count: appCount } = await supabase
-         .from('applications')
-         .select('jobs!inner(company_id)', { count: 'exact', head: true })
-         .eq('jobs.company_id', session.user.id);
-         
-      setCandidatesCount(appCount || 0);
+        .from('applications')
+        .select('jobs!inner(company_id)', { count: 'exact', head: true })
+        .eq('jobs.company_id', session.user.id);
 
+      setCandidatesCount(appCount || 0);
     } catch (error: any) {
       console.error('Error fetching company stats:', error.message);
     } finally {
@@ -122,9 +120,9 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
       {icon && (
-          <View style={styles.statIcon}>
-              <Ionicons name={icon} size={12} color={color || "#475569"} />
-          </View>
+        <View style={styles.statIcon}>
+          <Ionicons name={icon} size={12} color={color || '#475569'} />
+        </View>
       )}
     </View>
   );
@@ -133,60 +131,58 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
     <View style={{ flex: 1, backgroundColor: '#050505' }}>
       <StatusBar barStyle="light-content" />
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-        
-        <ObsidianHeader 
-          title="Enterprise Profile" 
-          subtitle="Corporate Center"
-        />
+        <ObsidianHeader title="Enterprise Profile" subtitle="Corporate Center" />
 
-        <ScrollView 
+        <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={fetchCompanyProfile} tintColor="#FF005C" />
-          }
-        >
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={fetchCompanyProfile}
+              tintColor="#FF005C"
+            />
+          }>
           {/* Logo Section */}
           <View style={styles.profileHeader}>
             <View style={styles.logoWrapper}>
               <View style={[styles.logoCircle, { overflow: 'hidden' }]}>
-                 {profile?.avatar_url ? (
-                    <Image source={{ uri: profile.avatar_url }} style={{ width: '100%', height: '100%' }} />
-                 ) : (
-                    <MaterialCommunityIcons name="office-building" size={60} color="white" />
-                 )}
+                {profile?.avatar_url ? (
+                  <Image
+                    source={{ uri: profile.avatar_url }}
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                ) : (
+                  <MaterialCommunityIcons name="office-building" size={60} color="white" />
+                )}
               </View>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.logoEditBtn}
                 onPress={handleImageUpload}
-                disabled={uploadingImage}
-              >
-                 {uploadingImage ? (
-                   <ActivityIndicator size="small" color="white" />
-                 ) : (
-                   <Feather name="camera" size={16} color="white" />
-                 )}
+                disabled={uploadingImage}>
+                {uploadingImage ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <Feather name="camera" size={16} color="white" />
+                )}
               </TouchableOpacity>
             </View>
-            
-            <Text style={styles.companyName}>
-              {profile?.full_name || 'TechFlow Inc.'}
-            </Text>
-            
+
+            <Text style={styles.companyName}>{profile?.full_name || 'TechFlow Inc.'}</Text>
+
             <View style={styles.categoryBadge}>
-                 <Text style={styles.categoryText}>{profile.category || 'Software & Tecnología'}</Text>
+              <Text style={styles.categoryText}>{profile.category || 'Software & Tecnología'}</Text>
             </View>
-            
+
             <View style={styles.locationRow}>
               <Ionicons name="location" size={14} color="#FF005C" />
               <Text style={styles.locationText}>{profile.location}</Text>
             </View>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => navigation.navigate('EditBusinessProfile', { profile })}
-              style={styles.editBtn}
-            >
+              style={styles.editBtn}>
               <Feather name="edit-3" size={18} color="#FF005C" />
               <Text style={styles.editBtnText}>Gestionar Información</Text>
             </TouchableOpacity>
@@ -194,8 +190,8 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
 
           {/* Stats Bar */}
           <View style={styles.statsRow}>
-             <LocalStatCard label="Vacantes Activas" value={jobsCount.toString()} />
-             <LocalStatCard label="Candidatos" value={candidatesCount.toString()} />
+            <LocalStatCard label="Vacantes Activas" value={jobsCount.toString()} />
+            <LocalStatCard label="Candidatos" value={candidatesCount.toString()} />
           </View>
 
           {/* Corporate Details Section */}
@@ -203,25 +199,81 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Detalles Corporativos</Text>
             </View>
-            <View style={{ backgroundColor: '#121214', padding: 24, borderRadius: 28, borderWidth: 1, borderColor: 'rgba(255,255,255,0.03)' }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 }}>
+            <View
+              style={{
+                backgroundColor: '#121214',
+                padding: 24,
+                borderRadius: 28,
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.03)',
+              }}>
+              <View
+                style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: '#475569', fontSize: 10, marginBottom: 8, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 }}>NIT / ID Fiscal</Text>
-                  <Text style={{ color: '#FFF', fontWeight: '900', fontSize: 15 }}>{profile?.tax_id || 'No registrado'}</Text>
+                  <Text
+                    style={{
+                      color: '#475569',
+                      fontSize: 10,
+                      marginBottom: 8,
+                      fontWeight: '800',
+                      textTransform: 'uppercase',
+                      letterSpacing: 1,
+                    }}>
+                    NIT / ID Fiscal
+                  </Text>
+                  <Text style={{ color: '#FFF', fontWeight: '900', fontSize: 15 }}>
+                    {profile?.tax_id || 'No registrado'}
+                  </Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: '#475569', fontSize: 10, marginBottom: 8, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 }}>Fundación</Text>
-                  <Text style={{ color: '#FFF', fontWeight: '900', fontSize: 15 }}>{profile?.creation_date || 'No registrada'}</Text>
+                  <Text
+                    style={{
+                      color: '#475569',
+                      fontSize: 10,
+                      marginBottom: 8,
+                      fontWeight: '800',
+                      textTransform: 'uppercase',
+                      letterSpacing: 1,
+                    }}>
+                    Fundación
+                  </Text>
+                  <Text style={{ color: '#FFF', fontWeight: '900', fontSize: 15 }}>
+                    {profile?.creation_date || 'No registrada'}
+                  </Text>
                 </View>
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: '#475569', fontSize: 10, marginBottom: 8, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 }}>Área de Negocio</Text>
-                  <Text style={{ color: '#FFF', fontWeight: '900', fontSize: 15 }}>{profile?.business_area || 'No registrada'}</Text>
+                  <Text
+                    style={{
+                      color: '#475569',
+                      fontSize: 10,
+                      marginBottom: 8,
+                      fontWeight: '800',
+                      textTransform: 'uppercase',
+                      letterSpacing: 1,
+                    }}>
+                    Área de Negocio
+                  </Text>
+                  <Text style={{ color: '#FFF', fontWeight: '900', fontSize: 15 }}>
+                    {profile?.business_area || 'No registrada'}
+                  </Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: '#475569', fontSize: 10, marginBottom: 8, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 }}>Sector principal</Text>
-                  <Text style={{ color: '#FFF', fontWeight: '900', fontSize: 15 }}>{profile?.industry || profile?.category || 'No registrado'}</Text>
+                  <Text
+                    style={{
+                      color: '#475569',
+                      fontSize: 10,
+                      marginBottom: 8,
+                      fontWeight: '800',
+                      textTransform: 'uppercase',
+                      letterSpacing: 1,
+                    }}>
+                    Sector principal
+                  </Text>
+                  <Text style={{ color: '#FFF', fontWeight: '900', fontSize: 15 }}>
+                    {profile?.industry || profile?.category || 'No registrado'}
+                  </Text>
                 </View>
               </View>
             </View>
@@ -235,14 +287,42 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
             {profile?.company_tags ? (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
                 {profile.company_tags.split(',').map((tag: string, index: number) => (
-                  <View key={index} style={{ backgroundColor: 'rgba(255,0,92,0.08)', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,0,92,0.2)' }}>
-                    <Text style={{ color: '#FF005C', fontWeight: '800', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>{tag.trim()}</Text>
+                  <View
+                    key={index}
+                    style={{
+                      backgroundColor: 'rgba(255,0,92,0.08)',
+                      paddingHorizontal: 18,
+                      paddingVertical: 10,
+                      borderRadius: 20,
+                      borderWidth: 1,
+                      borderColor: 'rgba(255,0,92,0.2)',
+                    }}>
+                    <Text
+                      style={{
+                        color: '#FF005C',
+                        fontWeight: '800',
+                        fontSize: 12,
+                        textTransform: 'uppercase',
+                        letterSpacing: 0.5,
+                      }}>
+                      {tag.trim()}
+                    </Text>
                   </View>
                 ))}
               </View>
             ) : (
-              <View style={{ backgroundColor: '#121214', padding: 24, borderRadius: 28, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.03)' }}>
-                 <Text style={{ color: '#475569', fontSize: 13, fontWeight: '600' }}>Aún no se han añadido etiquetas.</Text>
+              <View
+                style={{
+                  backgroundColor: '#121214',
+                  padding: 24,
+                  borderRadius: 28,
+                  alignItems: 'center',
+                  borderWidth: 1,
+                  borderColor: 'rgba(255,255,255,0.03)',
+                }}>
+                <Text style={{ color: '#475569', fontSize: 13, fontWeight: '600' }}>
+                  Aún no se han añadido etiquetas.
+                </Text>
               </View>
             )}
           </View>
@@ -252,16 +332,39 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Presentación Institucional</Text>
             </View>
-            <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#121214', padding: 20, borderRadius: 28, borderWidth: 1, borderColor: profile?.pdf_name ? 'rgba(255,0,92,0.3)' : 'rgba(255,255,255,0.03)' }}>
-              <View style={{ width: 50, height: 50, borderRadius: 16, backgroundColor: profile?.pdf_name ? 'rgba(255,0,92,0.1)' : '#1A1A1C', alignItems: 'center', justifyContent: 'center' }}>
-                 <MaterialCommunityIcons name={profile?.pdf_name ? "file-pdf-box" : "file-outline"} size={28} color={profile?.pdf_name ? "#FF005C" : "#475569"} />
+            <TouchableOpacity
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: '#121214',
+                padding: 20,
+                borderRadius: 28,
+                borderWidth: 1,
+                borderColor: profile?.pdf_name ? 'rgba(255,0,92,0.3)' : 'rgba(255,255,255,0.03)',
+              }}>
+              <View
+                style={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: 16,
+                  backgroundColor: profile?.pdf_name ? 'rgba(255,0,92,0.1)' : '#1A1A1C',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                <MaterialCommunityIcons
+                  name={profile?.pdf_name ? 'file-pdf-box' : 'file-outline'}
+                  size={28}
+                  color={profile?.pdf_name ? '#FF005C' : '#475569'}
+                />
               </View>
               <View style={{ marginLeft: 16, flex: 1 }}>
                 <Text style={{ color: '#FFF', fontWeight: '900', fontSize: 15, marginBottom: 4 }}>
                   {profile?.pdf_name ? profile.pdf_name : 'Sin documento adjunto'}
                 </Text>
                 <Text style={{ color: '#94a3b8', fontSize: 12, fontWeight: '500', lineHeight: 18 }}>
-                  {profile?.pdf_name ? 'Documento visible para todos los candidatos' : 'Puedes subirlo desde la edición del perfil'}
+                  {profile?.pdf_name
+                    ? 'Documento visible para todos los candidatos'
+                    : 'Puedes subirlo desde la edición del perfil'}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -271,71 +374,70 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Cultura y Misión</Text>
             <View style={styles.descriptionCard}>
-               <Text style={styles.descriptionText}>
-                 {profile.culture || 'Añade información sobre la cultura y misión de tu empresa.'}
-               </Text>
+              <Text style={styles.descriptionText}>
+                {profile.culture || 'Añade información sobre la cultura y misión de tu empresa.'}
+              </Text>
             </View>
           </View>
 
           {/* Recent Jobs */}
           <View style={styles.section}>
-             <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Recent Postings</Text>
-                <TouchableOpacity>
-                  <Text style={styles.seeAllText}>View All</Text>
-                </TouchableOpacity>
-             </View>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Recent Postings</Text>
+              <TouchableOpacity>
+                <Text style={styles.seeAllText}>View All</Text>
+              </TouchableOpacity>
+            </View>
 
-              {/* Dynamic Jobs */}
-             {recentJobs.length > 0 ? recentJobs.map(job => (
-               <TouchableOpacity 
-                 key={job.id} 
-                 style={styles.miniJobCard}
-                 onPress={() => navigation.navigate('Vacantes', { screen: 'JobDetail', params: { job } })}
-               >
+            {/* Dynamic Jobs */}
+            {recentJobs.length > 0 ? (
+              recentJobs.map((job) => (
+                <TouchableOpacity
+                  key={job.id}
+                  style={styles.miniJobCard}
+                  onPress={() =>
+                    navigation.navigate('Vacantes', { screen: 'JobDetail', params: { job } })
+                  }>
                   <View style={styles.miniJobIcon}>
-                      <MaterialCommunityIcons name="briefcase-outline" size={24} color="#FF005C" />
+                    <MaterialCommunityIcons name="briefcase-outline" size={24} color="#FF005C" />
                   </View>
                   <View style={styles.miniJobContent}>
-                     <Text style={styles.miniJobTitle} numberOfLines={1}>{job.title}</Text>
-                     <Text style={styles.miniJobMeta}>{job.location} • {job.modality || 'Presencial'}</Text>
+                    <Text style={styles.miniJobTitle} numberOfLines={1}>
+                      {job.title}
+                    </Text>
+                    <Text style={styles.miniJobMeta}>
+                      {job.location} • {job.modality || 'Presencial'}
+                    </Text>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color="#1A1A1C" />
-               </TouchableOpacity>
-             )) : (
-               <View style={{ padding: 20, alignItems: 'center' }}>
-                  <Text style={{ color: '#475569', fontSize: 12 }}>No tienes ofertas recientes.</Text>
-               </View>
-             )}
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={{ padding: 20, alignItems: 'center' }}>
+                <Text style={{ color: '#475569', fontSize: 12 }}>No tienes ofertas recientes.</Text>
+              </View>
+            )}
 
-             {/* Add New CTA */}
-             <TouchableOpacity 
-                onPress={() => navigation.navigate('Vacantes', { screen: 'CreateVacante' })}
-                style={styles.createCta}
-             >
-                <Ionicons name="add-circle-outline" size={20} color="#475569" />
-                <Text style={styles.createCtaText}>Publish New Opening</Text>
-             </TouchableOpacity>
+            {/* Add New CTA */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Vacantes', { screen: 'CreateVacante' })}
+              style={styles.createCta}>
+              <Ionicons name="add-circle-outline" size={20} color="#475569" />
+              <Text style={styles.createCtaText}>Publish New Opening</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Bottom Actions */}
           <View style={styles.footerActions}>
-            <TouchableOpacity 
-              onPress={handleLogout}
-              style={styles.logoutBtn}
-            >
-               <Feather name="log-out" size={18} color="#FF3B30" />
-               <Text style={styles.logoutText}>Cerrar Sesión</Text>
+            <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
+              <Feather name="log-out" size={18} color="#FF3B30" />
+              <Text style={styles.logoutText}>Cerrar Sesión</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
-              onPress={() => setShowDeleteModal(true)}
-              style={styles.deleteCta}
-            >
-               <Text style={styles.deleteText}>Eliminar Cuenta Permanente</Text>
+            <TouchableOpacity onPress={() => setShowDeleteModal(true)} style={styles.deleteCta}>
+              <Text style={styles.deleteText}>Eliminar Cuenta Permanente</Text>
             </TouchableOpacity>
           </View>
-
         </ScrollView>
 
         {/* Logout Confirmation Modal */}
@@ -602,5 +704,5 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     textTransform: 'uppercase',
     letterSpacing: 1.5,
-  }
+  },
 });

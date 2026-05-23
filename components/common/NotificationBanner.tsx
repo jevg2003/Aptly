@@ -40,23 +40,16 @@ export const NotificationBanner = () => {
   if (!notification) return null;
 
   return (
-    <Animated.View 
-      style={[
-        styles.container,
-        { transform: [{ translateY: slideAnim }] }
-      ]}
-    >
-      <TouchableOpacity 
-        style={styles.banner} 
-        onPress={hideBanner}
-        activeOpacity={0.9}
-      >
+    <Animated.View style={[styles.container, { transform: [{ translateY: slideAnim }] }]}>
+      <TouchableOpacity style={styles.banner} onPress={hideBanner} activeOpacity={0.9}>
         <View style={styles.iconContainer}>
           <Ionicons name="chatbubble-ellipses" size={24} color="#FF005C" />
         </View>
         <View style={styles.content}>
           <Text style={styles.title}>{notification.title}</Text>
-          <Text style={styles.body} numberOfLines={1}>{notification.body}</Text>
+          <Text style={styles.body} numberOfLines={1}>
+            {notification.body}
+          </Text>
         </View>
         <TouchableOpacity onPress={hideBanner}>
           <Ionicons name="close" size={20} color="#475569" />

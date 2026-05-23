@@ -10,19 +10,14 @@
     "experiments": {
       "tsconfigPaths": true
     },
-    "plugins": [
-      "expo-web-browser",
-      "@react-native-community/datetimepicker"
-    ],
+    "plugins": ["expo-web-browser", "@react-native-community/datetimepicker"],
     "orientation": "portrait",
     "icon": "./assets/favicon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
       "backgroundColor": "#050505"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true
     },

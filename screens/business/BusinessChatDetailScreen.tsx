@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  Image, 
-  FlatList, 
-  TextInput, 
-  KeyboardAvoidingView, 
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  FlatList,
+  TextInput,
+  KeyboardAvoidingView,
   Platform,
   StatusBar,
   StyleSheet,
@@ -22,12 +22,12 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring, 
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
   runOnJS,
-  interpolate
+  interpolate,
 } from 'react-native-reanimated';
 
 import { useBusinessChat } from '../../lib/BusinessChatContext';
@@ -50,15 +50,15 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
   const [resumeVisible, setResumeVisible] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [isAttachmentMenuVisible, setAttachmentMenuVisible] = useState(false);
-  const [menuData, setMenuData] = useState<{ message: any, x: number, y: number } | null>(null);
+  const [menuData, setMenuData] = useState<{ message: any; x: number; y: number } | null>(null);
   const [isSending, setIsSending] = useState(false);
   const didSendAutoMessage = useRef(false);
   const flatListRef = useRef<FlatList>(null);
 
   // Find the live conversation object from context
-  const conversation = conversations?.find((c: any) => 
-    c.id === (initialConversation?.id || conversationId)
-  ) || initialConversation;
+  const conversation =
+    conversations?.find((c: any) => c.id === (initialConversation?.id || conversationId)) ||
+    initialConversation;
 
   const messages = conversation?.messages || [];
 
@@ -68,7 +68,7 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
       if (!conversation) {
         setLoadingError(true);
       }
-    }, 3500); 
+    }, 3500);
     return () => clearTimeout(timer);
   }, [conversation]);
 
@@ -88,7 +88,7 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
 
   const handleSend = async () => {
     if (!messageText.trim()) return;
-    
+
     const options: any = {};
     if (replyingTo) {
       options.replyToId = replyingTo.id;
@@ -122,24 +122,24 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
         }
       }
 
-      const result = useCamera 
+      const result = useCamera
         ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 1 })
         : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
-      
+
       setAttachmentMenuVisible(false);
-      
+
       if (!result.canceled) {
-         try {
-           const uri = result.assets[0].uri;
-           const manipResult = await ImageManipulator.manipulateAsync(
-             uri,
-             [{ resize: { width: 800 } }],
-             { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
-           );
-           await uploadFile(manipResult.uri, 'image');
-         } catch (error) {
-           console.error('Error procesando imagen:', error);
-         }
+        try {
+          const uri = result.assets[0].uri;
+          const manipResult = await ImageManipulator.manipulateAsync(
+            uri,
+            [{ resize: { width: 800 } }],
+            { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+          );
+          await uploadFile(manipResult.uri, 'image');
+        } catch (error) {
+          console.error('Error procesando imagen:', error);
+        }
       }
     } catch (e) {
       console.error('Error al seleccionar imagen', e);
@@ -151,17 +151,16 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
     try {
       const result = await DocumentPicker.getDocumentAsync({ type: 'application/pdf' });
       setAttachmentMenuVisible(false);
-      
+
       if (!result.canceled) {
-         const asset = result.assets[0];
-         await uploadFile(asset.uri, 'file', asset.name);
+        const asset = result.assets[0];
+        await uploadFile(asset.uri, 'file', asset.name);
       }
     } catch (e) {
       console.error('Error al seleccionar documento', e);
       setAttachmentMenuVisible(false);
     }
   };
-
 
   const uploadFile = async (uri: string, type: 'image' | 'file', name?: string) => {
     try {
@@ -176,21 +175,18 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
         type: type === 'image' ? 'image/jpeg' : 'application/pdf',
       } as any);
 
-      const { error } = await supabase.storage
-        .from('chat-attachments')
-        .upload(path, formData);
+      const { error } = await supabase.storage.from('chat-attachments').upload(path, formData);
 
       if (error) throw error;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('chat-attachments')
-        .getPublicUrl(path);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('chat-attachments').getPublicUrl(path);
 
       sendMessage(conversation.id, type === 'image' ? 'Sent an image' : `Document: ${filename}`, {
         type,
-        metadata: { url: publicUrl, name: filename }
+        metadata: { url: publicUrl, name: filename },
       });
-
     } catch (err) {
       console.error('Upload error:', err);
       showToast('No se pudo subir el archivo', 'error');
@@ -202,14 +198,14 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
   const MessageBubble = ({ item }: { item: any }) => {
     const isMe = item.senderId === 'me';
     const isDeleted = !!item.deletedAt;
-    
+
     // Gesture for Swipe to Reply
     const translateX = useSharedValue(0);
     const context = useSharedValue({ x: 0 });
 
     const gesture = Gesture.Pan()
-      .activeOffsetX([0, 10]) 
-      .failOffsetY([-5, 5]) 
+      .activeOffsetX([0, 10])
+      .failOffsetY([-5, 5])
       .onStart(() => {
         context.value = { x: translateX.value };
       })
@@ -227,17 +223,17 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
       });
 
     const animatedStyle = useAnimatedStyle(() => ({
-      transform: [{ translateX: translateX.value }]
+      transform: [{ translateX: translateX.value }],
     }));
 
     const replyIconStyle = useAnimatedStyle(() => ({
       opacity: interpolate(translateX.value, [0, 50], [0, 1]),
-      transform: [{ scale: interpolate(translateX.value, [0, 50], [0.5, 1]) }]
+      transform: [{ scale: interpolate(translateX.value, [0, 50], [0.5, 1]) }],
     }));
 
     const handleLongPress = (event: any) => {
       if (isDeleted) return;
-      
+
       const { pageX, pageY } = event.nativeEvent;
       // Localized position calculation
       const menuX = pageX > SCREEN_WIDTH * 0.6 ? pageX - 160 : pageX;
@@ -262,30 +258,37 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
       }
     }
 
-    const parentMessage = item.replyToId ? messages.find((m: any) => m.id === item.replyToId) : null;
+    const parentMessage = item.replyToId
+      ? messages.find((m: any) => m.id === item.replyToId)
+      : null;
 
     return (
       <View style={styles.msgWrapper}>
         <Animated.View style={[styles.replyIndicator, replyIconStyle]}>
-           <Ionicons name="arrow-undo" size={20} color="#FF005C" />
+          <Ionicons name="arrow-undo" size={20} color="#FF005C" />
         </Animated.View>
 
         <GestureDetector gesture={gesture}>
-          <Animated.View style={[styles.msgContainer, isMe ? styles.msgMe : styles.msgOther, animatedStyle]}>
-            <TouchableOpacity 
-              onLongPress={(e) => handleLongPress(e)} 
-              activeOpacity={0.9} 
+          <Animated.View
+            style={[styles.msgContainer, isMe ? styles.msgMe : styles.msgOther, animatedStyle]}>
+            <TouchableOpacity
+              onLongPress={(e) => handleLongPress(e)}
+              activeOpacity={0.9}
               disabled={isDeleted}
-              delayLongPress={350}
-            >
-              
+              delayLongPress={350}>
               {/* Replying to Context */}
               {parentMessage && (
-                <View style={[styles.replyContext, isMe ? styles.replyContextMe : styles.replyContextOther]}>
-                   <Text style={styles.replyName} numberOfLines={1}>
-                     {parentMessage.senderId === 'me' ? 'Tú' : conversation.participant.name}
-                   </Text>
-                   <Text style={styles.replyText} numberOfLines={1}>{parentMessage.text}</Text>
+                <View
+                  style={[
+                    styles.replyContext,
+                    isMe ? styles.replyContextMe : styles.replyContextOther,
+                  ]}>
+                  <Text style={styles.replyName} numberOfLines={1}>
+                    {parentMessage.senderId === 'me' ? 'Tú' : conversation.participant.name}
+                  </Text>
+                  <Text style={styles.replyText} numberOfLines={1}>
+                    {parentMessage.text}
+                  </Text>
                 </View>
               )}
 
@@ -293,30 +296,33 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
               {displayType === 'image' && !isDeleted && displayUrl && (
                 <Image source={{ uri: displayUrl }} style={styles.msgImage} resizeMode="cover" />
               )}
-              
+
               {displayType === 'file' && !isDeleted && displayUrl && (
-                <TouchableOpacity style={styles.fileContainer} onPress={() => showToast('Abriendo archivo...', 'info')}>
-                   <Ionicons name="document-text" size={32} color={isMe ? 'white' : '#FF005C'} />
-                   <View style={{ marginLeft: 10 }}>
-                      <Text style={[styles.fileName, { color: isMe ? 'white' : 'white' }]}>
-                        {item.metadata?.name || displayUrl.split('/').pop() || 'Archivo'}
-                      </Text>
-                      <Text style={styles.fileSize}>PDF Document</Text>
-                   </View>
+                <TouchableOpacity
+                  style={styles.fileContainer}
+                  onPress={() => showToast('Abriendo archivo...', 'info')}>
+                  <Ionicons name="document-text" size={32} color={isMe ? 'white' : '#FF005C'} />
+                  <View style={{ marginLeft: 10 }}>
+                    <Text style={[styles.fileName, { color: isMe ? 'white' : 'white' }]}>
+                      {item.metadata?.name || displayUrl.split('/').pop() || 'Archivo'}
+                    </Text>
+                    <Text style={styles.fileSize}>PDF Document</Text>
+                  </View>
                 </TouchableOpacity>
               )}
 
               {/* Text Content */}
               {displayType !== 'image' && displayType !== 'file' && (
-                <Text style={[
-                  styles.msgText, 
-                  isMe ? styles.textMe : styles.textOther,
-                  isDeleted ? styles.textDeleted : null
-                ]}>
+                <Text
+                  style={[
+                    styles.msgText,
+                    isMe ? styles.textMe : styles.textOther,
+                    isDeleted ? styles.textDeleted : null,
+                  ]}>
                   {isDeleted ? 'Este mensaje fue eliminado' : item.text}
                 </Text>
               )}
-              
+
               <Text style={[styles.timestamp, isMe ? styles.tsMe : styles.tsOther]}>
                 {item.timestamp}
               </Text>
@@ -332,40 +338,45 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
       <View style={{ flex: 1, backgroundColor: '#050505' }}>
         <StatusBar barStyle="light-content" />
         <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-          
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
               <Ionicons name="arrow-back" size={24} color="white" />
             </TouchableOpacity>
-            
+
             {conversation ? (
-              <TouchableOpacity 
-                style={styles.participantInfo} 
+              <TouchableOpacity
+                style={styles.participantInfo}
                 onPress={() => setResumeVisible(true)}
-                activeOpacity={0.7}
-              >
-                 <View style={styles.avatarContainer}>
-                    {conversation.participant.avatar ? (
-                        <Image source={{ uri: conversation.participant.avatar }} style={styles.headerAvatar} />
-                    ) : (
-                        <Text style={styles.avatarInitial}>{conversation.participant.name.charAt(0)}</Text>
-                    )}
-                 </View>
-                 <View style={{ marginLeft: 12 }}>
-                    <Text style={styles.participantName}>{conversation.participant.name}</Text>
-                    <Text style={styles.participantRole}>
-                      {conversation.jobTitle || conversation.participant.role}
+                activeOpacity={0.7}>
+                <View style={styles.avatarContainer}>
+                  {conversation.participant.avatar ? (
+                    <Image
+                      source={{ uri: conversation.participant.avatar }}
+                      style={styles.headerAvatar}
+                    />
+                  ) : (
+                    <Text style={styles.avatarInitial}>
+                      {conversation.participant.name.charAt(0)}
                     </Text>
-                 </View>
+                  )}
+                </View>
+                <View style={{ marginLeft: 12 }}>
+                  <Text style={styles.participantName}>{conversation.participant.name}</Text>
+                  <Text style={styles.participantRole}>
+                    {conversation.jobTitle || conversation.participant.role}
+                  </Text>
+                </View>
               </TouchableOpacity>
             ) : (
               <View style={{ flex: 1, justifyContent: 'center' }}>
-                 {loadingError ? (
-                   <Text style={{ color: '#64748b', fontSize: 12, textAlign: 'center' }}>Error al cargar chat</Text>
-                 ) : (
-                   <ActivityIndicator size="small" color="#FF005C" />
-                 )}
+                {loadingError ? (
+                  <Text style={{ color: '#64748b', fontSize: 12, textAlign: 'center' }}>
+                    Error al cargar chat
+                  </Text>
+                ) : (
+                  <ActivityIndicator size="small" color="#FF005C" />
+                )}
               </View>
             )}
 
@@ -374,10 +385,9 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
             </TouchableOpacity>
           </View>
 
-          <KeyboardAvoidingView 
-            style={{ flex: 1 }} 
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          >
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <FlatList
               ref={flatListRef}
               data={messages}
@@ -391,34 +401,51 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
             {/* Replying Preview Area */}
             {replyingTo && (
               <View style={styles.replyPreview}>
-                 <View style={styles.replyBar} />
-                 <View style={{ flex: 1, paddingHorizontal: 15 }}>
-                    <Text style={styles.replyPreviewName}>Respondiendo a {replyingTo.senderId === 'me' ? 'ti mismo' : conversation.participant.name}</Text>
-                    <Text style={styles.replyPreviewText} numberOfLines={1}>{replyingTo.text}</Text>
-                 </View>
-                 <TouchableOpacity onPress={() => setReplyingTo(null)} style={styles.closeReply}>
-                    <Ionicons name="close" size={20} color="#94a3b8" />
-                 </TouchableOpacity>
+                <View style={styles.replyBar} />
+                <View style={{ flex: 1, paddingHorizontal: 15 }}>
+                  <Text style={styles.replyPreviewName}>
+                    Respondiendo a{' '}
+                    {replyingTo.senderId === 'me' ? 'ti mismo' : conversation.participant.name}
+                  </Text>
+                  <Text style={styles.replyPreviewText} numberOfLines={1}>
+                    {replyingTo.text}
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={() => setReplyingTo(null)} style={styles.closeReply}>
+                  <Ionicons name="close" size={20} color="#94a3b8" />
+                </TouchableOpacity>
               </View>
             )}
 
             {/* Footer Input */}
             {conversation?.participant?.deletedAt ? (
-              <View style={[styles.footer, { justifyContent: 'center', alignItems: 'center', paddingVertical: 20 }]}>
-                <Ionicons name="information-circle-outline" size={20} color="#64748b" style={{ marginBottom: 4 }} />
+              <View
+                style={[
+                  styles.footer,
+                  { justifyContent: 'center', alignItems: 'center', paddingVertical: 20 },
+                ]}>
+                <Ionicons
+                  name="information-circle-outline"
+                  size={20}
+                  color="#64748b"
+                  style={{ marginBottom: 4 }}
+                />
                 <Text style={{ color: '#64748b', fontSize: 13, textAlign: 'center' }}>
-                  No puedes responder a esta conversación porque la cuenta del usuario fue eliminada.
+                  No puedes responder a esta conversación porque la cuenta del usuario fue
+                  eliminada.
                 </Text>
               </View>
             ) : (
               <View style={styles.footer}>
                 <View style={styles.inputContainer}>
-                  <TouchableOpacity style={styles.attachmentBtn} onPress={() => {
-                    setAttachmentMenuVisible(true);
-                  }}>
+                  <TouchableOpacity
+                    style={styles.attachmentBtn}
+                    onPress={() => {
+                      setAttachmentMenuVisible(true);
+                    }}>
                     <Ionicons name="add" size={24} color="#FF005C" />
                   </TouchableOpacity>
-                  
+
                   <TextInput
                     placeholder="Escribe un mensaje..."
                     placeholderTextColor="#64748b"
@@ -427,20 +454,26 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
                     onChangeText={setMessageText}
                     multiline
                   />
-                  
-                  <TouchableOpacity 
+
+                  <TouchableOpacity
                     onPress={handleSend}
                     disabled={!messageText.trim() && !uploading}
-                    style={[styles.sendBtn, { backgroundColor: messageText.trim() ? '#FF005C' : '#333' }]}
-                  >
-                    {uploading ? <ActivityIndicator size="small" color="white" /> : <Ionicons name="send" size={18} color="white" />}
+                    style={[
+                      styles.sendBtn,
+                      { backgroundColor: messageText.trim() ? '#FF005C' : '#333' },
+                    ]}>
+                    {uploading ? (
+                      <ActivityIndicator size="small" color="white" />
+                    ) : (
+                      <Ionicons name="send" size={18} color="white" />
+                    )}
                   </TouchableOpacity>
                 </View>
               </View>
             )}
           </KeyboardAvoidingView>
 
-          <ObsidianConfirm 
+          <ObsidianConfirm
             visible={confirmVisible}
             title={confirmData?.title || ''}
             message={confirmData?.message || ''}
@@ -451,78 +484,69 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
 
           {/* Context Menu Overlay */}
           {menuVisible && menuData && (
-            <TouchableOpacity 
-              style={styles.menuOverlay} 
-              activeOpacity={1} 
-              onPress={() => setMenuVisible(false)}
-            >
-               <View 
-                 style={[
-                   styles.contextMenu, 
-                   { top: menuData.y, left: menuData.x }
-                 ]}
-               >
-                  <TouchableOpacity 
-                    style={styles.menuOption} 
-                    onPress={() => {
-                      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                      setReplyingTo(menuData.message);
-                      setMenuVisible(false);
-                    }}
-                  >
-                     <Ionicons name="arrow-undo-outline" size={18} color="white" />
-                     <Text style={styles.menuOptionText}>Responder</Text>
-                  </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.menuOverlay}
+              activeOpacity={1}
+              onPress={() => setMenuVisible(false)}>
+              <View style={[styles.contextMenu, { top: menuData.y, left: menuData.x }]}>
+                <TouchableOpacity
+                  style={styles.menuOption}
+                  onPress={() => {
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    setReplyingTo(menuData.message);
+                    setMenuVisible(false);
+                  }}>
+                  <Ionicons name="arrow-undo-outline" size={18} color="white" />
+                  <Text style={styles.menuOptionText}>Responder</Text>
+                </TouchableOpacity>
 
-                  <View style={styles.menuDivider} />
+                <View style={styles.menuDivider} />
 
-                  <TouchableOpacity 
-                    style={styles.menuOption} 
-                    onPress={() => {
-                      showToast('Mensaje copiado', 'success');
-                      setMenuVisible(false);
-                    }}
-                  >
-                     <Ionicons name="copy-outline" size={18} color="white" />
-                     <Text style={styles.menuOptionText}>Copiar</Text>
-                  </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.menuOption}
+                  onPress={() => {
+                    showToast('Mensaje copiado', 'success');
+                    setMenuVisible(false);
+                  }}>
+                  <Ionicons name="copy-outline" size={18} color="white" />
+                  <Text style={styles.menuOptionText}>Copiar</Text>
+                </TouchableOpacity>
 
-                  {menuData.message.senderId === 'me' && (
-                    <>
-                      <View style={styles.menuDivider} />
-                      <TouchableOpacity 
-                        style={styles.menuOption} 
-                        onPress={() => {
-                          setMenuVisible(false);
-                          setConfirmData({
-                            title: 'ELIMINAR MENSAJE',
-                            message: '¿Borrar para todos?',
-                            onConfirm: () => {
-                              deleteMessage(menuData.message.id, true);
-                              setConfirmVisible(false);
-                            },
-                            type: 'danger'
-                          });
-                          setConfirmVisible(true);
-                        }}
-                      >
-                         <Ionicons name="trash-outline" size={18} color="#FF3B30" />
-                         <Text style={[styles.menuOptionText, { color: '#FF3B30' }]}>Eliminar</Text>
-                      </TouchableOpacity>
-                    </>
-                  )}
-               </View>
+                {menuData.message.senderId === 'me' && (
+                  <>
+                    <View style={styles.menuDivider} />
+                    <TouchableOpacity
+                      style={styles.menuOption}
+                      onPress={() => {
+                        setMenuVisible(false);
+                        setConfirmData({
+                          title: 'ELIMINAR MENSAJE',
+                          message: '¿Borrar para todos?',
+                          onConfirm: () => {
+                            deleteMessage(menuData.message.id, true);
+                            setConfirmVisible(false);
+                          },
+                          type: 'danger',
+                        });
+                        setConfirmVisible(true);
+                      }}>
+                      <Ionicons name="trash-outline" size={18} color="#FF3B30" />
+                      <Text style={[styles.menuOptionText, { color: '#FF3B30' }]}>Eliminar</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
             </TouchableOpacity>
           )}
 
           {/* Profile Modal */}
           {conversation && (
-            <CandidateResumePreview 
+            <CandidateResumePreview
               profile={{
                 id: conversation.participant.id,
                 full_name: conversation.participant.name,
                 avatar_url: conversation.participant.avatar,
-                professional_title: conversation.participant.role
+                professional_title: conversation.participant.role,
               }}
               onClose={() => setResumeVisible(false)}
               isVisible={resumeVisible}
@@ -536,49 +560,91 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
             visible={isAttachmentMenuVisible}
             transparent
             animationType="fade"
-            onRequestClose={() => setAttachmentMenuVisible(false)}
-          >
-            <TouchableOpacity 
+            onRequestClose={() => setAttachmentMenuVisible(false)}>
+            <TouchableOpacity
               style={styles.menuOverlay}
               activeOpacity={1}
-              onPress={() => setAttachmentMenuVisible(false)}
-            >
-              <TouchableOpacity activeOpacity={1} style={{
-                 backgroundColor: '#121214',
-                 borderTopWidth: 1,
-                 borderTopColor: 'rgba(255,255,255,0.1)',
-                 borderTopLeftRadius: 24,
-                 borderTopRightRadius: 24,
-                 padding: 24,
-                 paddingBottom: 40,
-                 position: 'absolute',
-                 bottom: 0,
-                 left: 0,
-                 right: 0
-              }}>
-                <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold', marginBottom: 24, textAlign: 'center' }}>Adjuntar archivo</Text>
-                
+              onPress={() => setAttachmentMenuVisible(false)}>
+              <TouchableOpacity
+                activeOpacity={1}
+                style={{
+                  backgroundColor: '#121214',
+                  borderTopWidth: 1,
+                  borderTopColor: 'rgba(255,255,255,0.1)',
+                  borderTopLeftRadius: 24,
+                  borderTopRightRadius: 24,
+                  padding: 24,
+                  paddingBottom: 40,
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                }}>
+                <Text
+                  style={{
+                    color: 'white',
+                    fontSize: 18,
+                    fontWeight: 'bold',
+                    marginBottom: 24,
+                    textAlign: 'center',
+                  }}>
+                  Adjuntar archivo
+                </Text>
+
                 <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-                   <TouchableOpacity style={{ alignItems: 'center' }} onPress={() => handleAttachImage(true)}>
-                      <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(0,163,255,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
-                         <Feather name="camera" size={24} color="#00A3FF" />
-                      </View>
-                      <Text style={{ color: '#cbd5e1', fontSize: 12 }}>Cámara</Text>
-                   </TouchableOpacity>
-                   
-                   <TouchableOpacity style={{ alignItems: 'center' }} onPress={() => handleAttachImage(false)}>
-                      <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(168,85,247,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
-                         <Feather name="image" size={24} color="#a855f7" />
-                      </View>
-                      <Text style={{ color: '#cbd5e1', fontSize: 12 }}>Fototeca</Text>
-                   </TouchableOpacity>
-                   
-                   <TouchableOpacity style={{ alignItems: 'center' }} onPress={() => handleAttachDocument()}>
-                      <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(249,115,22,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
-                         <Feather name="file-text" size={24} color="#f97316" />
-                      </View>
-                      <Text style={{ color: '#cbd5e1', fontSize: 12 }}>Archivo</Text>
-                   </TouchableOpacity>
+                  <TouchableOpacity
+                    style={{ alignItems: 'center' }}
+                    onPress={() => handleAttachImage(true)}>
+                    <View
+                      style={{
+                        width: 56,
+                        height: 56,
+                        borderRadius: 28,
+                        backgroundColor: 'rgba(0,163,255,0.2)',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: 8,
+                      }}>
+                      <Feather name="camera" size={24} color="#00A3FF" />
+                    </View>
+                    <Text style={{ color: '#cbd5e1', fontSize: 12 }}>Cámara</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={{ alignItems: 'center' }}
+                    onPress={() => handleAttachImage(false)}>
+                    <View
+                      style={{
+                        width: 56,
+                        height: 56,
+                        borderRadius: 28,
+                        backgroundColor: 'rgba(168,85,247,0.2)',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: 8,
+                      }}>
+                      <Feather name="image" size={24} color="#a855f7" />
+                    </View>
+                    <Text style={{ color: '#cbd5e1', fontSize: 12 }}>Fototeca</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={{ alignItems: 'center' }}
+                    onPress={() => handleAttachDocument()}>
+                    <View
+                      style={{
+                        width: 56,
+                        height: 56,
+                        borderRadius: 28,
+                        backgroundColor: 'rgba(249,115,22,0.2)',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: 8,
+                      }}>
+                      <Feather name="file-text" size={24} color="#f97316" />
+                    </View>
+                    <Text style={{ color: '#cbd5e1', fontSize: 12 }}>Archivo</Text>
+                  </TouchableOpacity>
                 </View>
               </TouchableOpacity>
             </TouchableOpacity>
@@ -597,32 +663,53 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: '#1e1e1e',
-    backgroundColor: '#1A1A1C'
+    backgroundColor: '#1A1A1C',
   },
   backBtn: { marginRight: 12 },
   participantInfo: { flexDirection: 'row', flex: 1, alignItems: 'center' },
   avatarContainer: { position: 'relative' },
   headerAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#334155' },
   avatarInitial: { color: '#94a3b8', fontWeight: 'bold' },
-  onlineDot: { position: 'absolute', bottom: 0, right: 0, width: 12, height: 12, backgroundColor: '#22c55e', borderRadius: 6, borderWidth: 2, borderColor: '#1A1A1C' },
+  onlineDot: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 12,
+    height: 12,
+    backgroundColor: '#22c55e',
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#1A1A1C',
+  },
   participantName: { color: 'white', fontWeight: 'bold', fontSize: 16 },
-  participantRole: { color: '#FF005C', fontSize: 10, fontWeight: '900', textTransform: 'uppercase' },
+  participantRole: {
+    color: '#FF005C',
+    fontSize: 10,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+  },
   moreBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  
+
   msgWrapper: { position: 'relative', marginBottom: 16 },
   replyIndicator: { position: 'absolute', left: -40, top: '40%' },
-  msgContainer: { 
-    maxWidth: '85%', 
-    padding: 12, 
+  msgContainer: {
+    maxWidth: '85%',
+    padding: 12,
     borderRadius: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3
+    elevation: 3,
   },
   msgMe: { alignSelf: 'flex-end', backgroundColor: '#FF005C', borderBottomRightRadius: 4 },
-  msgOther: { alignSelf: 'flex-start', backgroundColor: '#121214', borderBottomLeftRadius: 4, borderWidth: 1, borderColor: '#1e1e1e' },
+  msgOther: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#121214',
+    borderBottomLeftRadius: 4,
+    borderWidth: 1,
+    borderColor: '#1e1e1e',
+  },
   msgText: { fontSize: 14, lineHeight: 20 },
   textMe: { color: 'white' },
   textOther: { color: 'white' },
@@ -630,41 +717,73 @@ const styles = StyleSheet.create({
   timestamp: { fontSize: 9, marginTop: 4 },
   tsMe: { color: 'rgba(255,255,255,0.7)', textAlign: 'right' },
   tsOther: { color: '#64748b' },
-  
+
   replyContext: { padding: 8, borderRadius: 12, marginBottom: 8, borderLeftWidth: 3 },
   replyContextMe: { backgroundColor: 'rgba(0,0,0,0.2)', borderLeftColor: 'white' },
   replyContextOther: { backgroundColor: 'rgba(255,255,255,0.05)', borderLeftColor: '#FF005C' },
   replyName: { fontSize: 11, fontWeight: '900', color: '#FF005C' },
   replyText: { fontSize: 12, color: 'rgba(255,255,255,0.7)' },
-  
+
   msgImage: { width: 240, height: 180, borderRadius: 16, marginBottom: 8 },
-  fileContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.1)', padding: 12, borderRadius: 16, marginBottom: 8 },
+  fileContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    padding: 12,
+    borderRadius: 16,
+    marginBottom: 8,
+  },
   fileName: { fontSize: 13, fontWeight: 'bold' },
   fileSize: { fontSize: 10, color: '#94a3b8' },
 
-  footer: { padding: 16, paddingBottom: 24, borderTopWidth: 1, borderTopColor: '#1e1e1e', backgroundColor: '#1A1A1C' },
-  inputContainer: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#121214', 
-    padding: 6, 
-    borderRadius: 30, 
-    borderWidth: 1, 
-    borderColor: '#333' 
+  footer: {
+    padding: 16,
+    paddingBottom: 24,
+    borderTopWidth: 1,
+    borderTopColor: '#1e1e1e',
+    backgroundColor: '#1A1A1C',
   },
-  attachmentBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 22, backgroundColor: '#1A1A1C' },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#121214',
+    padding: 6,
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  attachmentBtn: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 22,
+    backgroundColor: '#1A1A1C',
+  },
   input: { flex: 1, color: 'white', fontSize: 14, paddingHorizontal: 12, maxHeight: 100 },
-  sendBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 22 },
-  
-  replyPreview: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    paddingVertical: 12, 
-    backgroundColor: '#0F0F10', 
-    borderTopWidth: 1, 
-    borderTopColor: '#1e1e1e' 
+  sendBtn: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 22,
   },
-  replyBar: { width: 4, height: 32, backgroundColor: '#FF005C', borderTopRightRadius: 4, borderBottomRightRadius: 4 },
+
+  replyPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    backgroundColor: '#0F0F10',
+    borderTopWidth: 1,
+    borderTopColor: '#1e1e1e',
+  },
+  replyBar: {
+    width: 4,
+    height: 32,
+    backgroundColor: '#FF005C',
+    borderTopRightRadius: 4,
+    borderBottomRightRadius: 4,
+  },
   replyPreviewName: { color: '#FF005C', fontWeight: '900', fontSize: 11 },
   replyPreviewText: { color: '#94a3b8', fontSize: 13, marginTop: 2 },
   closeReply: { padding: 10 },

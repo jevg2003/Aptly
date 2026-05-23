@@ -1,24 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Dimensions, 
-  TouchableOpacity, 
-  Image, 
-  StatusBar, 
-  Alert 
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  TouchableOpacity,
+  Image,
+  StatusBar,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring, 
-  interpolate, 
-  Extrapolate, 
-  runOnJS 
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  interpolate,
+  Extrapolate,
+  runOnJS,
 } from 'react-native-reanimated';
 import { SessionContext } from '../../lib/SessionContext';
 import { supabase } from '../../lib/supabase';
@@ -83,7 +83,7 @@ const MOCK_CANDIDATES: CandidateData[] = [
     role: 'Aux. Tienda',
     tags: ['Logística', 'Inventarios'],
     imageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&q=80',
-  }
+  },
 ];
 
 const CATEGORIES = ['Todos', 'Programador', 'Vendedor', 'Tienda'];
@@ -102,7 +102,8 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
       setLoading(true);
       const { data, error } = await supabase
         .from('applications')
-        .select(`
+        .select(
+          `
           id,
           status,
           jobs!inner(company_id),
@@ -110,63 +111,72 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
             id, full_name, avatar_url, location, phone, bio, professional_title,
             candidate_tags, industry_interests, experience_level, portfolio_url, linkedin_url, birth_date
           )
-        `)
+        `
+        )
         .eq('job_id', job.id)
         .eq('status', 'pending');
 
       if (error) throw error;
 
-      const mapped: CandidateData[] = (data || []).map(app => {
-         const profile = Array.isArray(app.profiles) ? app.profiles[0] : app.profiles;
-         let candTags: string[] = [];
-         let indInterests: string[] = [];
-         try {
-           if (profile?.candidate_tags) {
-             if (typeof profile.candidate_tags === 'string') {
-               if (profile.candidate_tags.trim().startsWith('[')) {
-                 candTags = JSON.parse(profile.candidate_tags);
-               } else {
-                 candTags = profile.candidate_tags.split(',').map((t: string) => t.trim()).filter(Boolean);
-               }
-             } else if (Array.isArray(profile.candidate_tags)) {
-               candTags = profile.candidate_tags;
-             }
-           }
-           if (profile?.industry_interests) {
-             if (typeof profile.industry_interests === 'string') {
-               if (profile.industry_interests.trim().startsWith('[')) {
-                 indInterests = JSON.parse(profile.industry_interests);
-               } else {
-                 indInterests = profile.industry_interests.split(',').map((t: string) => t.trim()).filter(Boolean);
-               }
-             } else if (Array.isArray(profile.industry_interests)) {
-               indInterests = profile.industry_interests;
-             }
-           }
-         } catch (e) {
-           console.warn('Error parsing candidate fields:', e);
-         }
+      const mapped: CandidateData[] = (data || []).map((app) => {
+        const profile = Array.isArray(app.profiles) ? app.profiles[0] : app.profiles;
+        let candTags: string[] = [];
+        let indInterests: string[] = [];
+        try {
+          if (profile?.candidate_tags) {
+            if (typeof profile.candidate_tags === 'string') {
+              if (profile.candidate_tags.trim().startsWith('[')) {
+                candTags = JSON.parse(profile.candidate_tags);
+              } else {
+                candTags = profile.candidate_tags
+                  .split(',')
+                  .map((t: string) => t.trim())
+                  .filter(Boolean);
+              }
+            } else if (Array.isArray(profile.candidate_tags)) {
+              candTags = profile.candidate_tags;
+            }
+          }
+          if (profile?.industry_interests) {
+            if (typeof profile.industry_interests === 'string') {
+              if (profile.industry_interests.trim().startsWith('[')) {
+                indInterests = JSON.parse(profile.industry_interests);
+              } else {
+                indInterests = profile.industry_interests
+                  .split(',')
+                  .map((t: string) => t.trim())
+                  .filter(Boolean);
+              }
+            } else if (Array.isArray(profile.industry_interests)) {
+              indInterests = profile.industry_interests;
+            }
+          }
+        } catch (e) {
+          console.warn('Error parsing candidate fields:', e);
+        }
 
-         return {
-            applicationId: app.id,
-            id: profile?.id || Math.random().toString(),
-            name: profile?.full_name || 'Candidato',
-            age: 26, // Fallback if age is not calculated
-            location: profile?.location || 'Colombia',
-            availability: 'Tiempo Completo',
-            role: profile?.professional_title || 'Aplicante General',
-            tags: candTags.length > 0 ? candTags : ['Entusiasta', 'Proactivo'],
-            imageUrl: profile?.avatar_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
-            // New rich fields
-            phone: profile?.phone || '',
-            bio: profile?.bio || '',
-            experienceLevel: profile?.experience_level || '',
-            portfolioUrl: profile?.portfolio_url || '',
-            linkedinUrl: profile?.linkedin_url || '',
-            birthDate: profile?.birth_date || '',
-            industryInterests: indInterests,
-            candidateTags: candTags
-         };
+        return {
+          applicationId: app.id,
+          id: profile?.id || Math.random().toString(),
+          name: profile?.full_name || 'Candidato',
+          age: 26, // Fallback if age is not calculated
+          location: profile?.location || 'Colombia',
+          availability: 'Tiempo Completo',
+          role: profile?.professional_title || 'Aplicante General',
+          tags: candTags.length > 0 ? candTags : ['Entusiasta', 'Proactivo'],
+          imageUrl:
+            profile?.avatar_url ||
+            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
+          // New rich fields
+          phone: profile?.phone || '',
+          bio: profile?.bio || '',
+          experienceLevel: profile?.experience_level || '',
+          portfolioUrl: profile?.portfolio_url || '',
+          linkedinUrl: profile?.linkedin_url || '',
+          birthDate: profile?.birth_date || '',
+          industryInterests: indInterests,
+          candidateTags: candTags,
+        };
       });
 
       setCandidates(mapped);
@@ -187,9 +197,9 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
     title: '',
     message: '',
     icon: 'star',
-    type: 'info' as 'info' | 'success'
+    type: 'info' as 'info' | 'success',
   });
- 
+
   const [detailModalVisible, setDetailModalVisible] = useState(false);
 
   // Ya no filtramos localmente, usamos todos los candidatos de la base de datos para este puesto
@@ -201,49 +211,55 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
   const handleAction = async (type: 'reject' | 'match' | 'superlike') => {
     const currentCandidate = filteredCandidates[currentIndex];
     if (!currentCandidate || !currentCandidate.applicationId) {
-      console.warn("No candidate or applicationId found for index:", currentIndex);
+      console.warn('No candidate or applicationId found for index:', currentIndex);
       return;
     }
 
     // Actualizar Base de datos
     try {
-       const isMatch = type === 'match' || type === 'superlike';
-       const status = isMatch ? 'interview' : 'rejected';
-       
-       const { error: updateError } = await supabase
-         .from('applications')
-         .update({ status })
-         .eq('id', currentCandidate.applicationId);
+      const isMatch = type === 'match' || type === 'superlike';
+      const status = isMatch ? 'interview' : 'rejected';
 
-       if (updateError) {
-         console.error("DB Error updating application status:", updateError);
-         Alert.alert("Error al procesar", "Hubo un problema al actualizar el estado del candidato. Por favor intenta de nuevo.");
-         return; // No avanzar el índice si falló la DB
-       }
+      const { error: updateError } = await supabase
+        .from('applications')
+        .update({ status })
+        .eq('id', currentCandidate.applicationId);
 
-       if (isMatch) {
-         // Asegurar que exista sala de chat
-         const { data: existingRoom } = await supabase
-           .from('chat_rooms')
-           .select('id')
-           .eq('application_id', currentCandidate.applicationId)
-           .maybeSingle();
+      if (updateError) {
+        console.error('DB Error updating application status:', updateError);
+        Alert.alert(
+          'Error al procesar',
+          'Hubo un problema al actualizar el estado del candidato. Por favor intenta de nuevo.'
+        );
+        return; // No avanzar el índice si falló la DB
+      }
 
-         if (!existingRoom) {
-           const { error: roomError } = await supabase.from('chat_rooms').insert([
-             {
-               application_id: currentCandidate.applicationId,
-               company_id: session?.user?.id,
-               candidate_id: currentCandidate.id
-             }
-           ]);
-           if (roomError) console.error("Error creating chat room:", roomError);
-         }
-       }
+      if (isMatch) {
+        // Asegurar que exista sala de chat
+        const { data: existingRoom } = await supabase
+          .from('chat_rooms')
+          .select('id')
+          .eq('application_id', currentCandidate.applicationId)
+          .maybeSingle();
+
+        if (!existingRoom) {
+          const { error: roomError } = await supabase.from('chat_rooms').insert([
+            {
+              application_id: currentCandidate.applicationId,
+              company_id: session?.user?.id,
+              candidate_id: currentCandidate.id,
+            },
+          ]);
+          if (roomError) console.error('Error creating chat room:', roomError);
+        }
+      }
     } catch (e) {
-       console.error("Unexpected error during swipe action:", e);
-       Alert.alert("Error Inesperado", "Algo salió mal. Si el problema persiste, reinicia la aplicación.");
-       return;
+      console.error('Unexpected error during swipe action:', e);
+      Alert.alert(
+        'Error Inesperado',
+        'Algo salió mal. Si el problema persiste, reinicia la aplicación.'
+      );
+      return;
     }
 
     if (type === 'match') {
@@ -252,7 +268,7 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
         title: '¡Candidato Preseleccionado!',
         message: `Excelente, hemos guardado el perfil de ${currentCandidate.name}. En breve notificaremos al candidato para iniciar el proceso de selección y los contactaremos con ustedes.`,
         icon: 'heart',
-        type: 'success'
+        type: 'success',
       });
     } else if (type === 'superlike') {
       setModalConfig({
@@ -260,21 +276,22 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
         title: '¡Evaluación Prioritaria!',
         message: `Hemos notificado a ${currentCandidate.name} sobre tu alto interés en su perfil para acelerar la comunicación.`,
         icon: 'zap',
-        type: 'success'
+        type: 'success',
       });
     } else if (type === 'reject') {
       setModalConfig({
         visible: true,
         title: 'Perfil Descartado',
-        message: 'Hemos registrado tu decisión. Buscaremos candidatos que se alineen mejor con los requerimientos de la empresa.',
+        message:
+          'Hemos registrado tu decisión. Buscaremos candidatos que se alineen mejor con los requerimientos de la empresa.',
         icon: 'x-circle',
-        type: 'info'
+        type: 'info',
       });
     }
 
     translateX.value = 0;
     translateY.value = 0;
-    setCurrentIndex(prev => prev + 1);
+    setCurrentIndex((prev) => prev + 1);
   };
 
   const onSwipeComplete = (direction: 'right' | 'left' | 'up') => {
@@ -290,11 +307,17 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
     })
     .onEnd((event) => {
       if (translateX.value > SWIPE_THRESHOLD) {
-        translateX.value = withSpring(SCREEN_WIDTH * 1.5, {}, () => runOnJS(onSwipeComplete)('right'));
+        translateX.value = withSpring(SCREEN_WIDTH * 1.5, {}, () =>
+          runOnJS(onSwipeComplete)('right')
+        );
       } else if (translateX.value < -SWIPE_THRESHOLD) {
-        translateX.value = withSpring(-SCREEN_WIDTH * 1.5, {}, () => runOnJS(onSwipeComplete)('left'));
+        translateX.value = withSpring(-SCREEN_WIDTH * 1.5, {}, () =>
+          runOnJS(onSwipeComplete)('left')
+        );
       } else if (translateY.value < -SWIPE_THRESHOLD) {
-        translateY.value = withSpring(-SCREEN_WIDTH * 1.5, {}, () => runOnJS(onSwipeComplete)('up'));
+        translateY.value = withSpring(-SCREEN_WIDTH * 1.5, {}, () =>
+          runOnJS(onSwipeComplete)('up')
+        );
       } else {
         translateX.value = withSpring(0);
         translateY.value = withSpring(0);
@@ -302,15 +325,34 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
     });
 
   const cardStyle = useAnimatedStyle(() => {
-    const rotate = interpolate(translateX.value, [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2], [-8, 0, 8], Extrapolate.CLAMP);
+    const rotate = interpolate(
+      translateX.value,
+      [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
+      [-8, 0, 8],
+      Extrapolate.CLAMP
+    );
     return {
-      transform: [{ translateX: translateX.value }, { translateY: translateY.value }, { rotate: `${rotate}deg` }]
+      transform: [
+        { translateX: translateX.value },
+        { translateY: translateY.value },
+        { rotate: `${rotate}deg` },
+      ],
     };
   });
 
   const nextCardStyle = useAnimatedStyle(() => {
-    const scale = interpolate(Math.abs(translateX.value), [0, SWIPE_THRESHOLD], [0.92, 1], Extrapolate.CLAMP);
-    const opacity = interpolate(Math.abs(translateX.value), [0, SWIPE_THRESHOLD], [0.6, 1], Extrapolate.CLAMP);
+    const scale = interpolate(
+      Math.abs(translateX.value),
+      [0, SWIPE_THRESHOLD],
+      [0.92, 1],
+      Extrapolate.CLAMP
+    );
+    const opacity = interpolate(
+      Math.abs(translateX.value),
+      [0, SWIPE_THRESHOLD],
+      [0.6, 1],
+      Extrapolate.CLAMP
+    );
     return { transform: [{ scale }], opacity };
   });
 
@@ -329,7 +371,7 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
     );
     return {
       opacity,
-      transform: [{ scale }, { rotate: '-12deg' }]
+      transform: [{ scale }, { rotate: '-12deg' }],
     };
   });
 
@@ -348,7 +390,7 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
     );
     return {
       opacity,
-      transform: [{ scale }, { rotate: '12deg' }]
+      transform: [{ scale }, { rotate: '12deg' }],
     };
   });
 
@@ -357,36 +399,39 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
 
   const CandidateCard = ({ candidate }: { candidate: CandidateData }) => (
     <View style={styles.candidateCard}>
-      <Image source={{ uri: candidate.imageUrl }} style={styles.candidateImage} resizeMode="cover" />
+      <Image
+        source={{ uri: candidate.imageUrl }}
+        style={styles.candidateImage}
+        resizeMode="cover"
+      />
       <View style={styles.candidateOverlay}>
         <View style={styles.availabilityRow}>
-            <View style={styles.availabilityBadge}>
-                <Text style={styles.availabilityText}>DISPONIBLE</Text>
-            </View>
-            <Text style={styles.infoText}>{candidate.availability}</Text>
+          <View style={styles.availabilityBadge}>
+            <Text style={styles.availabilityText}>DISPONIBLE</Text>
+          </View>
+          <Text style={styles.infoText}>{candidate.availability}</Text>
         </View>
 
         <View style={styles.nameRow}>
-            <Text style={styles.candidateName}>{candidate.name}, {candidate.age}</Text>
-            <TouchableOpacity 
-              onPress={() => setDetailModalVisible(true)}
-              style={styles.infoBtn}
-            >
-                <Ionicons name="information-circle-outline" size={24} color="#FF005C" />
-            </TouchableOpacity>
+          <Text style={styles.candidateName}>
+            {candidate.name}, {candidate.age}
+          </Text>
+          <TouchableOpacity onPress={() => setDetailModalVisible(true)} style={styles.infoBtn}>
+            <Ionicons name="information-circle-outline" size={24} color="#FF005C" />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.candidateLocation}>
-            <Ionicons name="location" size={14} color="#FF005C" />
-            <Text style={styles.locationLabel}>{candidate.location}</Text>
+          <Ionicons name="location" size={14} color="#FF005C" />
+          <Text style={styles.locationLabel}>{candidate.location}</Text>
         </View>
 
         <View style={styles.candidateTags}>
-            {candidate.tags.map((tag, idx) => (
-                <View key={idx} style={styles.candidateTag}>
-                    <Text style={styles.tagLabel}>{tag}</Text>
-                </View>
-            ))}
+          {candidate.tags.map((tag, idx) => (
+            <View key={idx} style={styles.candidateTag}>
+              <Text style={styles.tagLabel}>{tag}</Text>
+            </View>
+          ))}
         </View>
       </View>
     </View>
@@ -396,9 +441,8 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
     <View style={{ flex: 1, backgroundColor: '#050505' }}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-        
-        <ObsidianHeader 
-          title="Vacantes" 
+        <ObsidianHeader
+          title="Vacantes"
           subtitle="MATCH FINDER"
           leftIcon="arrow-back"
           onLeftPress={() => navigation.goBack()}
@@ -418,7 +462,7 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
               <GestureDetector gesture={gesture}>
                 <Animated.View style={[{ flex: 1 }, cardStyle]}>
                   <CandidateCard candidate={currentCandidate} />
-                  
+
                   {/* LIKE / APTO Stamp */}
                   <Animated.View style={[styles.stampContainer, styles.likeStamp, likeStampStyle]}>
                     <Ionicons name="checkmark-circle" size={26} color="#00E676" />
@@ -434,24 +478,32 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
               </GestureDetector>
 
               <View style={styles.actionsContainer}>
-                <TouchableOpacity onPress={() => handleAction('reject')} style={[styles.actionBtn, styles.rejectBtn]}>
+                <TouchableOpacity
+                  onPress={() => handleAction('reject')}
+                  style={[styles.actionBtn, styles.rejectBtn]}>
                   <Ionicons name="close" size={30} color="#FF3B30" />
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => handleAction('superlike')} style={[styles.actionBtn, styles.superBtn]}>
+                <TouchableOpacity
+                  onPress={() => handleAction('superlike')}
+                  style={[styles.actionBtn, styles.superBtn]}>
                   <Ionicons name="star" size={24} color="#FFCC00" />
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => handleAction('match')} style={[styles.actionBtn, styles.matchBtn]}>
+                <TouchableOpacity
+                  onPress={() => handleAction('match')}
+                  style={[styles.actionBtn, styles.matchBtn]}>
                   <Ionicons name="heart" size={32} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
             </View>
           ) : (
             <View style={styles.emptyContainer}>
-               <Ionicons name="sparkles" size={60} color="rgba(255,255,255,0.1)" />
-               <Text style={styles.emptyTitle}>¡Eso es todo!</Text>
-               <Text style={styles.emptyText}>Has visto a todos los candidatos disponibles para esta categoría.</Text>
+              <Ionicons name="sparkles" size={60} color="rgba(255,255,255,0.1)" />
+              <Text style={styles.emptyTitle}>¡Eso es todo!</Text>
+              <Text style={styles.emptyText}>
+                Has visto a todos los candidatos disponibles para esta categoría.
+              </Text>
             </View>
           )}
         </View>
@@ -477,7 +529,6 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
             tags={currentCandidate.tags}
             content={`Experto en el sector de ${currentCandidate.role}. Con amplia disponibilidad (${currentCandidate.availability}) para incorporarse a equipos dinámicos.`}
             accentColor="#FF005C"
-
             // Rich Candidate Detail Props
             isCandidateDetail={true}
             candidateBio={currentCandidate.bio}
@@ -721,5 +772,5 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     textTransform: 'uppercase',
     letterSpacing: 2,
-  }
+  },
 });

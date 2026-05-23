@@ -1,12 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { 
-  Animated, 
-  Text, 
-  View, 
-  StyleSheet, 
-  Dimensions, 
-  DeviceEventEmitter 
-} from 'react-native';
+import { Animated, Text, View, StyleSheet, Dimensions, DeviceEventEmitter } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 
@@ -25,10 +18,13 @@ export const ObsidianToast = () => {
   const slideAnim = useRef(new Animated.Value(-20)).current;
 
   useEffect(() => {
-    const listener = DeviceEventEmitter.addListener('SHOW_OBSIDIAN_TOAST', (options: ToastOptions) => {
-      setConfig(options);
-      show();
-    });
+    const listener = DeviceEventEmitter.addListener(
+      'SHOW_OBSIDIAN_TOAST',
+      (options: ToastOptions) => {
+        setConfig(options);
+        show();
+      }
+    );
     return () => listener.remove();
   }, []);
 
@@ -72,39 +68,49 @@ export const ObsidianToast = () => {
 
   const getIcon = () => {
     switch (config.type) {
-      case 'error': return 'alert-circle';
-      case 'info': return 'information-circle';
-      default: return 'checkmark-circle';
+      case 'error':
+        return 'alert-circle';
+      case 'info':
+        return 'information-circle';
+      default:
+        return 'checkmark-circle';
     }
   };
 
   const getAccentColor = () => {
     switch (config.type) {
-      case 'error': return '#FF3B30';
-      case 'info': return '#00A3FF';
-      default: return '#FF005C';
+      case 'error':
+        return '#FF3B30';
+      case 'info':
+        return '#00A3FF';
+      default:
+        return '#FF005C';
     }
   };
 
   return (
-    <Animated.View 
-      style={[
-        styles.container, 
-        { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
-      ]}
-    >
+    <Animated.View
+      style={[styles.container, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
       <BlurView intensity={20} tint="dark" style={styles.blur}>
-        <View style={[styles.toast, { borderColor: `rgba(${config.type === 'error' ? '255,59,48' : '255,0,92'}, 0.3)` }]}>
-           <View style={[styles.iconLine, { backgroundColor: getAccentColor() }]} />
-           <Ionicons name={getIcon()} size={20} color={getAccentColor()} />
-           <Text style={styles.message}>{config.message}</Text>
+        <View
+          style={[
+            styles.toast,
+            { borderColor: `rgba(${config.type === 'error' ? '255,59,48' : '255,0,92'}, 0.3)` },
+          ]}>
+          <View style={[styles.iconLine, { backgroundColor: getAccentColor() }]} />
+          <Ionicons name={getIcon()} size={20} color={getAccentColor()} />
+          <Text style={styles.message}>{config.message}</Text>
         </View>
       </BlurView>
     </Animated.View>
   );
 };
 
-export const showToast = (message: string, type: ToastOptions['type'] = 'success', duration = 3000) => {
+export const showToast = (
+  message: string,
+  type: ToastOptions['type'] = 'success',
+  duration = 3000
+) => {
   DeviceEventEmitter.emit('SHOW_OBSIDIAN_TOAST', { message, type, duration });
 };
 
@@ -144,5 +150,5 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginLeft: 12,
     letterSpacing: 0.3,
-  }
+  },
 });

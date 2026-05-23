@@ -18,7 +18,7 @@ export const ObsidianHeader: React.FC<ObsidianHeaderProps> = ({
   onLeftPress,
   rightIcon,
   onRightPress,
-  subtitle
+  subtitle,
 }) => {
   return (
     <View style={styles.container}>
@@ -26,10 +26,7 @@ export const ObsidianHeader: React.FC<ObsidianHeaderProps> = ({
         {/* Left Action */}
         <View style={styles.actionContainer}>
           {leftIcon && (
-            <TouchableOpacity 
-              onPress={onLeftPress}
-              style={styles.iconButton}
-            >
+            <TouchableOpacity onPress={onLeftPress} style={styles.iconButton}>
               <Ionicons name={leftIcon} size={24} color="#FFFFFF" />
             </TouchableOpacity>
           )}
@@ -37,17 +34,16 @@ export const ObsidianHeader: React.FC<ObsidianHeaderProps> = ({
 
         {/* Center Title */}
         <View style={styles.titleContainer}>
-          <Text style={styles.title} numberOfLines={1}>{title}</Text>
+          <Text style={styles.title} numberOfLines={1}>
+            {title}
+          </Text>
           {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
         </View>
 
         {/* Right Action */}
         <View style={styles.actionContainer}>
           {rightIcon && (
-            <TouchableOpacity 
-              onPress={onRightPress}
-              style={styles.iconButton}
-            >
+            <TouchableOpacity onPress={onRightPress} style={styles.iconButton}>
               <Ionicons name={rightIcon} size={24} color="#FFFFFF" />
             </TouchableOpacity>
           )}
@@ -105,5 +101,5 @@ const styles = StyleSheet.create({
     marginTop: 2,
     textTransform: 'uppercase',
     letterSpacing: 1,
-  }
+  },
 });

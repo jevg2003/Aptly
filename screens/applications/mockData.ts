@@ -1,9 +1,9 @@
-import { 
-  TimelineStatus, 
-  TimelineStepData, 
-  ApplicationStatus, 
-  ApplicationData, 
-  SHARED_APPLICATIONS 
+import {
+  TimelineStatus,
+  TimelineStepData,
+  ApplicationStatus,
+  ApplicationData,
+  SHARED_APPLICATIONS,
 } from '../../lib/data';
 
 export type { TimelineStatus, TimelineStepData, ApplicationStatus };

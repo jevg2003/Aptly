@@ -12,22 +12,20 @@ const filters: FilterParam[] = ['Todos', 'No leídos', 'Archivados'];
 
 export const FilterTabs = ({ activeFilter, onFilterChange }: FilterTabsProps) => {
   return (
-    <View className="flex-row border-b border-slate-200 dark:border-slate-800 mx-4">
+    <View className="mx-4 flex-row border-b border-slate-200 dark:border-slate-800">
       {filters.map((filter) => {
         const isActive = activeFilter === filter;
         return (
           <TouchableOpacity
             key={filter}
             onPress={() => onFilterChange(filter)}
-            className={`flex-1 items-center py-3 border-b-2 ${
+            className={`flex-1 items-center border-b-2 py-3 ${
               isActive ? 'border-blue-600' : 'border-transparent'
-            }`}
-          >
+            }`}>
             <Text
               className={`font-medium ${
                 isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'
-              }`}
-            >
+              }`}>
               {filter}
             </Text>
           </TouchableOpacity>
