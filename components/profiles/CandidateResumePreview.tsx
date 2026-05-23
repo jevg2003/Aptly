@@ -1,11 +1,26 @@
 import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Modal as RNModal, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  Modal as RNModal,
+  ActivityIndicator,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
 import { SessionContext } from '../../lib/SessionContext';
 import { useNavigation } from '@react-navigation/native';
 
-export const CandidateResumePreview = ({ profile, onClose, isVisible = false, fromChat = false, conversationId = null }: any) => {
+export const CandidateResumePreview = ({
+  profile,
+  onClose,
+  isVisible = false,
+  fromChat = false,
+  conversationId = null,
+}: any) => {
   const session = React.useContext(SessionContext);
   const navigation = useNavigation<any>();
   const [applications, setApplications] = React.useState<any[]>([]);
@@ -16,17 +31,19 @@ export const CandidateResumePreview = ({ profile, onClose, isVisible = false, fr
     if (!profile?.id || !session?.user?.id) return;
     try {
       setLoading(true);
-      
+
       // 1. Fetch Processes with this company
       const { data: apps, error: appError } = await supabase
         .from('applications')
-        .select(`
+        .select(
+          `
           id,
           status,
           current_stage,
           job:jobs!applications_job_id_fkey(id, title, company_id),
           profiles!applications_candidate_id_fkey(id, full_name, avatar_url, professional_title)
-        `)
+        `
+        )
         .eq('candidate_id', profile.id)
         .eq('jobs.company_id', session.user.id);
 
@@ -42,7 +59,6 @@ export const CandidateResumePreview = ({ profile, onClose, isVisible = false, fr
 
       if (expError) throw expError;
       setExperiences(exps || []);
-
     } catch (err) {
       console.error('Error fetching profile data:', err);
     } finally {
@@ -70,51 +86,98 @@ export const CandidateResumePreview = ({ profile, onClose, isVisible = false, fr
         <ScrollView contentContainerStyle={styles.scroll}>
           {/* Profile Card */}
           <View style={styles.profileSection}>
-            <Image 
-              source={{ uri: profile?.avatar_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80' }} 
-              style={styles.avatar} 
+            <Image
+              source={{
+                uri:
+                  profile?.avatar_url ||
+                  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80',
+              }}
+              style={styles.avatar}
             />
             <Text style={styles.profileName}>{profile?.full_name}</Text>
             <Text style={styles.profileRole}>
               {profile?.professional_title || 'Candidato'}
               {profile?.experience_level ? ` • ${profile.experience_level}` : ''}
             </Text>
-            
+
             <View style={styles.locationRow}>
               <Ionicons name="location-outline" size={14} color="#64748b" />
               <Text style={styles.locationText}>{profile?.location || 'Colombia'}</Text>
             </View>
 
             <View style={styles.bioContainer}>
-               <Text style={styles.sectionTitle}>SOBRE MÍ</Text>
-               <Text style={styles.bioText}>{profile?.bio || 'Este candidato aún no ha completado su biografía profesional.'}</Text>
+              <Text style={styles.sectionTitle}>SOBRE MÍ</Text>
+              <Text style={styles.bioText}>
+                {profile?.bio || 'Este candidato aún no ha completado su biografía profesional.'}
+              </Text>
             </View>
           </View>
 
           {/* Contact & Links */}
-          {(profile?.phone || profile?.linkedin_url || profile?.portfolio_url) ? (
+          {profile?.phone || profile?.linkedin_url || profile?.portfolio_url ? (
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Ionicons name="call-outline" size={18} color="#FF005C" />
                 <Text style={styles.sectionTitle}>CONTACTO Y ENLACES</Text>
               </View>
-              <View style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', gap: 12 }}>
+              <View
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.02)',
+                  padding: 16,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: 'rgba(255,255,255,0.05)',
+                  gap: 12,
+                }}>
                 {profile?.phone && (
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Ionicons name="call-outline" size={16} color="#FF005C" style={{ marginRight: 10 }} />
-                    <Text style={{ color: '#E2E8F0', fontSize: 13, fontWeight: '500' }}>{profile.phone}</Text>
+                    <Ionicons
+                      name="call-outline"
+                      size={16}
+                      color="#FF005C"
+                      style={{ marginRight: 10 }}
+                    />
+                    <Text style={{ color: '#E2E8F0', fontSize: 13, fontWeight: '500' }}>
+                      {profile.phone}
+                    </Text>
                   </View>
                 )}
                 {profile?.linkedin_url && (
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Ionicons name="logo-linkedin" size={16} color="#FF005C" style={{ marginRight: 10 }} />
-                    <Text style={{ color: '#FF005C', fontSize: 13, fontWeight: '600', textDecorationLine: 'underline' }}>{profile.linkedin_url}</Text>
+                    <Ionicons
+                      name="logo-linkedin"
+                      size={16}
+                      color="#FF005C"
+                      style={{ marginRight: 10 }}
+                    />
+                    <Text
+                      style={{
+                        color: '#FF005C',
+                        fontSize: 13,
+                        fontWeight: '600',
+                        textDecorationLine: 'underline',
+                      }}>
+                      {profile.linkedin_url}
+                    </Text>
                   </View>
                 )}
                 {profile?.portfolio_url && (
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Ionicons name="globe-outline" size={16} color="#FF005C" style={{ marginRight: 10 }} />
-                    <Text style={{ color: '#FF005C', fontSize: 13, fontWeight: '600', textDecorationLine: 'underline' }}>{profile.portfolio_url}</Text>
+                    <Ionicons
+                      name="globe-outline"
+                      size={16}
+                      color="#FF005C"
+                      style={{ marginRight: 10 }}
+                    />
+                    <Text
+                      style={{
+                        color: '#FF005C',
+                        fontSize: 13,
+                        fontWeight: '600',
+                        textDecorationLine: 'underline',
+                      }}>
+                      {profile.portfolio_url}
+                    </Text>
                   </View>
                 )}
               </View>
@@ -130,8 +193,19 @@ export const CandidateResumePreview = ({ profile, onClose, isVisible = false, fr
               </View>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                 {profile.candidate_tags.split(',').map((tag: string, index: number) => (
-                  <View key={index} style={{ backgroundColor: 'rgba(255,0,92,0.06)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,0,92,0.15)' }}>
-                    <Text style={{ color: '#FF005C', fontWeight: '700', fontSize: 11 }}>{tag.trim()}</Text>
+                  <View
+                    key={index}
+                    style={{
+                      backgroundColor: 'rgba(255,0,92,0.06)',
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: 'rgba(255,0,92,0.15)',
+                    }}>
+                    <Text style={{ color: '#FF005C', fontWeight: '700', fontSize: 11 }}>
+                      {tag.trim()}
+                    </Text>
                   </View>
                 ))}
               </View>
@@ -147,8 +221,19 @@ export const CandidateResumePreview = ({ profile, onClose, isVisible = false, fr
               </View>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                 {profile.industry_interests.split(',').map((interest: string, index: number) => (
-                  <View key={index} style={{ backgroundColor: 'rgba(255,255,255,0.03)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
-                    <Text style={{ color: '#E2E8F0', fontWeight: '600', fontSize: 11 }}>{interest.trim()}</Text>
+                  <View
+                    key={index}
+                    style={{
+                      backgroundColor: 'rgba(255,255,255,0.03)',
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: 'rgba(255,255,255,0.08)',
+                    }}>
+                    <Text style={{ color: '#E2E8F0', fontWeight: '600', fontSize: 11 }}>
+                      {interest.trim()}
+                    </Text>
                   </View>
                 ))}
               </View>
@@ -161,85 +246,104 @@ export const CandidateResumePreview = ({ profile, onClose, isVisible = false, fr
               <Ionicons name="briefcase-outline" size={18} color="#FF005C" />
               <Text style={styles.sectionTitle}>TRAYECTORIA LABORAL</Text>
             </View>
-            
+
             {experiences.length > 0 ? (
               experiences.map((exp: any, index: number) => (
                 <View key={exp.id || index} style={styles.expItem}>
-                   <View style={styles.expDot} />
-                   {index !== experiences.length - 1 && <View style={styles.expLine} />}
-                   
-                   <View style={styles.expContent}>
-                      <Text style={styles.expTitle}>{exp.title}</Text>
-                      <Text style={styles.expCompany}>{exp.company}</Text>
-                      <Text style={styles.expDate}>
-                        {exp.start_date ? new Date(exp.start_date).getFullYear() : 'N/A'} - {exp.is_current ? 'Presente' : (exp.end_date ? new Date(exp.end_date).getFullYear() : 'N/A')}
-                      </Text>
-                      <Text style={styles.expDesc}>{exp.description}</Text>
-                      
-                      {exp.tags && (
-                        <View style={styles.tagRow}>
-                          {exp.tags.map((tag: string, tidx: number) => (
-                            <View key={tidx} style={styles.tag}>
-                              <Text style={styles.tagText}>{tag}</Text>
-                            </View>
-                          ))}
-                        </View>
-                      )}
-                   </View>
+                  <View style={styles.expDot} />
+                  {index !== experiences.length - 1 && <View style={styles.expLine} />}
+
+                  <View style={styles.expContent}>
+                    <Text style={styles.expTitle}>{exp.title}</Text>
+                    <Text style={styles.expCompany}>{exp.company}</Text>
+                    <Text style={styles.expDate}>
+                      {exp.start_date ? new Date(exp.start_date).getFullYear() : 'N/A'} -{' '}
+                      {exp.is_current
+                        ? 'Presente'
+                        : exp.end_date
+                          ? new Date(exp.end_date).getFullYear()
+                          : 'N/A'}
+                    </Text>
+                    <Text style={styles.expDesc}>{exp.description}</Text>
+
+                    {exp.tags && (
+                      <View style={styles.tagRow}>
+                        {exp.tags.map((tag: string, tidx: number) => (
+                          <View key={tidx} style={styles.tag}>
+                            <Text style={styles.tagText}>{tag}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
                 </View>
               ))
             ) : (
               <View style={styles.emptyBox}>
-                 <Text style={styles.emptyText}>No hay experiencias laborales registradas.</Text>
+                <Text style={styles.emptyText}>No hay experiencias laborales registradas.</Text>
               </View>
             )}
           </View>
 
           {/* Procesos Activos Section */}
           <View style={[styles.section, { paddingBottom: 60 }]}>
-             <View style={styles.sectionHeader}>
-                <Ionicons name="git-branch-outline" size={18} color="#FF005C" />
-                <Text style={styles.sectionTitle}>PROCESOS CON TU EMPRESA</Text>
-             </View>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="git-branch-outline" size={18} color="#FF005C" />
+              <Text style={styles.sectionTitle}>PROCESOS CON TU EMPRESA</Text>
+            </View>
 
-             {loading ? (
-               <ActivityIndicator color="#FF005C" style={{ marginVertical: 10 }} />
-             ) : applications.length > 0 ? (
-               applications.map((app: any) => (
-                 <TouchableOpacity 
-                   key={app.id} 
-                   style={styles.processCard}
-                   onPress={() => {
-                      onClose();
-                      // Navegar entre tabs al stack de Procesos
-                      navigation.navigate('Procesos', { 
-                        screen: 'CandidatePipeline', 
-                        params: { 
-                           application: app, 
-                           job: app.job,
-                           fromChat,
-                           conversationId
-                         } 
-                      });
-                   }}
-                 >
-                    <View style={{ flex: 1 }}>
-                       <Text style={styles.processJob}>{app.job?.title}</Text>
-                       <Text style={styles.processStage}>{app.current_stage || 'Revisión'}</Text>
-                    </View>
-                    <View style={[styles.statusBadge, { backgroundColor: app.status === 'interview' ? 'rgba(0,163,255,0.1)' : 'rgba(255,255,255,0.05)' }]}>
-                       <Text style={[styles.statusText, { color: app.status === 'interview' ? '#00A3FF' : 'rgba(255,255,255,0.4)' }]}>
-                          {app.status === 'interview' ? 'EN PROCESO' : app.status.toUpperCase()}
-                       </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.2)" />
-                 </TouchableOpacity>
-               ))
-             ) : (
-               <View style={styles.emptyBox}>
-                  <Text style={styles.emptyText}>No hay procesos registrados para este candidato.</Text>
-               </View>
-             )}
+            {loading ? (
+              <ActivityIndicator color="#FF005C" style={{ marginVertical: 10 }} />
+            ) : applications.length > 0 ? (
+              applications.map((app: any) => (
+                <TouchableOpacity
+                  key={app.id}
+                  style={styles.processCard}
+                  onPress={() => {
+                    onClose();
+                    // Navegar entre tabs al stack de Procesos
+                    navigation.navigate('Procesos', {
+                      screen: 'CandidatePipeline',
+                      params: {
+                        application: app,
+                        job: app.job,
+                        fromChat,
+                        conversationId,
+                      },
+                    });
+                  }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.processJob}>{app.job?.title}</Text>
+                    <Text style={styles.processStage}>{app.current_stage || 'Revisión'}</Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.statusBadge,
+                      {
+                        backgroundColor:
+                          app.status === 'interview'
+                            ? 'rgba(0,163,255,0.1)'
+                            : 'rgba(255,255,255,0.05)',
+                      },
+                    ]}>
+                    <Text
+                      style={[
+                        styles.statusText,
+                        { color: app.status === 'interview' ? '#00A3FF' : 'rgba(255,255,255,0.4)' },
+                      ]}>
+                      {app.status === 'interview' ? 'EN PROCESO' : app.status.toUpperCase()}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.2)" />
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.emptyBox}>
+                <Text style={styles.emptyText}>
+                  No hay procesos registrados para este candidato.
+                </Text>
+              </View>
+            )}
           </View>
         </ScrollView>
       </View>
@@ -249,56 +353,112 @@ export const CandidateResumePreview = ({ profile, onClose, isVisible = false, fr
 
 const styles = StyleSheet.create({
   modalContent: { flex: 1, backgroundColor: '#050505' },
-  topBar: { 
-    height: 60, 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between', 
+  topBar: {
+    height: 60,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     backgroundColor: '#1A1A1C',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)'
+    borderBottomColor: 'rgba(255,255,255,0.05)',
   },
-  topTitle: { color: 'white', fontWeight: '900', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
+  topTitle: {
+    color: 'white',
+    fontWeight: '900',
+    fontSize: 13,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
   closeBtn: { padding: 5 },
   scroll: { paddingBottom: 40 },
   profileSection: { alignItems: 'center', padding: 24, backgroundColor: '#121214' },
-  avatar: { width: 120, height: 120, borderRadius: 60, borderWidth: 3, borderColor: '#FF005C', marginBottom: 16 },
+  avatar: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 3,
+    borderColor: '#FF005C',
+    marginBottom: 16,
+  },
   profileName: { color: 'white', fontSize: 24, fontWeight: '900' },
-  profileRole: { color: '#FF005C', fontSize: 14, fontWeight: '800', marginTop: 4, letterSpacing: 0.5 },
+  profileRole: {
+    color: '#FF005C',
+    fontSize: 14,
+    fontWeight: '800',
+    marginTop: 4,
+    letterSpacing: 0.5,
+  },
   locationRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 4 },
   locationText: { color: '#64748b', fontSize: 12, fontWeight: '600' },
-  bioContainer: { width: '100%', marginTop: 24, backgroundColor: 'rgba(255,255,255,0.03)', padding: 16, borderRadius: 20 },
-  sectionTitle: { color: '#FF005C', fontSize: 11, fontWeight: '900', letterSpacing: 1.5, marginBottom: 8 },
+  bioContainer: {
+    width: '100%',
+    marginTop: 24,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    padding: 16,
+    borderRadius: 20,
+  },
+  sectionTitle: {
+    color: '#FF005C',
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 1.5,
+    marginBottom: 8,
+  },
   bioText: { color: '#94a3b8', fontSize: 13, lineHeight: 20 },
-  
+
   section: { padding: 24 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20 },
   expItem: { flexDirection: 'row', marginBottom: 24, position: 'relative' },
-  expDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#FF005C', marginTop: 4, zIndex: 2 },
-  expLine: { position: 'absolute', left: 5.5, top: 16, bottom: -24, width: 1, backgroundColor: 'rgba(255,0,92,0.2)', zIndex: 1 },
+  expDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#FF005C',
+    marginTop: 4,
+    zIndex: 2,
+  },
+  expLine: {
+    position: 'absolute',
+    left: 5.5,
+    top: 16,
+    bottom: -24,
+    width: 1,
+    backgroundColor: 'rgba(255,0,92,0.2)',
+    zIndex: 1,
+  },
   expContent: { flex: 1, marginLeft: 20 },
   expTitle: { color: 'white', fontSize: 16, fontWeight: '800' },
   expCompany: { color: '#94a3b8', fontSize: 14, fontWeight: '600', marginTop: 2 },
   expDate: { color: '#64748b', fontSize: 10, fontWeight: '700', marginTop: 4 },
   expDesc: { color: '#64748b', fontSize: 12, lineHeight: 18, marginTop: 8 },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
-  tag: { backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
+  tag: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
   tagText: { color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: '700' },
-  emptyBox: { padding: 20, backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: 16, alignItems: 'center' },
+  emptyBox: {
+    padding: 20,
+    backgroundColor: 'rgba(255,255,255,0.02)',
+    borderRadius: 16,
+    alignItems: 'center',
+  },
   emptyText: { color: '#475569', fontSize: 12 },
-  processCard: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#121214', 
-    padding: 16, 
-    borderRadius: 16, 
+  processCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#121214',
+    padding: 16,
+    borderRadius: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)'
+    borderColor: 'rgba(255,255,255,0.05)',
   },
   processJob: { color: 'white', fontSize: 15, fontWeight: '800' },
   processStage: { color: '#FF005C', fontSize: 12, fontWeight: '700', marginTop: 2 },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, marginRight: 12 },
-  statusText: { fontSize: 9, fontWeight: '900' }
+  statusText: { fontSize: 9, fontWeight: '900' },
 });

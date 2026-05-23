@@ -1,7 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Image, Animated, StatusBar, Text } from 'react-native';
 
-export const WelcomeScreen = ({ navigation, onFinish }: { navigation: any, onFinish: () => void }) => {
+export const WelcomeScreen = ({
+  navigation,
+  onFinish,
+}: {
+  navigation: any;
+  onFinish: () => void;
+}) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.75)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -55,7 +61,7 @@ export const WelcomeScreen = ({ navigation, onFinish }: { navigation: any, onFin
           toValue: -60,
           duration: 700,
           useNativeDriver: true,
-        })
+        }),
       ]).start(() => {
         onFinish();
         navigation.replace('Login');
@@ -75,7 +81,13 @@ export const WelcomeScreen = ({ navigation, onFinish }: { navigation: any, onFin
   });
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#050505', alignItems: 'center', justifyContent: 'center' }}>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: '#050505',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
       <StatusBar barStyle="light-content" backgroundColor="#050505" />
 
       <Animated.View
@@ -83,8 +95,7 @@ export const WelcomeScreen = ({ navigation, onFinish }: { navigation: any, onFin
           opacity: fadeAnim,
           transform: [{ scale: scaleAnim }, { translateY }],
           alignItems: 'center',
-        }}
-      >
+        }}>
         {/* Logo and Glow Section */}
         <View style={{ width: 220, height: 220, alignItems: 'center', justifyContent: 'center' }}>
           {/* Glow ring */}
@@ -117,8 +128,7 @@ export const WelcomeScreen = ({ navigation, onFinish }: { navigation: any, onFin
               borderWidth: 1,
               borderColor: 'rgba(255, 0, 92, 0.25)',
               zIndex: 2,
-            }}
-          >
+            }}>
             <Image
               source={require('../assets/favicon.png')}
               style={{ width: 140, height: 140 }}
@@ -128,7 +138,8 @@ export const WelcomeScreen = ({ navigation, onFinish }: { navigation: any, onFin
         </View>
 
         {/* App name + tagline */}
-        <View style={{ height: 100, alignItems: 'center', justifyContent: 'center', marginTop: 20 }}>
+        <View
+          style={{ height: 100, alignItems: 'center', justifyContent: 'center', marginTop: 20 }}>
           <Animated.View style={{ opacity: textFadeAnim, alignItems: 'center' }}>
             <Text
               style={{
@@ -137,8 +148,7 @@ export const WelcomeScreen = ({ navigation, onFinish }: { navigation: any, onFin
                 fontWeight: '900',
                 letterSpacing: 6,
                 textTransform: 'uppercase',
-              }}
-            >
+              }}>
               Aptly
             </Text>
             <Text
@@ -150,8 +160,7 @@ export const WelcomeScreen = ({ navigation, onFinish }: { navigation: any, onFin
                 textTransform: 'uppercase',
                 marginTop: 6,
                 opacity: 0.9,
-              }}
-            >
+              }}>
               Tu carrera, tu ritmo
             </Text>
           </Animated.View>

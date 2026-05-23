@@ -1,5 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ObsidianHeader } from '../../../components/ObsidianHeader';
@@ -18,13 +25,15 @@ export const BusinessProcesosScreen = ({ navigation }: any) => {
       // Obtener vacantes de la empresa que tengan candidatos en proceso (status 'interview')
       const { data, error } = await supabase
         .from('jobs')
-        .select(`
+        .select(
+          `
           id,
           title,
           location,
           status,
           applications(count)
-        `)
+        `
+        )
         .eq('company_id', session.user.id)
         .eq('status', 'active');
 
@@ -42,11 +51,10 @@ export const BusinessProcesosScreen = ({ navigation }: any) => {
   }, []);
 
   const renderJobItem = ({ item }: { item: any }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.jobCard}
       onPress={() => navigation.navigate('JobProcessDetail', { job: item })}
-      activeOpacity={0.8}
-    >
+      activeOpacity={0.8}>
       <View style={styles.jobInfo}>
         <Text style={styles.jobTitle}>{item.title}</Text>
         <Text style={styles.jobLocation}>{item.location}</Text>
@@ -54,7 +62,12 @@ export const BusinessProcesosScreen = ({ navigation }: any) => {
       <View style={styles.badgeContainer}>
         <Ionicons name="people" size={16} color="#FF005C" />
         <Text style={styles.badgeText}>{item.applications?.[0]?.count || 0}</Text>
-        <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.3)" style={{ marginLeft: 8 }} />
+        <Ionicons
+          name="chevron-forward"
+          size={20}
+          color="rgba(255,255,255,0.3)"
+          style={{ marginLeft: 8 }}
+        />
       </View>
     </TouchableOpacity>
   );
@@ -62,10 +75,7 @@ export const BusinessProcesosScreen = ({ navigation }: any) => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-        <ObsidianHeader 
-          title="Gestión" 
-          subtitle="PROCESOS DE SELECCIÓN"
-        />
+        <ObsidianHeader title="Gestión" subtitle="PROCESOS DE SELECCIÓN" />
 
         {loading ? (
           <View style={styles.center}>
@@ -75,7 +85,7 @@ export const BusinessProcesosScreen = ({ navigation }: any) => {
           <FlatList
             data={jobs}
             renderItem={renderJobItem}
-            keyExtractor={item => item.id}
+            keyExtractor={(item) => item.id}
             contentContainerStyle={styles.list}
             ListEmptyComponent={
               <View style={styles.empty}>
@@ -117,5 +127,5 @@ const styles = StyleSheet.create({
   },
   badgeText: { color: 'white', fontWeight: '800', marginLeft: 6, fontSize: 13 },
   empty: { flex: 1, alignItems: 'center', paddingTop: 100 },
-  emptyText: { color: '#64748b', marginTop: 10, fontSize: 14 }
+  emptyText: { color: '#64748b', marginTop: 10, fontSize: 14 },
 });

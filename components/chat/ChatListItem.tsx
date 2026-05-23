@@ -10,7 +10,7 @@ interface ChatListItemProps {
 
 export const ChatListItem = ({ conversation, onPress }: ChatListItemProps) => {
   const { participant, lastMessage, timestamp, unreadCount } = conversation;
-  
+
   // Extract initials for fallback avatar
   const initials = participant.name
     .split(' ')
@@ -20,50 +20,50 @@ export const ChatListItem = ({ conversation, onPress }: ChatListItemProps) => {
     .toUpperCase();
 
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       onPress={() => onPress(conversation)}
-      className="flex-row items-center bg-[#121214] mx-4 my-1.5 p-4 rounded-[24px] border border-white/5"
-      activeOpacity={0.7}
-    >
-      <View className="w-14 h-14 rounded-full bg-slate-800 items-center justify-center overflow-hidden border border-white/5">
+      className="mx-4 my-1.5 flex-row items-center rounded-[24px] border border-white/5 bg-[#121214] p-4"
+      activeOpacity={0.7}>
+      <View className="h-14 w-14 items-center justify-center overflow-hidden rounded-full border border-white/5 bg-slate-800">
         {participant.avatar ? (
-           <Image source={{ uri: participant.avatar }} className="w-full h-full" />
+          <Image source={{ uri: participant.avatar }} className="h-full w-full" />
         ) : (
-          <Text className="text-slate-400 font-bold text-lg">{initials}</Text>
+          <Text className="text-lg font-bold text-slate-400">{initials}</Text>
         )}
       </View>
-      
-      <View className="flex-1 ml-4 justify-center">
-        <View className="flex-row justify-between items-start mb-0.5">
-          <View className="flex-1 mr-2">
-            <Text className="text-white font-bold text-base" numberOfLines={1}>
+
+      <View className="ml-4 flex-1 justify-center">
+        <View className="mb-0.5 flex-row items-start justify-between">
+          <View className="mr-2 flex-1">
+            <Text className="text-base font-bold text-white" numberOfLines={1}>
               {participant.name}
             </Text>
             {(conversation as BusinessConversation).jobTitle && (
-              <Text className="text-[#FF005C] text-[10px] font-black uppercase tracking-widest mt-0.5" numberOfLines={1}>
+              <Text
+                className="mt-0.5 text-[10px] font-black uppercase tracking-widest text-[#FF005C]"
+                numberOfLines={1}>
                 {(conversation as BusinessConversation).jobTitle}
               </Text>
             )}
           </View>
           <View className="items-end">
-            <Text className="text-slate-500 text-[11px] mt-1">
-              {timestamp}
-            </Text>
+            <Text className="mt-1 text-[11px] text-slate-500">{timestamp}</Text>
           </View>
         </View>
-        
-        <View className="flex-row justify-between items-center pr-1">
-           <Text 
-             className={`text-sm flex-1 mr-2 ${unreadCount > 0 ? 'text-white font-black' : 'text-slate-500'}`}
-             numberOfLines={1}
-           >
-              {lastMessage}
-           </Text>
-           {unreadCount > 0 && (
-             <View className="bg-[#FF005C] rounded-full min-w-[20px] h-[20px] items-center justify-center px-1.5 shadow-[0_0_10px_rgba(255,0,92,0.3)]">
-               <Text className="text-white text-[10px] font-black">{unreadCount > 99 ? '99+' : unreadCount}</Text>
-             </View>
-           )}
+
+        <View className="flex-row items-center justify-between pr-1">
+          <Text
+            className={`mr-2 flex-1 text-sm ${unreadCount > 0 ? 'font-black text-white' : 'text-slate-500'}`}
+            numberOfLines={1}>
+            {lastMessage}
+          </Text>
+          {unreadCount > 0 && (
+            <View className="h-[20px] min-w-[20px] items-center justify-center rounded-full bg-[#FF005C] px-1.5 shadow-[0_0_10px_rgba(255,0,92,0.3)]">
+              <Text className="text-[10px] font-black text-white">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
     </TouchableOpacity>

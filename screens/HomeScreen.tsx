@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
-import { 
-  View, 
-  Text, 
-  Dimensions, 
-  TouchableOpacity, 
-  Alert, 
+import {
+  View,
+  Text,
+  Dimensions,
+  TouchableOpacity,
+  Alert,
   StyleSheet,
   StatusBar,
   ActivityIndicator,
@@ -13,7 +13,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,13 +22,13 @@ import { SessionContext } from '../lib/SessionContext';
 import { useMatches } from '../lib/MatchContext';
 import { JobCard, JobData } from '../components/JobCard';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring, 
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
   interpolate,
   Extrapolate,
-  runOnJS
+  runOnJS,
 } from 'react-native-reanimated';
 
 import { ObsidianHeader } from '../components/ObsidianHeader';
@@ -99,7 +99,7 @@ export const HomeScreen = ({ navigation }: any) => {
 
   const sheetAnimatedStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ translateY: sheetTranslateY.value }]
+      transform: [{ translateY: sheetTranslateY.value }],
     };
   });
 
@@ -107,7 +107,7 @@ export const HomeScreen = ({ navigation }: any) => {
   useEffect(() => {
     if (navigation) {
       navigation.setOptions({
-        tabBarStyle: filterModalVisible ? { display: 'none' } : undefined
+        tabBarStyle: filterModalVisible ? { display: 'none' } : undefined,
       });
     }
   }, [filterModalVisible, navigation]);
@@ -132,7 +132,7 @@ export const HomeScreen = ({ navigation }: any) => {
     title: '',
     message: '',
     icon: 'star',
-    type: 'info' as 'success' | 'info'
+    type: 'info' as 'success' | 'info',
   });
 
   const [detailModalVisible, setDetailModalVisible] = useState(false);
@@ -165,12 +165,14 @@ export const HomeScreen = ({ navigation }: any) => {
       // Fetch active jobs and include company info by joining the profiles table
       const { data, error } = await supabase
         .from('jobs')
-        .select('*, profiles(full_name, bio, avatar_url, industry, business_area, company_tags, creation_date, phone)')
+        .select(
+          '*, profiles(full_name, bio, avatar_url, industry, business_area, company_tags, creation_date, phone)'
+        )
         .eq('status', 'active');
-        
+
       if (error) throw error;
-      
-      const mappedJobs: JobData[] = (data || []).map(job => {
+
+      const mappedJobs: JobData[] = (data || []).map((job) => {
         let comTags: string[] = [];
         try {
           if (job.profiles?.company_tags) {
@@ -178,7 +180,10 @@ export const HomeScreen = ({ navigation }: any) => {
               if (job.profiles.company_tags.trim().startsWith('[')) {
                 comTags = JSON.parse(job.profiles.company_tags);
               } else {
-                comTags = job.profiles.company_tags.split(',').map((t: string) => t.trim()).filter(Boolean);
+                comTags = job.profiles.company_tags
+                  .split(',')
+                  .map((t: string) => t.trim())
+                  .filter(Boolean);
               }
             } else if (Array.isArray(job.profiles.company_tags)) {
               comTags = job.profiles.company_tags;
@@ -208,7 +213,7 @@ export const HomeScreen = ({ navigation }: any) => {
           companyBusinessArea: job.profiles?.business_area || '',
           companyPhone: job.profiles?.phone || '',
           companyTags: comTags,
-          companyCreationDate: job.profiles?.creation_date || ''
+          companyCreationDate: job.profiles?.creation_date || '',
         };
       });
       
@@ -274,19 +279,19 @@ export const HomeScreen = ({ navigation }: any) => {
     let filtered = [...allJobs];
 
     if (newFilters.modality) {
-      filtered = filtered.filter(job => 
+      filtered = filtered.filter((job) =>
         job.modality?.toLowerCase().includes(newFilters.modality.toLowerCase())
       );
     }
 
     if (newFilters.type) {
-      filtered = filtered.filter(job => 
+      filtered = filtered.filter((job) =>
         job.type?.toLowerCase().includes(newFilters.type.toLowerCase())
       );
     }
 
     if (newFilters.location) {
-      filtered = filtered.filter(job => 
+      filtered = filtered.filter((job) =>
         job.location?.toLowerCase().includes(newFilters.location.toLowerCase())
       );
     }
@@ -345,7 +350,7 @@ export const HomeScreen = ({ navigation }: any) => {
         await supabase.from('applications').insert({
           candidate_id: session?.user?.id,
           job_id: currentJob.id,
-          status: 'pending'
+          status: 'pending',
         });
       } catch (err) {
         console.error('Error guardando aplicacion:', err);
@@ -354,24 +359,26 @@ export const HomeScreen = ({ navigation }: any) => {
       setModalConfig({
         visible: true,
         title: '¡Es un Match!',
-        message: '¡Excelente elección! La empresa evaluará tu perfil para determinar si eres el candidato apto. Se comunicarán contigo en un plazo estimado de 3 a 5 días hábiles. ¡Mantente atento!',
+        message:
+          '¡Excelente elección! La empresa evaluará tu perfil para determinar si eres el candidato apto. Se comunicarán contigo en un plazo estimado de 3 a 5 días hábiles. ¡Mantente atento!',
         icon: 'heart',
-        type: 'success'
+        type: 'success',
       });
     } else if (type === 'reject') {
       setModalConfig({
         visible: true,
         title: 'Preferencia Guardada',
-        message: 'Entendido. Hemos filtrado esta vacante; tu tiempo es valioso y buscaremos algo que se ajuste mejor a lo que deseas.',
+        message:
+          'Entendido. Hemos filtrado esta vacante; tu tiempo es valioso y buscaremos algo que se ajuste mejor a lo que deseas.',
         icon: 'x-circle',
-        type: 'info'
+        type: 'info',
       });
       translateX.value = withSpring(-SCREEN_WIDTH * 1.5);
     }
 
     translateX.value = 0;
     translateY.value = 0;
-    setCurrentIndex(prev => prev + 1);
+    setCurrentIndex((prev) => prev + 1);
   };
 
   const onSwipeComplete = (direction: 'right' | 'left' | 'up') => {
@@ -387,11 +394,17 @@ export const HomeScreen = ({ navigation }: any) => {
     })
     .onEnd((event) => {
       if (translateX.value > SWIPE_THRESHOLD) {
-        translateX.value = withSpring(SCREEN_WIDTH * 1.5, {}, () => runOnJS(onSwipeComplete)('right'));
+        translateX.value = withSpring(SCREEN_WIDTH * 1.5, {}, () =>
+          runOnJS(onSwipeComplete)('right')
+        );
       } else if (translateX.value < -SWIPE_THRESHOLD) {
-        translateX.value = withSpring(-SCREEN_WIDTH * 1.5, {}, () => runOnJS(onSwipeComplete)('left'));
+        translateX.value = withSpring(-SCREEN_WIDTH * 1.5, {}, () =>
+          runOnJS(onSwipeComplete)('left')
+        );
       } else if (translateY.value < -SWIPE_THRESHOLD) {
-        translateY.value = withSpring(-SCREEN_WIDTH * 1.5, {}, () => runOnJS(onSwipeComplete)('up'));
+        translateY.value = withSpring(-SCREEN_WIDTH * 1.5, {}, () =>
+          runOnJS(onSwipeComplete)('up')
+        );
       } else {
         translateX.value = withSpring(0);
         translateY.value = withSpring(0);
@@ -399,15 +412,34 @@ export const HomeScreen = ({ navigation }: any) => {
     });
 
   const cardStyle = useAnimatedStyle(() => {
-    const rotate = interpolate(translateX.value, [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2], [-8, 0, 8], Extrapolate.CLAMP);
+    const rotate = interpolate(
+      translateX.value,
+      [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
+      [-8, 0, 8],
+      Extrapolate.CLAMP
+    );
     return {
-      transform: [{ translateX: translateX.value }, { translateY: translateY.value }, { rotate: `${rotate}deg` }]
+      transform: [
+        { translateX: translateX.value },
+        { translateY: translateY.value },
+        { rotate: `${rotate}deg` },
+      ],
     };
   });
 
   const nextCardStyle = useAnimatedStyle(() => {
-    const scale = interpolate(Math.abs(translateX.value), [0, SWIPE_THRESHOLD], [0.92, 1], Extrapolate.CLAMP);
-    const opacity = interpolate(Math.abs(translateX.value), [0, SWIPE_THRESHOLD], [0.6, 1], Extrapolate.CLAMP);
+    const scale = interpolate(
+      Math.abs(translateX.value),
+      [0, SWIPE_THRESHOLD],
+      [0.92, 1],
+      Extrapolate.CLAMP
+    );
+    const opacity = interpolate(
+      Math.abs(translateX.value),
+      [0, SWIPE_THRESHOLD],
+      [0.6, 1],
+      Extrapolate.CLAMP
+    );
     return { transform: [{ scale }], opacity };
   });
 
@@ -426,7 +458,7 @@ export const HomeScreen = ({ navigation }: any) => {
     );
     return {
       opacity,
-      transform: [{ scale }, { rotate: '-12deg' }]
+      transform: [{ scale }, { rotate: '-12deg' }],
     };
   });
 
@@ -445,7 +477,7 @@ export const HomeScreen = ({ navigation }: any) => {
     );
     return {
       opacity,
-      transform: [{ scale }, { rotate: '12deg' }]
+      transform: [{ scale }, { rotate: '12deg' }],
     };
   });
 
@@ -459,14 +491,26 @@ export const HomeScreen = ({ navigation }: any) => {
 
   if (checkingProfile) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#050505', alignItems: 'center', justifyContent: 'center' }}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: '#050505',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
         <Text style={{ color: '#94a3b8', fontStyle: 'italic' }}>Iniciando Obsidian...</Text>
       </View>
     );
   }
 
   if (showOnboarding && session?.user?.id) {
-    return <OnboardingCandidate userId={session.user.id} session={session} onComplete={() => setShowOnboarding(false)} />;
+    return (
+      <OnboardingCandidate
+        userId={session.user.id}
+        session={session}
+        onComplete={() => setShowOnboarding(false)}
+      />
+    );
   }
 
   const currentJob = jobs[currentIndex];
@@ -476,9 +520,8 @@ export const HomeScreen = ({ navigation }: any) => {
     <View style={{ flex: 1, backgroundColor: '#050505' }}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-        
-        <ObsidianHeader 
-          title="Exploration" 
+        <ObsidianHeader
+          title="Exploration"
           subtitle="Top Matches"
           rightIcon="options"
           onRightPress={() => setFilterModalVisible(true)}
@@ -489,20 +532,14 @@ export const HomeScreen = ({ navigation }: any) => {
             <View style={styles.cardWrapper}>
               {nextJob && (
                 <Animated.View style={[styles.nextCard, nextCardStyle]}>
-                  <JobCard 
-                    job={nextJob} 
-                    onInfoPress={() => setDetailModalVisible(true)} 
-                  />
+                  <JobCard job={nextJob} onInfoPress={() => setDetailModalVisible(true)} />
                 </Animated.View>
               )}
 
               <GestureDetector gesture={gesture}>
                 <Animated.View style={[{ flex: 1 }, cardStyle]}>
-                  <JobCard 
-                    job={currentJob} 
-                    onInfoPress={() => setDetailModalVisible(true)} 
-                  />
-                  
+                  <JobCard job={currentJob} onInfoPress={() => setDetailModalVisible(true)} />
+
                   {/* LIKE / APTO Stamp */}
                   <Animated.View style={[styles.stampContainer, styles.likeStamp, likeStampStyle]}>
                     <Ionicons name="checkmark-circle" size={26} color="#00E676" />
@@ -518,15 +555,21 @@ export const HomeScreen = ({ navigation }: any) => {
               </GestureDetector>
 
               <View style={styles.actionsContainer}>
-                <TouchableOpacity onPress={() => handleAction('reject')} style={[styles.actionBtn, styles.rejectBtn]}>
+                <TouchableOpacity
+                  onPress={() => handleAction('reject')}
+                  style={[styles.actionBtn, styles.rejectBtn]}>
                   <Ionicons name="close" size={30} color="#FF3B30" />
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => handleAction('superlike')} style={[styles.actionBtn, styles.superBtn]}>
+                <TouchableOpacity
+                  onPress={() => handleAction('superlike')}
+                  style={[styles.actionBtn, styles.superBtn]}>
                   <Ionicons name="star" size={24} color="#FFCC00" />
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => handleAction('match')} style={[styles.actionBtn, styles.matchBtn]}>
+                <TouchableOpacity
+                  onPress={() => handleAction('match')}
+                  style={[styles.actionBtn, styles.matchBtn]}>
                   <Ionicons name="heart" size={32} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
@@ -534,15 +577,30 @@ export const HomeScreen = ({ navigation }: any) => {
           ) : (
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
               {loadingJobs ? (
-                  <ActivityIndicator size="large" color="#00A3FF" />
+                <ActivityIndicator size="large" color="#00A3FF" />
               ) : (
-                  <>
-                     <Ionicons name="checkmark-circle" size={80} color="#00A3FF" style={{ marginBottom: 20 }} />
-                     <Text style={{ color: '#FFFFFF', fontSize: 24, fontWeight: '900', marginBottom: 10 }}>Has visto todo</Text>
-                     <Text style={{ color: '#94a3b8', textAlign: 'center', paddingHorizontal: 40, lineHeight: 22 }}>
-                        Has deslizado por todas las vacantes por ahora. Las empresas subirán nuevas opciones pronto.
-                     </Text>
-                  </>
+                <>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={80}
+                    color="#00A3FF"
+                    style={{ marginBottom: 20 }}
+                  />
+                  <Text
+                    style={{ color: '#FFFFFF', fontSize: 24, fontWeight: '900', marginBottom: 10 }}>
+                    Has visto todo
+                  </Text>
+                  <Text
+                    style={{
+                      color: '#94a3b8',
+                      textAlign: 'center',
+                      paddingHorizontal: 40,
+                      lineHeight: 22,
+                    }}>
+                    Has deslizado por todas las vacantes por ahora. Las empresas subirán nuevas
+                    opciones pronto.
+                  </Text>
+                </>
               )}
             </View>
           )}
@@ -568,9 +626,11 @@ export const HomeScreen = ({ navigation }: any) => {
             location={currentJob.location}
             salary={currentJob.salary}
             tags={currentJob.tags}
-            content={currentJob.companyDescription || 'Forma parte de una de las empresas más innovadoras del sector.'}
+            content={
+              currentJob.companyDescription ||
+              'Forma parte de una de las empresas más innovadoras del sector.'
+            }
             accentColor="#00A3FF"
-            
             // Rich Job Detail Props
             isJobDetail={true}
             jobDescription={currentJob.description}
@@ -578,7 +638,6 @@ export const HomeScreen = ({ navigation }: any) => {
             jobBenefits={currentJob.benefits}
             jobType={currentJob.type}
             jobModality={currentJob.modality}
-            
             // Rich Company Profile Props
             companyBio={currentJob.companyDescription}
             companyIndustry={currentJob.companyIndustry}
@@ -601,15 +660,14 @@ export const HomeScreen = ({ navigation }: any) => {
           <TouchableWithoutFeedback onPress={dismissFilterSheet}>
             <View style={styles.filterOverlay}>
               <TouchableWithoutFeedback>
-                <KeyboardAvoidingView 
+                <KeyboardAvoidingView
                   behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                  style={styles.filterKeyboardContainer}
-                >
+                  style={styles.filterKeyboardContainer}>
                   <Animated.View style={[styles.filterContainer, sheetAnimatedStyle]}>
                     <GestureDetector gesture={sheetGesture}>
                       <View style={styles.dragHandleArea}>
                         <View style={styles.dragIndicator} />
-                        
+
                         <View style={styles.filterHeader}>
                           <Text style={styles.filterTitle}>Filtrar Empleos</Text>
                           <TouchableOpacity onPress={dismissFilterSheet} style={styles.closeBtn}>
@@ -619,27 +677,28 @@ export const HomeScreen = ({ navigation }: any) => {
                       </View>
                     </GestureDetector>
 
-                    <ScrollView contentContainerStyle={styles.filterScroll} showsVerticalScrollIndicator={false}>
+                    <ScrollView
+                      contentContainerStyle={styles.filterScroll}
+                      showsVerticalScrollIndicator={false}>
                       <Text style={styles.filterSectionTitle}>Modalidad</Text>
-                      <ScrollView 
-                        horizontal 
-                        showsHorizontalScrollIndicator={false} 
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.horizontalChipsScroll}
-                        style={styles.horizontalScrollWrapper}
-                      >
+                        style={styles.horizontalScrollWrapper}>
                         {['', 'Remoto', 'Presencial', 'Híbrido'].map((mod) => (
                           <TouchableOpacity
                             key={mod}
                             onPress={() => setActiveFilters({ ...activeFilters, modality: mod })}
                             style={[
                               styles.filterChip,
-                              activeFilters.modality === mod && styles.activeFilterChip
-                            ]}
-                          >
-                            <Text style={[
-                              styles.filterChipText,
-                              activeFilters.modality === mod && styles.activeFilterChipText
+                              activeFilters.modality === mod && styles.activeFilterChip,
                             ]}>
+                            <Text
+                              style={[
+                                styles.filterChipText,
+                                activeFilters.modality === mod && styles.activeFilterChipText,
+                              ]}>
                               {mod === '' ? 'Todos' : mod}
                             </Text>
                           </TouchableOpacity>
@@ -647,29 +706,30 @@ export const HomeScreen = ({ navigation }: any) => {
                       </ScrollView>
 
                       <Text style={styles.filterSectionTitle}>Tipo de Empleo</Text>
-                      <ScrollView 
-                        horizontal 
-                        showsHorizontalScrollIndicator={false} 
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.horizontalChipsScroll}
-                        style={styles.horizontalScrollWrapper}
-                      >
-                        {['', 'Tiempo Completo', 'Medio Tiempo', 'Práctica', 'Freelance'].map((t) => (
-                          <TouchableOpacity
-                            key={t}
-                            onPress={() => setActiveFilters({ ...activeFilters, type: t })}
-                            style={[
-                              styles.filterChip,
-                              activeFilters.type === t && styles.activeFilterChip
-                            ]}
-                          >
-                            <Text style={[
-                              styles.filterChipText,
-                              activeFilters.type === t && styles.activeFilterChipText
-                            ]}>
-                              {t === '' ? 'Todos' : t}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
+                        style={styles.horizontalScrollWrapper}>
+                        {['', 'Tiempo Completo', 'Medio Tiempo', 'Práctica', 'Freelance'].map(
+                          (t) => (
+                            <TouchableOpacity
+                              key={t}
+                              onPress={() => setActiveFilters({ ...activeFilters, type: t })}
+                              style={[
+                                styles.filterChip,
+                                activeFilters.type === t && styles.activeFilterChip,
+                              ]}>
+                              <Text
+                                style={[
+                                  styles.filterChipText,
+                                  activeFilters.type === t && styles.activeFilterChipText,
+                                ]}>
+                                {t === '' ? 'Todos' : t}
+                              </Text>
+                            </TouchableOpacity>
+                          )
+                        )}
                       </ScrollView>
 
                       <Text style={styles.filterSectionTitle}>Buscar por Cargo / Trabajo</Text>
@@ -1066,5 +1126,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-  }
+  },
 });

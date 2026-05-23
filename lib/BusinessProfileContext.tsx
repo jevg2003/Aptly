@@ -38,7 +38,7 @@ const INITIAL_PROFILE: BusinessProfile = {
   business_area: '',
   company_tags: '',
   pdf_name: '',
-  phone: ''
+  phone: '',
 };
 
 const BusinessProfileContext = createContext<BusinessProfileContextType | undefined>(undefined);
@@ -61,25 +61,25 @@ export const BusinessProfileProvider = ({ children }: { children: ReactNode }) =
           .single();
 
         if (error && error.code !== 'PGRST116') throw error;
-        
+
         if (data && mounted) {
-           setProfile(prev => ({
-             ...prev,
-             full_name: data.full_name || '',
-             category: data.professional_title || '',
-             location: data.location || '',
-             website: data.resume_url || '', // Abusing resume_url for website
-             culture: data.bio || '',
-             avatar_url: data.avatar_url || '',
-             team: prev.team || [],
-             tax_id: data.tax_id || '',
-             creation_date: data.creation_date || '',
-             industry: data.industry || '',
-             business_area: data.business_area || '',
-             company_tags: data.company_tags || '',
-             pdf_name: data.pdf_name || '',
-             phone: data.phone || ''
-           }));
+          setProfile((prev) => ({
+            ...prev,
+            full_name: data.full_name || '',
+            category: data.professional_title || '',
+            location: data.location || '',
+            website: data.resume_url || '', // Abusing resume_url for website
+            culture: data.bio || '',
+            avatar_url: data.avatar_url || '',
+            team: prev.team || [],
+            tax_id: data.tax_id || '',
+            creation_date: data.creation_date || '',
+            industry: data.industry || '',
+            business_area: data.business_area || '',
+            company_tags: data.company_tags || '',
+            pdf_name: data.pdf_name || '',
+            phone: data.phone || '',
+          }));
         }
       } catch (err) {
         console.error('Error loading business profile:', err);
@@ -88,14 +88,16 @@ export const BusinessProfileProvider = ({ children }: { children: ReactNode }) =
       }
     };
     fetchProfile();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [session?.user?.id]);
 
   const updateProfile = async (updates: Partial<BusinessProfile>) => {
-    setProfile(prev => ({ ...prev, ...updates }));
-    
+    setProfile((prev) => ({ ...prev, ...updates }));
+
     if (!session?.user?.id) return;
-    
+
     // Map to DB columns
     const dbUpdate: any = {};
     if (updates.full_name !== undefined) dbUpdate.full_name = updates.full_name;
@@ -112,11 +114,8 @@ export const BusinessProfileProvider = ({ children }: { children: ReactNode }) =
     if (updates.pdf_name !== undefined) dbUpdate.pdf_name = updates.pdf_name;
     if (updates.phone !== undefined) dbUpdate.phone = updates.phone;
 
-    const { error } = await supabase
-      .from('profiles')
-      .update(dbUpdate)
-      .eq('id', session.user.id);
-      
+    const { error } = await supabase.from('profiles').update(dbUpdate).eq('id', session.user.id);
+
     if (error) console.error('Failed to sync profile to DB:', error);
   };
 

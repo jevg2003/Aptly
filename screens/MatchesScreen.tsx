@@ -25,7 +25,8 @@ const MOCK_MATCHES: MatchInfo[] = [
     salary: '$140k - $180k',
     location: 'Mountain View, CA (Híbrido)',
     vacancies: 4,
-    description: 'Buscamos un desarrollador con pasión por la UI y sistemas complejos. Google ofrece un ambiente de innovación constante.',
+    description:
+      'Buscamos un desarrollador con pasión por la UI y sistemas complejos. Google ofrece un ambiente de innovación constante.',
     postedAt: 'Hace 3 días',
   },
   {
@@ -38,7 +39,8 @@ const MOCK_MATCHES: MatchInfo[] = [
     salary: '$110k - $150k',
     location: 'San Francisco, CA (Remoto)',
     vacancies: 2,
-    description: 'Airbnb está redefiniendo cómo viajamos. Ayúdanos a diseñar experiencias que hagan que cualquiera se sienta como en casa.',
+    description:
+      'Airbnb está redefiniendo cómo viajamos. Ayúdanos a diseñar experiencias que hagan que cualquiera se sienta como en casa.',
     postedAt: 'Hace 1 día',
   },
   {
@@ -50,7 +52,8 @@ const MOCK_MATCHES: MatchInfo[] = [
     salary: '$130k - $170k',
     location: 'Redmond, WA (Híbrido)',
     vacancies: 7,
-    description: 'Únete a nuestro equipo de Azure para construir el futuro de la nube a escala global.',
+    description:
+      'Únete a nuestro equipo de Azure para construir el futuro de la nube a escala global.',
     postedAt: 'Hace 5 días',
   },
 ];
@@ -73,46 +76,49 @@ export const MatchesScreen = () => {
 
   const renderMatchItem = ({ item }: { item: MatchInfo }) => (
     <TouchableOpacity
-      className="flex-row items-center px-6 py-4 mb-3 bg-white dark:bg-slate-900 mx-4 rounded-3xl shadow-sm border border-slate-50 dark:border-slate-800"
+      className="mx-4 mb-3 flex-row items-center rounded-3xl border border-slate-50 bg-white px-6 py-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
       activeOpacity={0.7}
-      onPress={() => openCompanyDetail(item)}
-    >
+      onPress={() => openCompanyDetail(item)}>
       <View className="relative">
-        <Image source={{ uri: item.imageUrl }} className="w-16 h-16 rounded-2xl" />
+        <Image source={{ uri: item.imageUrl }} className="h-16 w-16 rounded-2xl" />
         {item.unread && (
-          <View className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white dark:border-slate-900" />
+          <View className="absolute -right-1 -top-1 h-4 w-4 rounded-full border-2 border-white bg-blue-500 dark:border-slate-900" />
         )}
       </View>
 
-      <View className="flex-1 ml-4">
-        <View className="flex-row justify-between items-center mb-1">
-          <Text className="text-lg font-bold text-slate-800 dark:text-white" numberOfLines={1}>{item.companyName}</Text>
+      <View className="ml-4 flex-1">
+        <View className="mb-1 flex-row items-center justify-between">
+          <Text className="text-lg font-bold text-slate-800 dark:text-white" numberOfLines={1}>
+            {item.companyName}
+          </Text>
           <Text className="text-xs text-slate-400 dark:text-slate-500">{item.matchDate}</Text>
         </View>
-        <Text className="text-sm text-slate-500 dark:text-slate-400 font-medium" numberOfLines={1}>{item.role}</Text>
-        <View className="flex-row mt-1 items-center">
+        <Text className="text-sm font-medium text-slate-500 dark:text-slate-400" numberOfLines={1}>
+          {item.role}
+        </Text>
+        <View className="mt-1 flex-row items-center">
           <Ionicons name="location-outline" size={12} color="#94a3b8" />
-          <Text className="text-[10px] text-slate-400 ml-1">{item.location}</Text>
+          <Text className="ml-1 text-[10px] text-slate-400">{item.location}</Text>
         </View>
       </View>
 
       <View className="ml-2">
-        <Ionicons name="chevron-forward" size={20} color={isDarkMode ? "#475569" : "#cbd5e1"} />
+        <Ionicons name="chevron-forward" size={20} color={isDarkMode ? '#475569' : '#cbd5e1'} />
       </View>
     </TouchableOpacity>
   );
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
-      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
 
-      <View className="px-6 py-4 flex-row items-center justify-between">
+      <View className="flex-row items-center justify-between px-6 py-4">
         <View>
           <Text className="text-3xl font-black text-slate-900 dark:text-white">Matches</Text>
-          <Text className="text-slate-500 dark:text-slate-400 font-medium">Tus nuevos matches</Text>
+          <Text className="font-medium text-slate-500 dark:text-slate-400">Tus nuevos matches</Text>
         </View>
-        <TouchableOpacity className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-900 items-center justify-center shadow-sm border border-slate-50 dark:border-slate-800">
-          <Ionicons name="search" size={22} color={isDarkMode ? "#ffffff" : "#1e293b"} />
+        <TouchableOpacity className="h-12 w-12 items-center justify-center rounded-2xl border border-slate-50 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <Ionicons name="search" size={22} color={isDarkMode ? '#ffffff' : '#1e293b'} />
         </TouchableOpacity>
       </View>
 
@@ -123,8 +129,10 @@ export const MatchesScreen = () => {
         contentContainerStyle={{ paddingBottom: 100, paddingTop: 10 }}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={() => (
-          <View className="px-6 mb-4">
-            <Text className="text-xs font-bold text-blue-600 dark:text-blue-400 tracking-widest uppercase">RECIENTES</Text>
+          <View className="mb-4 px-6">
+            <Text className="text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">
+              RECIENTES
+            </Text>
           </View>
         )}
       />
@@ -133,70 +141,102 @@ export const MatchesScreen = () => {
         animationType="slide"
         transparent={true}
         visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
+        onRequestClose={() => setModalVisible(false)}>
         <View className="flex-1 justify-end bg-black/40">
-          <View className="bg-white dark:bg-slate-900 h-[85%] rounded-t-[40px] overflow-hidden">
+          <View className="h-[85%] overflow-hidden rounded-t-[40px] bg-white dark:bg-slate-900">
             {selectedMatch && (
               <>
-                <View className="h-60 w-full relative">
-                  <Image source={{ uri: selectedMatch.imageUrl }} className="w-full h-full" resizeMode="cover" />
+                <View className="relative h-60 w-full">
+                  <Image
+                    source={{ uri: selectedMatch.imageUrl }}
+                    className="h-full w-full"
+                    resizeMode="cover"
+                  />
                   <View className="absolute inset-0 bg-black/20" />
                   <TouchableOpacity
                     onPress={() => setModalVisible(false)}
-                    className="absolute top-6 right-6 w-10 h-10 bg-black/30 rounded-full items-center justify-center border border-white/20"
-                  >
+                    className="absolute right-6 top-6 h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/30">
                     <Ionicons name="close" size={24} color="white" />
                   </TouchableOpacity>
-                  <View className="absolute -bottom-10 left-8 p-1 bg-white dark:bg-slate-900 rounded-3xl shadow-xl">
-                    <Image source={{ uri: selectedMatch.imageUrl }} className="w-20 h-20 rounded-2xl" />
+                  <View className="absolute -bottom-10 left-8 rounded-3xl bg-white p-1 shadow-xl dark:bg-slate-900">
+                    <Image
+                      source={{ uri: selectedMatch.imageUrl }}
+                      className="h-20 w-20 rounded-2xl"
+                    />
                   </View>
                 </View>
 
-                <ScrollView className="flex-1 px-8 pt-12 pb-10" showsVerticalScrollIndicator={false}>
+                <ScrollView
+                  className="flex-1 px-8 pb-10 pt-12"
+                  showsVerticalScrollIndicator={false}>
                   <View className="mb-6">
-                    <Text className="text-3xl font-black text-slate-800 dark:text-white mb-1">{selectedMatch.companyName}</Text>
-                    <Text className="text-lg font-bold text-blue-600 dark:text-blue-400">{selectedMatch.role}</Text>
+                    <Text className="mb-1 text-3xl font-black text-slate-800 dark:text-white">
+                      {selectedMatch.companyName}
+                    </Text>
+                    <Text className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                      {selectedMatch.role}
+                    </Text>
                   </View>
 
-                  <View className="flex-row flex-wrap gap-3 mb-8">
-                    <View className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl flex-1 min-w-[45%] border border-slate-100 dark:border-slate-700">
+                  <View className="mb-8 flex-row flex-wrap gap-3">
+                    <View className="min-w-[45%] flex-1 rounded-2xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
                       <Ionicons name="cash-outline" size={20} color="#10b981" />
-                      <Text className="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Salario</Text>
-                      <Text className="text-sm font-black text-slate-700 dark:text-slate-200">{selectedMatch.salary}</Text>
+                      <Text className="mt-1 text-[10px] font-bold uppercase tracking-tighter text-slate-400">
+                        Salario
+                      </Text>
+                      <Text className="text-sm font-black text-slate-700 dark:text-slate-200">
+                        {selectedMatch.salary}
+                      </Text>
                     </View>
 
-                    <View className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl flex-1 min-w-[45%] border border-slate-100 dark:border-slate-700">
+                    <View className="min-w-[45%] flex-1 rounded-2xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
                       <Ionicons name="location-outline" size={20} color="#3b82f6" />
-                      <Text className="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Ubicación</Text>
-                      <Text className="text-sm font-black text-slate-700 dark:text-slate-200" numberOfLines={1}>{selectedMatch.location}</Text>
+                      <Text className="mt-1 text-[10px] font-bold uppercase tracking-tighter text-slate-400">
+                        Ubicación
+                      </Text>
+                      <Text
+                        className="text-sm font-black text-slate-700 dark:text-slate-200"
+                        numberOfLines={1}>
+                        {selectedMatch.location}
+                      </Text>
                     </View>
 
-                    <View className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl flex-1 min-w-[45%] border border-slate-100 dark:border-slate-700">
+                    <View className="min-w-[45%] flex-1 rounded-2xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
                       <Ionicons name="briefcase-outline" size={20} color="#f59e0b" />
-                      <Text className="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Vacantes</Text>
-                      <Text className="text-sm font-black text-slate-700 dark:text-slate-200">{selectedMatch.vacancies} Disponibles</Text>
+                      <Text className="mt-1 text-[10px] font-bold uppercase tracking-tighter text-slate-400">
+                        Vacantes
+                      </Text>
+                      <Text className="text-sm font-black text-slate-700 dark:text-slate-200">
+                        {selectedMatch.vacancies} Disponibles
+                      </Text>
                     </View>
 
-                    <View className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl flex-1 min-w-[45%] border border-slate-100 dark:border-slate-700">
+                    <View className="min-w-[45%] flex-1 rounded-2xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
                       <Ionicons name="time-outline" size={20} color="#6366f1" />
-                      <Text className="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Publicado</Text>
-                      <Text className="text-sm font-black text-slate-700 dark:text-slate-200">{selectedMatch.postedAt}</Text>
+                      <Text className="mt-1 text-[10px] font-bold uppercase tracking-tighter text-slate-400">
+                        Publicado
+                      </Text>
+                      <Text className="text-sm font-black text-slate-700 dark:text-slate-200">
+                        {selectedMatch.postedAt}
+                      </Text>
                     </View>
                   </View>
 
                   <View className="mb-32">
-                    <Text className="text-lg font-bold text-slate-800 dark:text-white mb-2">Sobre la empresa</Text>
-                    <Text className="text-slate-500 dark:text-slate-400 leading-6">{selectedMatch.description}</Text>
+                    <Text className="mb-2 text-lg font-bold text-slate-800 dark:text-white">
+                      Sobre la empresa
+                    </Text>
+                    <Text className="leading-6 text-slate-500 dark:text-slate-400">
+                      {selectedMatch.description}
+                    </Text>
                   </View>
                 </ScrollView>
 
                 <View className="absolute bottom-8 left-8 right-8">
                   <TouchableOpacity
-                    className="bg-blue-600 h-16 rounded-2xl items-center justify-center shadow-lg shadow-blue-400"
-                    onPress={() => setModalVisible(false)}
-                  >
-                    <Text className="text-white font-bold text-lg">Postularse Ahora</Text>
+                    className="h-16 items-center justify-center rounded-2xl bg-blue-600 shadow-lg shadow-blue-400"
+                    onPress={() => setModalVisible(false)}>
+                    <Text className="text-lg font-bold text-white">Postularse Ahora</Text>
                   </TouchableOpacity>
                 </View>
               </>

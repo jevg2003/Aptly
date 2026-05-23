@@ -1,10 +1,10 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Dimensions, 
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
   Platform,
   ActivityIndicator,
   Modal as RNModal,
@@ -47,12 +47,7 @@ export const ObsidianModal: React.FC<ObsidianModalProps> = ({
   const finalIconColor = isDestructive ? '#FF3B30' : iconColor;
 
   return (
-    <RNModal
-      transparent
-      visible={isVisible}
-      animationType="fade"
-      onRequestClose={onClose}
-    >
+    <RNModal transparent visible={isVisible} animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
         {/* Background Blur (if supported) */}
         {Platform.OS === 'ios' ? (
@@ -67,7 +62,11 @@ export const ObsidianModal: React.FC<ObsidianModalProps> = ({
             <View style={styles.glossyTop} />
 
             {/* Icon Header */}
-            <View style={[styles.iconWrapper, { backgroundColor: `${finalIconColor}15`, borderColor: `${finalIconColor}30` }]}>
+            <View
+              style={[
+                styles.iconWrapper,
+                { backgroundColor: `${finalIconColor}15`, borderColor: `${finalIconColor}30` },
+              ]}>
               <Feather name={iconName} size={28} color={finalIconColor} />
             </View>
 
@@ -80,25 +79,20 @@ export const ObsidianModal: React.FC<ObsidianModalProps> = ({
             {/* Actions */}
             <View style={styles.actions}>
               {cancelText && (
-                <TouchableOpacity 
-                  onPress={onClose} 
-                  style={styles.cancelBtn}
-                  activeOpacity={0.7}
-                >
+                <TouchableOpacity onPress={onClose} style={styles.cancelBtn} activeOpacity={0.7}>
                   <Text style={styles.cancelText}>{cancelText}</Text>
                 </TouchableOpacity>
               )}
 
-              <TouchableOpacity 
-                onPress={onConfirm || onClose} 
+              <TouchableOpacity
+                onPress={onConfirm || onClose}
                 style={[
-                  styles.confirmBtn, 
+                  styles.confirmBtn,
                   isDestructive ? styles.destructiveBtn : styles.infoBtn,
-                  !cancelText && { width: '100%' }
+                  !cancelText && { width: '100%' },
                 ]}
                 activeOpacity={0.8}
-                disabled={loading}
-              >
+                disabled={loading}>
                 {loading ? (
                   <ActivityIndicator size="small" color="white" />
                 ) : (

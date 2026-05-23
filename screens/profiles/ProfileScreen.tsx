@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
   TextInput,
   Alert,
-  Linking
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as DocumentPicker from 'expo-document-picker';
@@ -99,9 +99,11 @@ export const ProfileScreen = ({ navigation }: any) => {
       if (error) throw error;
 
       setProfile((prev: any) => ({ ...prev, avatar_url: publicUrl }));
-
     } catch (err: any) {
-      setErrorConfig({ visible: true, message: err.message || 'Hubo un problema actualizando tu foto de perfil.' });
+      setErrorConfig({
+        visible: true,
+        message: err.message || 'Hubo un problema actualizando tu foto de perfil.',
+      });
     } finally {
       setUploadingImage(false);
     }
@@ -111,11 +113,19 @@ export const ProfileScreen = ({ navigation }: any) => {
     if (!session?.user?.id) return;
     try {
       setLoading(true);
-      const { data: profileData, error: profileError } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
       if (profileError && profileError.code !== 'PGRST116') throw profileError;
       setProfile(profileData);
 
-      const { data: expData, error: expError } = await supabase.from('experiences').select('*').eq('profile_id', session.user.id).order('start_date', { ascending: false });
+      const { data: expData, error: expError } = await supabase
+        .from('experiences')
+        .select('*')
+        .eq('profile_id', session.user.id)
+        .order('start_date', { ascending: false });
       if (expError) throw expError;
       setExperiences(expData || []);
 
@@ -130,7 +140,8 @@ export const ProfileScreen = ({ navigation }: any) => {
       // Fetch Recent Applications Preview
       const { data: appsData, error: appsErr } = await supabase
         .from('applications')
-        .select(`
+        .select(
+          `
           id, 
           status,
           created_at,
@@ -138,23 +149,33 @@ export const ProfileScreen = ({ navigation }: any) => {
             title,
             profiles(full_name, avatar_url)
           )
-        `)
+        `
+        )
         .eq('candidate_id', session.user.id)
         .order('created_at', { ascending: false })
         .limit(3);
 
       if (!appsErr && appsData) {
-        const mapped = appsData.map(app => {
+        const mapped = appsData.map((app) => {
           const job = Array.isArray(app.jobs) ? app.jobs[0] : app.jobs;
-          const company = job?.profiles ? (Array.isArray(job.profiles) ? job.profiles[0] : job.profiles) : null;
+          const company = job?.profiles
+            ? Array.isArray(job.profiles)
+              ? job.profiles[0]
+              : job.profiles
+            : null;
           return {
             id: app.id,
             jobTitle: job?.title || 'Vacante',
             companyName: company?.full_name || 'Empresa',
             companyLogo: company?.avatar_url,
-            status: app.status === 'pending' ? 'Recibida' :
-              app.status === 'reviewed' ? 'En revisión' :
-                app.status === 'accepted' ? 'Seleccionado' : 'Procesando'
+            status:
+              app.status === 'pending'
+                ? 'Recibida'
+                : app.status === 'reviewed'
+                  ? 'En revisión'
+                  : app.status === 'accepted'
+                    ? 'Seleccionado'
+                    : 'Procesando',
           };
         });
         setRecentApps(mapped);
@@ -183,8 +204,11 @@ export const ProfileScreen = ({ navigation }: any) => {
 
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
-        copyToCacheDirectory: true
+        type: [
+          'application/pdf',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ],
+        copyToCacheDirectory: true,
       });
 
       if (result.canceled) return;
@@ -206,7 +230,6 @@ export const ProfileScreen = ({ navigation }: any) => {
       // Update local state
       setProfile({ ...profile, resume_url: publicUrl });
       Alert.alert('Éxito', 'Tu CV se ha subido correctamente.');
-
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Hubo un problema al subir tu CV.');
     } finally {
@@ -228,21 +251,22 @@ export const ProfileScreen = ({ navigation }: any) => {
 
   const handleAddExperience = async () => {
     if (!newExp.title || !newExp.company) {
-      setErrorConfig({ visible: true, message: 'Por favor completa al menos el cargo y la empresa.' });
+      setErrorConfig({
+        visible: true,
+        message: 'Por favor completa al menos el cargo y la empresa.',
+      });
       return;
     }
 
     setSavingExp(true);
     try {
-      const { error } = await supabase
-        .from('experiences')
-        .insert({
-          profile_id: session?.user?.id,
-          title: newExp.title,
-          company: newExp.company,
-          description: newExp.description,
-          start_date: new Date().toISOString() // Fallback literal
-        });
+      const { error } = await supabase.from('experiences').insert({
+        profile_id: session?.user?.id,
+        title: newExp.title,
+        company: newExp.company,
+        description: newExp.description,
+        start_date: new Date().toISOString(), // Fallback literal
+      });
 
       if (error) throw error;
 
@@ -258,22 +282,24 @@ export const ProfileScreen = ({ navigation }: any) => {
 
   if (loading && !refreshing) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#050505', alignItems: 'center', justifyContent: 'center' }}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: '#050505',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
         <Text style={{ color: '#475569', fontStyle: 'italic' }}>Iniciando Obsidian...</Text>
       </View>
     );
   }
 
-  const profileCompletePercent = 85;
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#050505' }}>
       <StatusBar barStyle="light-content" />
-
       <ObsidianHeader
         title="Profile"
         subtitle="Professional Hub"
-        rightIcon="settings-outline"
       />
 
       <ScrollView
@@ -313,15 +339,15 @@ export const ProfileScreen = ({ navigation }: any) => {
           {(profile?.location || (profile?.role !== 'company' && profile?.birth_date)) && (
             <View style={styles.locationRow}>
               {profile?.location && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
-                  <MaterialCommunityIcons name="map-marker-outline" size={14} color="#475569" />
-                  <Text style={styles.locationText}>{profile.location}</Text>
+                <View style={styles.locationTag}>
+                  <MaterialCommunityIcons name="map-marker-outline" size={14} color="#00A3FF" />
+                  <Text style={styles.locationTagText}>{profile.location}</Text>
                 </View>
               )}
               {profile?.role !== 'company' && profile?.birth_date && (
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <MaterialCommunityIcons name="cake-variant" size={14} color="#475569" />
-                  <Text style={styles.locationText}>{profile.birth_date}</Text>
+                <View style={styles.locationTag}>
+                  <MaterialCommunityIcons name="cake-variant" size={14} color="#00A3FF" />
+                  <Text style={styles.locationTagText}>{profile.birth_date}</Text>
                 </View>
               )}
             </View>
@@ -329,7 +355,13 @@ export const ProfileScreen = ({ navigation }: any) => {
 
           <TouchableOpacity
             onPress={() => navigation.navigate('EditProfile', { profile })}
-            style={[styles.editBtn, profile?.role === 'company' && { borderColor: 'rgba(255,0,92,0.3)' }]}
+            style={[
+              styles.editBtn,
+              profile?.role === 'company' && {
+                borderColor: 'rgba(255,0,92,0.15)',
+                backgroundColor: 'rgba(255,0,92,0.04)',
+              }
+            ]}
           >
             <Feather name="edit-3" size={18} color={profile?.role === 'company' ? "#FF005C" : "#00A3FF"} />
             <Text style={[styles.editBtnText, profile?.role === 'company' && { color: '#FF005C' }]}>Gestionar Información</Text>
@@ -338,10 +370,36 @@ export const ProfileScreen = ({ navigation }: any) => {
 
         {/* Stats Row */}
         <View style={styles.statsRow}>
-          <StatCard label="Progreso" value={`${profileCompletePercent}%`} sublabel={profile?.role === 'company' ? "Completar perfil" : "Añadir experiencia"} />
           <StatCard label={profile?.role === 'company' ? "Candidatos" : "Postulaciones"} value={appCount} />
           <StatCard label="Vistas" value="0" />
         </View>
+
+        {/* Bio / Sobre mí Section (Only for Candidate, but also nice for Companies) */}
+        {profile?.role !== 'company' && (
+          profile?.bio ? (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Sobre mí</Text>
+              </View>
+              <View style={styles.bioCard}>
+                <Text style={styles.bioText}>{profile.bio}</Text>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Sobre mí</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.emptyExperience}
+                onPress={() => navigation.navigate('EditProfile', { profile })}
+              >
+                <Text style={styles.emptyText}>Aún no has añadido una breve presentación sobre ti.</Text>
+                <Text style={styles.addText}>+ Añadir Resumen / Bio</Text>
+              </TouchableOpacity>
+            </View>
+          )
+        )}
 
         {profile?.role === 'company' ? (
           <>
@@ -350,25 +408,53 @@ export const ProfileScreen = ({ navigation }: any) => {
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Detalles Corporativos</Text>
               </View>
-              <View style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: 20, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
+              <View
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.02)',
+                  padding: 20,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: 'rgba(255,255,255,0.05)',
+                }}>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    marginBottom: 15,
+                  }}>
                   <View>
-                    <Text style={{ color: '#475569', fontSize: 12, marginBottom: 4 }}>NIT / ID Fiscal</Text>
-                    <Text style={{ color: '#FFF', fontWeight: '600' }}>{profile?.tax_id || 'No registrado'}</Text>
+                    <Text style={{ color: '#475569', fontSize: 12, marginBottom: 4 }}>
+                      NIT / ID Fiscal
+                    </Text>
+                    <Text style={{ color: '#FFF', fontWeight: '600' }}>
+                      {profile?.tax_id || 'No registrado'}
+                    </Text>
                   </View>
                   <View>
-                    <Text style={{ color: '#475569', fontSize: 12, marginBottom: 4 }}>Fecha de Creación</Text>
-                    <Text style={{ color: '#FFF', fontWeight: '600' }}>{profile?.creation_date || 'No registrada'}</Text>
+                    <Text style={{ color: '#475569', fontSize: 12, marginBottom: 4 }}>
+                      Fecha de Creación
+                    </Text>
+                    <Text style={{ color: '#FFF', fontWeight: '600' }}>
+                      {profile?.creation_date || 'No registrada'}
+                    </Text>
                   </View>
                 </View>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                   <View>
-                    <Text style={{ color: '#475569', fontSize: 12, marginBottom: 4 }}>Área de Negocio</Text>
-                    <Text style={{ color: '#FFF', fontWeight: '600' }}>{profile?.business_area || 'No registrada'}</Text>
+                    <Text style={{ color: '#475569', fontSize: 12, marginBottom: 4 }}>
+                      Área de Negocio
+                    </Text>
+                    <Text style={{ color: '#FFF', fontWeight: '600' }}>
+                      {profile?.business_area || 'No registrada'}
+                    </Text>
                   </View>
                   <View>
-                    <Text style={{ color: '#475569', fontSize: 12, marginBottom: 4 }}>Sector principal</Text>
-                    <Text style={{ color: '#FFF', fontWeight: '600' }}>{profile?.industry || 'No registrado'}</Text>
+                    <Text style={{ color: '#475569', fontSize: 12, marginBottom: 4 }}>
+                      Sector principal
+                    </Text>
+                    <Text style={{ color: '#FFF', fontWeight: '600' }}>
+                      {profile?.industry || 'No registrado'}
+                    </Text>
                   </View>
                 </View>
               </View>
@@ -382,8 +468,19 @@ export const ProfileScreen = ({ navigation }: any) => {
               {profile?.company_tags ? (
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
                   {profile.company_tags.split(',').map((tag: string, index: number) => (
-                    <View key={index} style={{ backgroundColor: 'rgba(255,0,92,0.1)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,0,92,0.3)' }}>
-                      <Text style={{ color: '#FF005C', fontWeight: '600', fontSize: 13 }}>{tag.trim()}</Text>
+                    <View
+                      key={index}
+                      style={{
+                        backgroundColor: 'rgba(255,0,92,0.1)',
+                        paddingHorizontal: 16,
+                        paddingVertical: 8,
+                        borderRadius: 20,
+                        borderWidth: 1,
+                        borderColor: 'rgba(255,0,92,0.3)',
+                      }}>
+                      <Text style={{ color: '#FF005C', fontWeight: '600', fontSize: 13 }}>
+                        {tag.trim()}
+                      </Text>
                     </View>
                   ))}
                 </View>
@@ -397,14 +494,29 @@ export const ProfileScreen = ({ navigation }: any) => {
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Presentación Institucional</Text>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}>
-                <MaterialCommunityIcons name={profile?.pdf_name ? "file-pdf-box" : "file-outline"} size={32} color={profile?.pdf_name ? "#FF005C" : "#475569"} />
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: 'rgba(255,255,255,0.02)',
+                  padding: 16,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: 'rgba(255,255,255,0.05)',
+                }}>
+                <MaterialCommunityIcons
+                  name={profile?.pdf_name ? 'file-pdf-box' : 'file-outline'}
+                  size={32}
+                  color={profile?.pdf_name ? '#FF005C' : '#475569'}
+                />
                 <View style={{ marginLeft: 16, flex: 1 }}>
                   <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 14 }}>
                     {profile?.pdf_name ? profile.pdf_name : 'Sin documento adjunto'}
                   </Text>
                   <Text style={{ color: '#475569', fontSize: 12, marginTop: 4 }}>
-                    {profile?.pdf_name ? 'Documento visible para candidatos' : 'Puedes subirlo desde la edición del perfil'}
+                    {profile?.pdf_name
+                      ? 'Documento visible para candidatos'
+                      : 'Puedes subirlo desde la edición del perfil'}
                   </Text>
                 </View>
               </View>
@@ -418,34 +530,42 @@ export const ProfileScreen = ({ navigation }: any) => {
                 <Text style={styles.sectionTitle}>Contacto y Enlaces</Text>
               </View>
               {profile?.phone || profile?.linkedin_url || profile?.portfolio_url ? (
-                <View style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: 20, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', gap: 15 }}>
+                <View style={styles.contactContainer}>
                   {profile?.phone && (
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <MaterialCommunityIcons name="phone-outline" size={20} color="#00A3FF" />
-                      <Text style={{ color: '#E2E8F0', marginLeft: 12, fontSize: 14, fontWeight: '500' }}>{profile.phone}</Text>
+                    <View style={styles.contactCard}>
+                      <View style={styles.contactIconWrapper}>
+                        <MaterialCommunityIcons name="phone" size={20} color="#00A3FF" />
+                      </View>
+                      <View style={styles.contactDetails}>
+                        <Text style={styles.contactLabel}>Teléfono</Text>
+                        <Text style={styles.contactValue}>{profile.phone}</Text>
+                      </View>
                     </View>
                   )}
-                  {profile?.linkedin_url && (
-                    <TouchableOpacity 
-                      style={{ flexDirection: 'row', alignItems: 'center' }} 
-                      onPress={() => handleOpenURL(profile.linkedin_url)}
-                    >
-                      <MaterialCommunityIcons name="linkedin" size={20} color="#00A3FF" />
-                      <Text style={{ color: '#00A3FF', marginLeft: 12, fontSize: 14, fontWeight: '600', textDecorationLine: 'underline' }}>
-                        Ver perfil de LinkedIn
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                  {profile?.portfolio_url && (
-                    <TouchableOpacity 
-                      style={{ flexDirection: 'row', alignItems: 'center' }} 
-                      onPress={() => handleOpenURL(profile.portfolio_url)}
-                    >
-                      <MaterialCommunityIcons name="web" size={20} color="#00A3FF" />
-                      <Text style={{ color: '#00A3FF', marginLeft: 12, fontSize: 14, fontWeight: '600', textDecorationLine: 'underline' }}>
-                        Ver Portafolio Profesional
-                      </Text>
-                    </TouchableOpacity>
+
+                  {(profile?.linkedin_url || profile?.portfolio_url) && (
+                    <View style={styles.linksRow}>
+                      {profile?.linkedin_url && (
+                        <TouchableOpacity 
+                          style={styles.linkButton} 
+                          onPress={() => handleOpenURL(profile.linkedin_url)}
+                        >
+                          <MaterialCommunityIcons name="linkedin" size={20} color="#00A3FF" />
+                          <Text style={styles.linkButtonText}>LinkedIn</Text>
+                          <Feather name="external-link" size={12} color="#00A3FF" style={{ marginLeft: 4 }} />
+                        </TouchableOpacity>
+                      )}
+                      {profile?.portfolio_url && (
+                        <TouchableOpacity 
+                          style={styles.linkButton} 
+                          onPress={() => handleOpenURL(profile.portfolio_url)}
+                        >
+                          <MaterialCommunityIcons name="web" size={20} color="#00A3FF" />
+                          <Text style={styles.linkButtonText}>Portafolio</Text>
+                          <Feather name="external-link" size={12} color="#00A3FF" style={{ marginLeft: 4 }} />
+                        </TouchableOpacity>
+                      )}
+                    </View>
                   )}
                 </View>
               ) : (
@@ -467,16 +587,26 @@ export const ProfileScreen = ({ navigation }: any) => {
               {profile?.candidate_tags ? (
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
                   {profile.candidate_tags.split(',').map((tag: string, index: number) => (
-                    <View key={index} style={{ backgroundColor: 'rgba(0,163,255,0.08)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(0,163,255,0.25)' }}>
-                      <Text style={{ color: '#00A3FF', fontWeight: '600', fontSize: 13 }}>{tag.trim()}</Text>
+                    <View
+                      key={index}
+                      style={{
+                        backgroundColor: 'rgba(0,163,255,0.08)',
+                        paddingHorizontal: 16,
+                        paddingVertical: 8,
+                        borderRadius: 20,
+                        borderWidth: 1,
+                        borderColor: 'rgba(0,163,255,0.25)',
+                      }}>
+                      <Text style={{ color: '#00A3FF', fontWeight: '600', fontSize: 13 }}>
+                        {tag.trim()}
+                      </Text>
                     </View>
                   ))}
                 </View>
               ) : (
                 <TouchableOpacity
                   style={styles.emptyExperience}
-                  onPress={() => navigation.navigate('EditProfile', { profile })}
-                >
+                  onPress={() => navigation.navigate('EditProfile', { profile })}>
                   <Text style={styles.emptyText}>Aún no has añadido tus habilidades clave</Text>
                   <Text style={styles.addText}>+ Configurar Habilidades</Text>
                 </TouchableOpacity>
@@ -491,16 +621,26 @@ export const ProfileScreen = ({ navigation }: any) => {
               {profile?.industry_interests ? (
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
                   {profile.industry_interests.split(',').map((interest: string, index: number) => (
-                    <View key={index} style={{ backgroundColor: 'rgba(255,255,255,0.03)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
-                      <Text style={{ color: '#E2E8F0', fontWeight: '600', fontSize: 13 }}>{interest.trim()}</Text>
+                    <View
+                      key={index}
+                      style={{
+                        backgroundColor: 'rgba(255,255,255,0.03)',
+                        paddingHorizontal: 16,
+                        paddingVertical: 8,
+                        borderRadius: 20,
+                        borderWidth: 1,
+                        borderColor: 'rgba(255,255,255,0.08)',
+                      }}>
+                      <Text style={{ color: '#E2E8F0', fontWeight: '600', fontSize: 13 }}>
+                        {interest.trim()}
+                      </Text>
                     </View>
                   ))}
                 </View>
               ) : (
                 <TouchableOpacity
                   style={styles.emptyExperience}
-                  onPress={() => navigation.navigate('EditProfile', { profile })}
-                >
+                  onPress={() => navigation.navigate('EditProfile', { profile })}>
                   <Text style={styles.emptyText}>Aún no has añadido tus sectores de interés</Text>
                   <Text style={styles.addText}>+ Configurar Intereses</Text>
                 </TouchableOpacity>
@@ -522,14 +662,11 @@ export const ProfileScreen = ({ navigation }: any) => {
               </View>
 
               {experiences.length > 0 ? (
-                experiences.map(exp => (
-                  <ExperienceItem key={exp.id} experience={exp} />
-                ))
+                experiences.map((exp) => <ExperienceItem key={exp.id} experience={exp} />)
               ) : (
                 <TouchableOpacity
                   style={styles.emptyExperience}
-                  onPress={() => setIsAddingExp(true)}
-                >
+                  onPress={() => setIsAddingExp(true)}>
                   <Text style={styles.emptyText}>Aún no has añadido experiencias</Text>
                   <Text style={styles.addText}>+ Añadir</Text>
                 </TouchableOpacity>
@@ -544,10 +681,7 @@ export const ProfileScreen = ({ navigation }: any) => {
                   <Text style={[styles.emptyText, { marginTop: 15 }]}>Subiendo currículum...</Text>
                 </View>
               ) : (
-                <ResumeSection
-                  resumeUrl={profile?.resume_url}
-                  onUpload={handleResumeUpload}
-                />
+                <ResumeSection resumeUrl={profile?.resume_url} onUpload={handleResumeUpload} />
               )}
             </View>
           </>
@@ -563,15 +697,17 @@ export const ProfileScreen = ({ navigation }: any) => {
           </View>
 
           {recentApps.length > 0 ? (
-            recentApps.map(app => (
+            recentApps.map((app) => (
               <TouchableOpacity
                 key={app.id}
                 style={styles.miniAppCard}
-                onPress={() => navigation.navigate('Postulaciones')}
-              >
+                onPress={() => navigation.navigate('Postulaciones')}>
                 <View style={styles.miniAppLogo}>
                   {app.companyLogo ? (
-                    <Image source={{ uri: app.companyLogo }} style={{ width: '100%', height: '100%' }} />
+                    <Image
+                      source={{ uri: app.companyLogo }}
+                      style={{ width: '100%', height: '100%' }}
+                    />
                   ) : (
                     <MaterialCommunityIcons name="office-building" size={20} color="#475569" />
                   )}
@@ -595,22 +731,15 @@ export const ProfileScreen = ({ navigation }: any) => {
 
         {/* Action Buttons */}
         <View style={styles.footerActions}>
-          <TouchableOpacity
-            onPress={handleLogout}
-            style={styles.logoutBtn}
-          >
+          <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
             <MaterialCommunityIcons name="logout" size={20} color="#FF3B30" />
             <Text style={styles.logoutText}>Cerrar Sesión</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() => setShowDeleteModal(true)}
-            style={styles.deleteBtn}
-          >
+          <TouchableOpacity onPress={() => setShowDeleteModal(true)} style={styles.deleteBtn}>
             <Text style={styles.deleteText}>Eliminar Cuenta Permanente</Text>
           </TouchableOpacity>
         </View>
-
       </ScrollView>
 
       {/* Logout Confirmation Modal */}
@@ -657,11 +786,10 @@ export const ProfileScreen = ({ navigation }: any) => {
         title="Nueva Experiencia"
         message=""
         iconName="briefcase"
-        confirmText={savingExp ? "Guardando..." : "Guardar"}
+        confirmText={savingExp ? 'Guardando...' : 'Guardar'}
         cancelText="Descartar"
         onConfirm={handleAddExperience}
-        loading={savingExp}
-      >
+        loading={savingExp}>
         <View style={styles.modalForm}>
           <Text style={styles.modalInputLabel}>1. Cargo o Posición</Text>
           <TextInput
@@ -748,22 +876,35 @@ const styles = StyleSheet.create({
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 6,
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: 12,
   },
-  locationText: {
-    color: '#475569',
+  locationTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.04)',
+  },
+  locationTagText: {
+    color: '#94a3b8',
     fontSize: 12,
-    fontWeight: '600',
-    marginLeft: 4,
+    fontWeight: '700',
+    marginLeft: 6,
   },
   editBtn: {
-    marginTop: 25,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    marginTop: 24,
+    backgroundColor: 'rgba(0, 163, 255, 0.04)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-    paddingHorizontal: 30,
-    paddingVertical: 12,
-    borderRadius: 16,
+    borderColor: 'rgba(0, 163, 255, 0.15)',
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -772,6 +913,79 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginLeft: 10,
     fontSize: 14,
+  },
+  bioCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    padding: 20,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  bioText: {
+    color: '#E2E8F0',
+    fontSize: 14,
+    lineHeight: 22,
+    fontWeight: '500',
+  },
+  contactContainer: {
+    gap: 12,
+  },
+  contactCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    padding: 16,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  contactIconWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0, 163, 255, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 163, 255, 0.2)',
+  },
+  contactDetails: {
+    marginLeft: 16,
+    flex: 1,
+  },
+  contactLabel: {
+    color: '#475569',
+    fontSize: 10,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  contactValue: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  linksRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  linkButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    paddingVertical: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  linkButtonText: {
+    color: '#00A3FF',
+    fontWeight: '800',
+    fontSize: 14,
+    marginLeft: 8,
   },
   statsRow: {
     flexDirection: 'row',
@@ -922,5 +1136,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
     marginBottom: 20,
-  }
+  },
 });

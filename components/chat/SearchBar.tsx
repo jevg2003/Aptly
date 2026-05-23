@@ -8,7 +8,11 @@ interface SearchBarProps {
   placeholder?: string;
 }
 
-export const SearchBar = ({ value, onChangeText, placeholder = 'Search conversations' }: SearchBarProps) => {
+export const SearchBar = ({
+  value,
+  onChangeText,
+  placeholder = 'Search conversations',
+}: SearchBarProps) => {
   return (
     <View style={styles.container}>
       <Feather name="search" size={18} color="#475569" style={{ marginRight: 10 }} />
@@ -41,5 +45,5 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '500',
-  }
+  },
 });

@@ -1,19 +1,29 @@
 const fs = require('fs');
 let content = fs.readFileSync('c:/Trabajos/Aptly/screens/RegisterScreen.tsx', 'utf8');
 
-content = content.replace(/const totalSteps = localRole === 'company' \? 4 : 3;/, "const totalSteps = localRole === 'company' ? 6 : 3;");
+content = content.replace(
+  /const totalSteps = localRole === 'company' \? 4 : 3;/,
+  "const totalSteps = localRole === 'company' ? 6 : 3;"
+);
 
-content = content.replace("const [selectedSectors, setSelectedSectors] = useState<string[]>([]);", 
-`const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
+content = content.replace(
+  'const [selectedSectors, setSelectedSectors] = useState<string[]>([]);',
+  `const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
   const [businessArea, setBusinessArea] = useState('');
   const [customSector, setCustomSector] = useState('');
-  const [isOtherSector, setIsOtherSector] = useState(false);`);
+  const [isOtherSector, setIsOtherSector] = useState(false);`
+);
 
-content = content.replace(/const isCompanyIncomplete =[^;]+;/, 
-`const finalSector = isOtherSector ? customSector : selectedSectors[0];
-    const isCompanyIncomplete = localRole === 'company' && (!companyName || !taxId || !creationDate || !businessArea || !finalSector);`);
+content = content.replace(
+  /const isCompanyIncomplete =[^;]+;/,
+  `const finalSector = isOtherSector ? customSector : selectedSectors[0];
+    const isCompanyIncomplete = localRole === 'company' && (!companyName || !taxId || !creationDate || !businessArea || !finalSector);`
+);
 
-content = content.replace(/industry: selectedSectors\.join\(\', \'\)/, 'business_area: businessArea,\n          industry: finalSector');
+content = content.replace(
+  /industry: selectedSectors\.join\(\', \'\)/,
+  'business_area: businessArea,\n          industry: finalSector'
+);
 
 const handleNextReplacement = `    if (localRole === 'company') {
       if (companyStep === 1) {
@@ -40,7 +50,10 @@ const handleNextReplacement = `    if (localRole === 'company') {
         handleRegister();
       }
     } else {`;
-content = content.replace(/    if \(localRole === 'company'\) \{[\s\S]*?\} else \{/, handleNextReplacement);
+content = content.replace(
+  /    if \(localRole === 'company'\) \{[\s\S]*?\} else \{/,
+  handleNextReplacement
+);
 
 const companyStepsBlock = `{localRole === 'company' && (
                   <>

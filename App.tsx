@@ -1,9 +1,8 @@
-import 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import React, { useState, useEffect } from 'react';
 import { View, useColorScheme as useRNColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { RootNavigator } from './navigation/index';
 import { supabase } from './lib/supabase';
@@ -22,7 +21,11 @@ export default function App() {
       setLoadingSession(false);
       return;
     }
-    const { data } = await supabase.from('profiles').select('deleted_at').eq('id', userSession.user.id).single();
+    const { data } = await supabase
+      .from('profiles')
+      .select('deleted_at')
+      .eq('id', userSession.user.id)
+      .single();
     if (data?.deleted_at) {
       setIsDeleted(true);
     } else {
@@ -37,14 +40,16 @@ export default function App() {
       checkDeletionStatus(session);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       checkDeletionStatus(session);
     });
-    
+
     return () => {
       subscription.unsubscribe();
-    }
+    };
   }, []);
 
   if (loadingSession) {

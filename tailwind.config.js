@@ -8,16 +8,16 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: "#2B468B",
-          light: "#3458B0",
-          dark: "#1E3A8A",
-          muted: "#F0F7FF"
+          DEFAULT: '#2B468B',
+          light: '#3458B0',
+          dark: '#1E3A8A',
+          muted: '#F0F7FF',
         },
         surface: {
-          light: "#FFFFFF",
-          dark: "#0F172A",
-          muted: "#F8FAFC"
-        }
+          light: '#FFFFFF',
+          dark: '#0F172A',
+          muted: '#F8FAFC',
+        },
       },
     },
   },

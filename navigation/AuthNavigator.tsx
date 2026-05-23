@@ -6,9 +6,7 @@ import { RegisterScreen } from '../screens/auth/register/RegisterScreen';
 
 const Stack = createNativeStackNavigator();
 
-export const AuthNavigator = ({ 
-  onWelcomeFinish
-}: any) => {
+export const AuthNavigator = ({ onWelcomeFinish }: any) => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Welcome">
       <Stack.Screen name="Welcome">
