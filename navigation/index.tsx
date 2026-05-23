@@ -4,7 +4,7 @@ import { Session } from '@supabase/supabase-js';
 
 import { WelcomeScreen } from '../screens/WelcomeScreen';
 import { LoginScreen } from '../screens/LoginScreen';
-import { RegisterScreen } from '../screens/RegisterScreen';
+import { RegisterScreen } from '../screens/auth/register/RegisterScreen';
 import { MainTabNavigator, BusinessTabNavigator } from './AppNavigator';
 import { SessionContext } from '../lib/SessionContext';
 import { MatchProvider } from '../lib/MatchContext';

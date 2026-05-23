@@ -75,7 +75,10 @@ export const CandidateResumePreview = ({ profile, onClose, isVisible = false, fr
               style={styles.avatar} 
             />
             <Text style={styles.profileName}>{profile?.full_name}</Text>
-            <Text style={styles.profileRole}>{profile?.professional_title || 'Candidato'}</Text>
+            <Text style={styles.profileRole}>
+              {profile?.professional_title || 'Candidato'}
+              {profile?.experience_level ? ` • ${profile.experience_level}` : ''}
+            </Text>
             
             <View style={styles.locationRow}>
               <Ionicons name="location-outline" size={14} color="#64748b" />
@@ -87,6 +90,70 @@ export const CandidateResumePreview = ({ profile, onClose, isVisible = false, fr
                <Text style={styles.bioText}>{profile?.bio || 'Este candidato aún no ha completado su biografía profesional.'}</Text>
             </View>
           </View>
+
+          {/* Contact & Links */}
+          {(profile?.phone || profile?.linkedin_url || profile?.portfolio_url) ? (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="call-outline" size={18} color="#FF005C" />
+                <Text style={styles.sectionTitle}>CONTACTO Y ENLACES</Text>
+              </View>
+              <View style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', gap: 12 }}>
+                {profile?.phone && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="call-outline" size={16} color="#FF005C" style={{ marginRight: 10 }} />
+                    <Text style={{ color: '#E2E8F0', fontSize: 13, fontWeight: '500' }}>{profile.phone}</Text>
+                  </View>
+                )}
+                {profile?.linkedin_url && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="logo-linkedin" size={16} color="#FF005C" style={{ marginRight: 10 }} />
+                    <Text style={{ color: '#FF005C', fontSize: 13, fontWeight: '600', textDecorationLine: 'underline' }}>{profile.linkedin_url}</Text>
+                  </View>
+                )}
+                {profile?.portfolio_url && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="globe-outline" size={16} color="#FF005C" style={{ marginRight: 10 }} />
+                    <Text style={{ color: '#FF005C', fontSize: 13, fontWeight: '600', textDecorationLine: 'underline' }}>{profile.portfolio_url}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          ) : null}
+
+          {/* Habilidades Clave */}
+          {profile?.candidate_tags ? (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="shield-checkmark-outline" size={18} color="#FF005C" />
+                <Text style={styles.sectionTitle}>HABILIDADES CLAVE</Text>
+              </View>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {profile.candidate_tags.split(',').map((tag: string, index: number) => (
+                  <View key={index} style={{ backgroundColor: 'rgba(255,0,92,0.06)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,0,92,0.15)' }}>
+                    <Text style={{ color: '#FF005C', fontWeight: '700', fontSize: 11 }}>{tag.trim()}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : null}
+
+          {/* Sectores de Interés */}
+          {profile?.industry_interests ? (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="apps-outline" size={18} color="#FF005C" />
+                <Text style={styles.sectionTitle}>SECTORES DE INTERÉS</Text>
+              </View>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {profile.industry_interests.split(',').map((interest: string, index: number) => (
+                  <View key={index} style={{ backgroundColor: 'rgba(255,255,255,0.03)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
+                    <Text style={{ color: '#E2E8F0', fontWeight: '600', fontSize: 11 }}>{interest.trim()}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : null}
 
           {/* Experience Section */}
           <View style={styles.section}>

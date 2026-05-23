@@ -21,6 +21,7 @@ import { uploadAvatar } from '../../lib/storageUtils';
 import { ObsidianModal } from '../../components/ObsidianModal';
 
 const SECTORS = ['Tecnología', 'Salud', 'Finanzas', 'Construcción', 'Comercio', 'Manufactura', 'Servicios', 'Marketing', 'Educación', 'Otro'];
+const EXPERIENCE_LEVELS = ['Junior', 'Semi-Senior', 'Senior', 'Lead / Principal'];
 
 export const EditProfileScreen = ({ navigation, route }: any) => {
   const session = React.useContext(SessionContext);
@@ -48,6 +49,11 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
       ? initialProfile.industry_interests.split(',').map((s: string) => s.trim()).filter(Boolean)
       : []
   );
+  const [experienceLevel, setExperienceLevel] = useState(initialProfile.experience_level || '');
+  const [portfolioUrl, setPortfolioUrl] = useState(initialProfile.portfolio_url || '');
+  const [linkedinUrl, setLinkedinUrl] = useState(initialProfile.linkedin_url || '');
+  const [birthDate, setBirthDate] = useState(initialProfile.birth_date || '');
+  const [phone, setPhone] = useState(initialProfile.phone || '');
   
   // Experience State
   const [experiences, setExperiences] = useState<any[]>([]);
@@ -127,6 +133,7 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
           professional_title: initialProfile.role === 'company' ? undefined : title,
           location: location,
           bio,
+          phone: phone || undefined,
           tax_id: initialProfile.role === 'company' ? taxId : undefined,
           creation_date: initialProfile.role === 'company' ? creationDate : undefined,
           business_area: initialProfile.role === 'company' ? businessArea : undefined,
@@ -134,6 +141,10 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
           company_tags: initialProfile.role === 'company' ? companyTags : undefined,
           candidate_tags: initialProfile.role === 'company' ? undefined : candidateTags,
           industry_interests: initialProfile.role === 'company' ? undefined : industryInterests.join(', '),
+          experience_level: initialProfile.role === 'company' ? undefined : experienceLevel,
+          portfolio_url: initialProfile.role === 'company' ? undefined : portfolioUrl,
+          linkedin_url: initialProfile.role === 'company' ? undefined : linkedinUrl,
+          birth_date: initialProfile.role === 'company' ? undefined : birthDate,
           updated_at: new Date(),
         });
 
@@ -264,8 +275,38 @@ export const EditProfileScreen = ({ navigation, route }: any) => {
                 <Text style={styles.inputLabel}>Título Profesional</Text>
                 <TextInput value={title} onChangeText={setTitle} placeholderTextColor="#334155" style={styles.input} />
 
+                <Text style={styles.inputLabel}>Nivel de Experiencia</Text>
+                <View style={styles.sectorsContainer}>
+                  <View style={styles.sectorsGrid}>
+                    {EXPERIENCE_LEVELS.map(level => {
+                      const isSelected = experienceLevel === level;
+                      return (
+                        <TouchableOpacity 
+                          key={level}
+                          style={[styles.sectorTag, isSelected && { borderColor: '#00A3FF', backgroundColor: 'rgba(0,163,255,0.1)' }]}
+                          onPress={() => setExperienceLevel(level)}
+                        >
+                          <Text style={[styles.sectorTagText, isSelected && styles.sectorTagTextActive]}>{level}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+
                 <Text style={styles.inputLabel}>Ubicación</Text>
                 <TextInput value={location} onChangeText={setLocation} placeholderTextColor="#334155" style={styles.input} />
+
+                <Text style={styles.inputLabel}>Fecha de Nacimiento</Text>
+                <TextInput value={birthDate} onChangeText={setBirthDate} placeholder="Ej: 25/11/1996" placeholderTextColor="#334155" style={styles.input} />
+
+                <Text style={styles.inputLabel}>Teléfono</Text>
+                <TextInput value={phone} onChangeText={setPhone} placeholder="Ej: +34 600 000 000" placeholderTextColor="#334155" keyboardType="phone-pad" style={styles.input} />
+
+                <Text style={styles.inputLabel}>Enlace de LinkedIn</Text>
+                <TextInput value={linkedinUrl} onChangeText={setLinkedinUrl} placeholder="Ej: linkedin.com/in/nombre-usuario" placeholderTextColor="#334155" autoCapitalize="none" style={styles.input} />
+
+                <Text style={styles.inputLabel}>Enlace de Portafolio</Text>
+                <TextInput value={portfolioUrl} onChangeText={setPortfolioUrl} placeholder="Ej: github.com/nombre-usuario" placeholderTextColor="#334155" autoCapitalize="none" style={styles.input} />
 
                 <Text style={styles.inputLabel}>Sectores de Interés</Text>
                 <View style={styles.sectorsContainer}>

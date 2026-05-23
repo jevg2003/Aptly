@@ -15,6 +15,16 @@ export interface JobData {
   logoColor?: string;
   imageUrl?: string;
   tags?: string[];
+  
+  // NEW Fields from Database
+  description?: string;
+  requirements?: string;
+  benefits?: string;
+  companyIndustry?: string;
+  companyBusinessArea?: string;
+  companyPhone?: string;
+  companyTags?: string[];
+  companyCreationDate?: string;
 }
 
 interface JobCardProps {
@@ -46,13 +56,16 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onPress, onInfoPress }) =
             </View>
             <View>
                 <Text style={styles.companyName}>{job.company}</Text>
-                <Text style={styles.companyDesc}>{job.companyDescription || 'Empresa destacada'}</Text>
+                <Text style={styles.companyDesc}>
+                  {job.companyIndustry ? `${job.companyIndustry} • ` : ''}
+                  {job.companyDescription || 'Empresa destacada'}
+                </Text>
             </View>
         </View>
 
         {/* Badge Flotante "NEW MATCH" */}
         <View style={styles.badge}>
-           <Text style={styles.badgeText}>NEW MATCH</Text>
+           <Text style={styles.badgeText}>VACANTE DISPONIBLE</Text>
         </View>
       </View>
 
@@ -74,7 +87,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onPress, onInfoPress }) =
           <View style={styles.locationRow}>
               <Ionicons name="location" size={16} color="#475569" />
               <Text style={styles.locationText}>
-                 {job.location} • {job.modality}
+                 {job.location} • {job.modality} • {job.type}
               </Text>
           </View>
 

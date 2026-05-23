@@ -40,6 +40,14 @@ interface CandidateData {
   tags: string[];
   imageUrl: string;
   role: string;
+  phone?: string;
+  bio?: string;
+  experienceLevel?: string;
+  portfolioUrl?: string;
+  linkedinUrl?: string;
+  birthDate?: string;
+  industryInterests?: string[];
+  candidateTags?: string[];
 }
 
 const MOCK_CANDIDATES: CandidateData[] = [
@@ -88,7 +96,7 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
   const [candidates, setCandidates] = useState<CandidateData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchCandidates = async () => {
+  const fetchCandidates = React.useCallback(async () => {
     if (!session?.user?.id || !job?.id) return;
     try {
       setLoading(true);
@@ -98,7 +106,10 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
           id,
           status,
           jobs!inner(company_id),
-          profiles!applications_candidate_id_fkey(id, full_name, avatar_url)
+          profiles!applications_candidate_id_fkey(
+            id, full_name, avatar_url, location, phone, bio, professional_title,
+            candidate_tags, industry_interests, experience_level, portfolio_url, linkedin_url, birth_date
+          )
         `)
         .eq('job_id', job.id)
         .eq('status', 'pending');
@@ -107,16 +118,54 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
 
       const mapped: CandidateData[] = (data || []).map(app => {
          const profile = Array.isArray(app.profiles) ? app.profiles[0] : app.profiles;
+         let candTags: string[] = [];
+         let indInterests: string[] = [];
+         try {
+           if (profile?.candidate_tags) {
+             if (typeof profile.candidate_tags === 'string') {
+               if (profile.candidate_tags.trim().startsWith('[')) {
+                 candTags = JSON.parse(profile.candidate_tags);
+               } else {
+                 candTags = profile.candidate_tags.split(',').map((t: string) => t.trim()).filter(Boolean);
+               }
+             } else if (Array.isArray(profile.candidate_tags)) {
+               candTags = profile.candidate_tags;
+             }
+           }
+           if (profile?.industry_interests) {
+             if (typeof profile.industry_interests === 'string') {
+               if (profile.industry_interests.trim().startsWith('[')) {
+                 indInterests = JSON.parse(profile.industry_interests);
+               } else {
+                 indInterests = profile.industry_interests.split(',').map((t: string) => t.trim()).filter(Boolean);
+               }
+             } else if (Array.isArray(profile.industry_interests)) {
+               indInterests = profile.industry_interests;
+             }
+           }
+         } catch (e) {
+           console.warn('Error parsing candidate fields:', e);
+         }
+
          return {
             applicationId: app.id,
             id: profile?.id || Math.random().toString(),
             name: profile?.full_name || 'Candidato',
-            age: 26,
-            location: 'Colombia',
+            age: 26, // Fallback if age is not calculated
+            location: profile?.location || 'Colombia',
             availability: 'Tiempo Completo',
-            role: 'Aplicante General',
-            tags: ['Entusiasta', 'Proactivo'],
-            imageUrl: profile?.avatar_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80'
+            role: profile?.professional_title || 'Aplicante General',
+            tags: candTags.length > 0 ? candTags : ['Entusiasta', 'Proactivo'],
+            imageUrl: profile?.avatar_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
+            // New rich fields
+            phone: profile?.phone || '',
+            bio: profile?.bio || '',
+            experienceLevel: profile?.experience_level || '',
+            portfolioUrl: profile?.portfolio_url || '',
+            linkedinUrl: profile?.linkedin_url || '',
+            birthDate: profile?.birth_date || '',
+            industryInterests: indInterests,
+            candidateTags: candTags
          };
       });
 
@@ -126,7 +175,7 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.user?.id, job?.id]);
 
   useEffect(() => {
     fetchCandidates();
@@ -265,6 +314,44 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
     return { transform: [{ scale }], opacity };
   });
 
+  const likeStampStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      translateX.value,
+      [0, SWIPE_THRESHOLD / 2, SWIPE_THRESHOLD],
+      [0, 0.4, 1],
+      Extrapolate.CLAMP
+    );
+    const scale = interpolate(
+      translateX.value,
+      [0, SWIPE_THRESHOLD],
+      [0.6, 1.1],
+      Extrapolate.CLAMP
+    );
+    return {
+      opacity,
+      transform: [{ scale }, { rotate: '-12deg' }]
+    };
+  });
+
+  const nopeStampStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      translateX.value,
+      [-SWIPE_THRESHOLD, -SWIPE_THRESHOLD / 2, 0],
+      [1, 0.4, 0],
+      Extrapolate.CLAMP
+    );
+    const scale = interpolate(
+      translateX.value,
+      [-SWIPE_THRESHOLD, 0],
+      [1.1, 0.6],
+      Extrapolate.CLAMP
+    );
+    return {
+      opacity,
+      transform: [{ scale }, { rotate: '12deg' }]
+    };
+  });
+
   const currentCandidate = filteredCandidates[currentIndex];
   const nextCandidate = filteredCandidates[currentIndex + 1];
 
@@ -331,6 +418,18 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
               <GestureDetector gesture={gesture}>
                 <Animated.View style={[{ flex: 1 }, cardStyle]}>
                   <CandidateCard candidate={currentCandidate} />
+                  
+                  {/* LIKE / APTO Stamp */}
+                  <Animated.View style={[styles.stampContainer, styles.likeStamp, likeStampStyle]}>
+                    <Ionicons name="checkmark-circle" size={26} color="#00E676" />
+                    <Text style={styles.likeStampText}>APTO</Text>
+                  </Animated.View>
+
+                  {/* NOPE / NO APTO Stamp */}
+                  <Animated.View style={[styles.stampContainer, styles.nopeStamp, nopeStampStyle]}>
+                    <Ionicons name="close-circle" size={26} color="#FF3B30" />
+                    <Text style={styles.nopeStampText}>NO APTO</Text>
+                  </Animated.View>
                 </Animated.View>
               </GestureDetector>
 
@@ -378,6 +477,17 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
             tags={currentCandidate.tags}
             content={`Experto en el sector de ${currentCandidate.role}. Con amplia disponibilidad (${currentCandidate.availability}) para incorporarse a equipos dinámicos.`}
             accentColor="#FF005C"
+
+            // Rich Candidate Detail Props
+            isCandidateDetail={true}
+            candidateBio={currentCandidate.bio}
+            candidatePhone={currentCandidate.phone}
+            candidateExperienceLevel={currentCandidate.experienceLevel}
+            candidatePortfolioUrl={currentCandidate.portfolioUrl}
+            candidateLinkedinUrl={currentCandidate.linkedinUrl}
+            candidateBirthDate={currentCandidate.birthDate}
+            candidateIndustryInterests={currentCandidate.industryInterests}
+            candidateTags={currentCandidate.candidateTags}
           />
         )}
       </SafeAreaView>
@@ -566,5 +676,50 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 10,
     lineHeight: 20,
+  },
+  // STAMP styles
+  stampContainer: {
+    position: 'absolute',
+    top: 40,
+    zIndex: 100,
+    borderWidth: 4,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    backgroundColor: 'rgba(5, 5, 5, 0.95)',
+  },
+  likeStamp: {
+    left: 30,
+    borderColor: '#00E676',
+    shadowColor: '#00E676',
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  likeStampText: {
+    color: '#00E676',
+    fontSize: 22,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+  },
+  nopeStamp: {
+    right: 30,
+    borderColor: '#FF3B30',
+    shadowColor: '#FF3B30',
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  nopeStampText: {
+    color: '#FF3B30',
+    fontSize: 22,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
   }
 });

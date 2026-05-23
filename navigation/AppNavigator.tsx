@@ -61,10 +61,15 @@ const BusinessProfileNavigator = () => (
 
 // Custom TabBar for Candidates
 const CandidateTabBar = ({ state, descriptors, navigation }: any) => {
+  const focusedOptions = descriptors[state.routes[state.index].key].options;
+  if (focusedOptions.tabBarStyle?.display === 'none') {
+    return null;
+  }
+
   const tabs = [
     { name: 'Inicio', icon: 'home', iconActive: 'home', label: 'Inicio' },
-    { name: 'Chat', icon: 'chatbubble-outline', iconActive: 'chatbubble', label: 'Chat' },
     { name: 'Postulaciones', icon: 'briefcase-outline', iconActive: 'briefcase', label: 'Postulaciones' },
+    { name: 'Chat', icon: 'chatbubble-outline', iconActive: 'chatbubble', label: 'Chat' },
     { name: 'Profile', icon: 'person-outline', iconActive: 'person', label: 'Perfil' },
   ];
   return (
@@ -94,6 +99,10 @@ const CandidateTabBar = ({ state, descriptors, navigation }: any) => {
 // Custom TabBar for Business
 const BusinessTabBar = ({ state, descriptors, navigation }: any) => {
   const { totalUnreadCount } = useBusinessChat();
+  const focusedOptions = descriptors[state.routes[state.index].key].options;
+  if (focusedOptions.tabBarStyle?.display === 'none') {
+    return null;
+  }
 
   const tabs = [
     { name: 'Vacantes', icon: 'layers-outline', iconActive: 'layers', label: 'Vacantes' },
@@ -201,8 +210,8 @@ export const MainTabNavigator = () => {
       screenOptions={{ headerShown: false }}
     >
       <Tab.Screen name="Inicio" component={HomeScreen} />
-      <Tab.Screen name="Chat" component={ChatNavigator} />
       <Tab.Screen name="Postulaciones" component={ApplicationsNavigator} />
+      <Tab.Screen name="Chat" component={ChatNavigator} />
       <Tab.Screen name="Profile" component={ProfileNavigator} />
     </Tab.Navigator>
   );

@@ -13,6 +13,8 @@ interface CustomInputProps {
   multiline?: boolean;
   numberOfLines?: number;
   className?: string;
+  role?: 'candidate' | 'company';
+  editable?: boolean;
 }
 
 export const CustomInput = ({
@@ -25,24 +27,30 @@ export const CustomInput = ({
   multiline = false,
   numberOfLines = 1,
   className = '',
+  role = 'candidate',
+  editable = true,
 }: CustomInputProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+
+  const activeColor = role === 'company' ? '#FF005C' : '#00A3FF';
 
   return (
     <View 
       className={`
         flex-row items-center border rounded-[22px] px-5 py-[12px] mb-4 
-        ${isFocused ? 'border-primary-light' : 'border-white/5'} 
         bg-zinc-900/50 shadow-sm
         ${className}
       `}
-      style={{ backgroundColor: '#1A1A1C' }}
+      style={[
+        { backgroundColor: '#1A1A1C' },
+        isFocused ? { borderColor: activeColor } : { borderColor: 'rgba(255, 255, 255, 0.05)' }
+      ]}
     >
       <MaterialCommunityIcons 
         name={iconName} 
         size={20} 
-        color={isFocused ? "#00A3FF" : "#64748b"} 
+        color={isFocused ? activeColor : "#64748b"} 
         style={{ marginTop: multiline ? 4 : 0 }}
       />
       <TextInput
@@ -59,6 +67,7 @@ export const CustomInput = ({
         multiline={multiline}
         numberOfLines={numberOfLines}
         textAlignVertical={multiline ? 'top' : 'center'}
+        editable={editable}
       />
       {isPassword && (
         <TouchableOpacity 
@@ -68,7 +77,7 @@ export const CustomInput = ({
           <MaterialCommunityIcons 
             name={showPassword ? "eye-off-outline" : "eye-outline"} 
             size={20} 
-            color={isFocused ? "#00A3FF" : "#64748b"} 
+            color={isFocused ? activeColor : "#64748b"} 
           />
         </TouchableOpacity>
       )}
