@@ -25,6 +25,10 @@ export interface JobData {
   companyPhone?: string;
   companyTags?: string[];
   companyCreationDate?: string;
+
+  // Algorithm Fields
+  matchScore?: number;
+  candidateTags?: string[];
 }
 
 interface JobCardProps {
@@ -66,6 +70,14 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onPress, onInfoPress }) =
         <View style={styles.badge}>
           <Text style={styles.badgeText}>VACANTE DISPONIBLE</Text>
         </View>
+
+        {/* Glowing Premium Match Score Badge */}
+        {job.matchScore !== undefined && (
+          <View style={styles.matchScoreBadge}>
+             <Ionicons name="sparkles" size={12} color="#FFFFFF" style={{ marginRight: 4 }} />
+             <Text style={styles.matchScoreBadgeText}>{job.matchScore}% MATCH</Text>
+          </View>
+        )}
       </View>
 
       {/* Obsidian Dark Content Area */}
@@ -89,11 +101,16 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onPress, onInfoPress }) =
         {/* Tags with Obsidian bordering */}
         <View style={styles.tagsRow}>
           {job.tags && job.tags.length > 0 ? (
-            job.tags.map((tag, index) => (
-              <View key={index} style={styles.tag}>
-                <Text style={styles.tagText}>{tag}</Text>
-              </View>
-            ))
+            job.tags.map((tag, index) => {
+              const candTags = (job.candidateTags || []).map(t => t.toLowerCase().trim());
+              const isMatch = candTags.includes(tag.toLowerCase().trim()) || 
+                              candTags.some(ct => ct.includes(tag.toLowerCase().trim()) || tag.toLowerCase().trim().includes(ct));
+              return (
+                <View key={index} style={[styles.tag, isMatch && styles.matchingTag]}>
+                  <Text style={[styles.tagText, isMatch && styles.matchingTagText]}>{tag}</Text>
+                </View>
+              );
+            })
           ) : (
             <View style={[styles.tag, { borderColor: 'transparent' }]}>
               <Text style={[styles.tagText, { fontStyle: 'italic', opacity: 0.5 }]}>
@@ -257,6 +274,39 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontSize: 12,
     fontWeight: '600',
+  },
+  matchingTag: {
+    backgroundColor: 'rgba(0, 163, 255, 0.12)',
+    borderColor: 'rgba(0, 163, 255, 0.4)',
+    borderWidth: 1,
+  },
+  matchingTagText: {
+    color: '#00A3FF',
+    fontWeight: '800',
+  },
+  matchScoreBadge: {
+    position: 'absolute',
+    top: 24,
+    right: 24,
+    backgroundColor: 'rgba(0, 163, 255, 0.95)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#00A3FF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.6,
+    shadowRadius: 8,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: '#00A3FF',
+  },
+  matchScoreBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1,
   },
   salaryContainer: {
     marginTop: 'auto',

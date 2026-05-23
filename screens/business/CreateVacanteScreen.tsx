@@ -25,8 +25,8 @@ export const CreateVacanteScreen = ({ route, navigation }: any) => {
   );
   const [benefits, setBenefits] = useState(job?.benefits || '');
   const [tags, setTags] = useState<string[]>(Array.isArray(job?.tags) ? job?.tags : []);
-  const [modality, setModality] = useState(job?.modality || 'Presencial');
-  const [contractType, setContractType] = useState(job?.type || 'Indefinido');
+  const [modality, setModality] = useState(job?.modality || 'Presencial'); 
+  const [contractType, setContractType] = useState(job?.type || 'Tiempo Completo');
 
   // Tag suggestion states
   const [tagQuery, setTagQuery] = useState('');
@@ -204,9 +204,9 @@ export const CreateVacanteScreen = ({ route, navigation }: any) => {
             onSelect={setModality}
           />
 
-          <Selector
-            label="Tipo de contrato"
-            options={['Indefinido', 'Término Fijo', 'Prestación de Servicios', 'Prácticas']}
+          <Selector 
+            label="Tipo de empleo"
+            options={['Tiempo Completo', 'Medio Tiempo', 'Freelance', 'Práctica']}
             current={contractType}
             onSelect={setContractType}
           />
