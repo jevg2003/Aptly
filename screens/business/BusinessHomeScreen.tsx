@@ -201,8 +201,7 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
             industryInterests: indInterests,
             candidateTags: candTags,
             matchScore: score
-         };
-       });
+        };
       });
 
       // Sort by match score in descending order so the best candidates appear first!
@@ -544,7 +543,7 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
                 <TouchableOpacity
                   onPress={() => handleAction('match')}
                   style={[styles.actionBtn, styles.matchBtn]}>
-                  <Ionicons name="heart" size={32} color="#FFFFFF" />
+                  <Ionicons name="thumbs-up" size={28} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
             </View>
