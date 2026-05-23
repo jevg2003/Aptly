@@ -10,27 +10,27 @@
     "experiments": {
       "tsconfigPaths": true
     },
-    "plugins": [
-      "expo-web-browser"
-    ],
+    "plugins": ["expo-web-browser", "@react-native-community/datetimepicker"],
     "orientation": "portrait",
     "icon": "./assets/favicon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#050505"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "package": "com.jevgdg.aptly",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/favicon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#050505"
+      }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "7890d788-2268-4d6b-a3cc-952e7964ad23"
       }
     }
   }

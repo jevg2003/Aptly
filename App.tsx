@@ -1,71 +1,71 @@
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import React, { useState, useEffect } from 'react';
-import { useColorScheme } from 'nativewind';
-import { useColorScheme as useRNColorScheme } from 'react-native';
+import { View, useColorScheme as useRNColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { WelcomeScreen } from './screens/WelcomeScreen';
-import { LoginScreen } from './screens/LoginScreen';
-import { RegisterScreen } from './screens/RegisterScreen';
-import { HomeScreen } from './screens/HomeScreen';
+import { NavigationContainer, DarkTheme } from '@react-navigation/native';
+
+import { RootNavigator } from './navigation/index';
 import { supabase } from './lib/supabase';
 import { Session } from '@supabase/supabase-js';
+import { AppProvider } from './lib/AppContext';
 import './global.css';
 
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState<'welcome' | 'login' | 'register' | 'home'>('welcome');
   const [session, setSession] = useState<Session | null>(null);
-  const { setColorScheme } = useColorScheme();
-  const systemColorScheme = useRNColorScheme();
+  const [isDeleted, setIsDeleted] = useState(false);
+  const [loadingSession, setLoadingSession] = useState(true);
 
-  // Handle System Theme
-  useEffect(() => {
-    if (systemColorScheme) {
-      setColorScheme(systemColorScheme);
+  const checkDeletionStatus = async (userSession: Session | null) => {
+    if (!userSession) {
+      setIsDeleted(false);
+      setLoadingSession(false);
+      return;
     }
-  }, [systemColorScheme, setColorScheme]);
+    const { data } = await supabase
+      .from('profiles')
+      .select('deleted_at')
+      .eq('id', userSession.user.id)
+      .single();
+    if (data?.deleted_at) {
+      setIsDeleted(true);
+    } else {
+      setIsDeleted(false);
+    }
+    setLoadingSession(false);
+  };
 
-  // Auth Subscription
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session && currentScreen !== 'welcome') {
-        setCurrentScreen('home');
-      }
+      checkDeletionStatus(session);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session && currentScreen !== 'welcome') {
-        setCurrentScreen('home');
-      } else if (!session && currentScreen === 'home') {
-        setCurrentScreen('login');
-      }
+      checkDeletionStatus(session);
     });
-    
+
     return () => {
       subscription.unsubscribe();
-    }
-  }, [currentScreen]);
+    };
+  }, []);
 
-  const handleWelcomeFinish = () => {
-    setCurrentScreen(session ? 'home' : 'login');
-  };
-
-  const renderScreen = () => {
-    if (currentScreen === 'welcome') {
-      return <WelcomeScreen onFinish={handleWelcomeFinish} />;
-    }
-    if (currentScreen === 'home') {
-      return <HomeScreen session={session} onLogout={() => setCurrentScreen('login')} />;
-    }
-    if (currentScreen === 'register') {
-      return <RegisterScreen onNavigate={setCurrentScreen} />;
-    }
-    return <LoginScreen onNavigate={setCurrentScreen} />;
-  };
+  if (loadingSession) {
+    return <View style={{ flex: 1, backgroundColor: '#050505' }} />;
+  }
 
   return (
-    <SafeAreaProvider>
-      {renderScreen()}
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AppProvider>
+        <SafeAreaProvider>
+          {/* Forcing Dark Theme for the entire app context */}
+          <NavigationContainer theme={DarkTheme}>
+            <RootNavigator session={session} isDeleted={isDeleted} />
+          </NavigationContainer>
+        </SafeAreaProvider>
+      </AppProvider>
+    </GestureHandlerRootView>
   );
 }

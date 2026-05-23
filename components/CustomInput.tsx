@@ -10,6 +10,11 @@ interface CustomInputProps {
   iconName: keyof typeof MaterialCommunityIcons.glyphMap;
   isPassword?: boolean;
   keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
+  multiline?: boolean;
+  numberOfLines?: number;
+  className?: string;
+  role?: 'candidate' | 'company';
+  editable?: boolean;
 }
 
 export const CustomInput = ({
@@ -19,44 +24,58 @@ export const CustomInput = ({
   iconName,
   isPassword = false,
   keyboardType = 'default',
+  multiline = false,
+  numberOfLines = 1,
+  className = '',
+  role = 'candidate',
+  editable = true,
 }: CustomInputProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
+  const activeColor = role === 'company' ? '#FF005C' : '#00A3FF';
+
   return (
-    <View 
+    <View
       className={`
-        flex-row items-center border rounded-[22px] px-5 py-[12px] mb-4 
-        ${isFocused ? 'border-primary' : 'border-slate-100 dark:border-slate-800'} 
-        bg-white dark:bg-slate-900 shadow-sm shadow-slate-200 dark:shadow-none
+        mb-4 flex-row items-center rounded-[22px] border bg-zinc-900/50 px-5 
+        py-[12px] shadow-sm
+        ${className}
       `}
-    >
-      <MaterialCommunityIcons 
-        name={iconName} 
-        size={20} 
-        color={isFocused ? "#2B468B" : "#94a3b8"} 
+      style={[
+        { backgroundColor: '#1A1A1C' },
+        isFocused ? { borderColor: activeColor } : { borderColor: 'rgba(255, 255, 255, 0.05)' },
+      ]}>
+      <MaterialCommunityIcons
+        name={iconName}
+        size={20}
+        color={isFocused ? activeColor : '#64748b'}
+        style={{ marginTop: multiline ? 4 : 0 }}
       />
       <TextInput
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        className="flex-1 ml-3 text-slate-800 dark:text-slate-100 text-base py-1"
+        className={`ml-3 flex-1 text-base text-white ${multiline ? 'min-h-[80px]' : 'py-1'}`}
         placeholder={placeholder}
-        placeholderTextColor="#94a3b8"
+        placeholderTextColor="#64748b"
         value={value}
         onChangeText={onChangeText}
         secureTextEntry={isPassword && !showPassword}
         keyboardType={keyboardType}
         autoCapitalize="none"
+        multiline={multiline}
+        numberOfLines={numberOfLines}
+        textAlignVertical={multiline ? 'top' : 'center'}
+        editable={editable}
       />
       {isPassword && (
-        <TouchableOpacity 
-          onPress={() => setShowPassword(!showPassword)} 
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        >
-          <MaterialCommunityIcons 
-            name={showPassword ? "eye-off-outline" : "eye-outline"} 
-            size={20} 
-            color={isFocused ? "#2B468B" : "#94a3b8"} 
+        <TouchableOpacity
+          onPress={() => setShowPassword(!showPassword)}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+          <MaterialCommunityIcons
+            name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+            size={20}
+            color={isFocused ? activeColor : '#64748b'}
           />
         </TouchableOpacity>
       )}

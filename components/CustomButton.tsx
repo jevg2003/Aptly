@@ -21,48 +21,51 @@ export const CustomButton = ({
   const isPrimary = variant === 'primary';
 
   const themes = {
-    primary: "bg-[#2B468B] dark:bg-[#3458B0] shadow-xl shadow-blue-900/40 active:bg-blue-900",
-    outline: "bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm active:bg-gray-50",
-    social: "bg-white dark:bg-slate-800 border border-slate-50 dark:border-slate-700 shadow-sm active:bg-gray-50"
+    primary: 'bg-[#FF005C] shadow-2xl shadow-[#FF005C]/30 active:bg-[#D4004D]',
+    outline: 'bg-[#121214] border-2 border-[#1e1e1e] shadow-sm active:bg-[#1a1a1c]',
+    social:
+      'bg-white dark:bg-[#1A1A1C] border border-slate-50 dark:border-[#1e1e1e] shadow-sm active:bg-gray-50',
   };
 
   const textColors = {
-    primary: "text-white font-bold",
-    outline: "text-slate-600 dark:text-slate-100 font-semibold",
-    social: "text-slate-600 dark:text-slate-100 font-semibold"
+    primary: 'text-white font-black tracking-tighter',
+    outline: 'text-white font-bold',
+    social: 'text-slate-600 dark:text-white font-semibold',
   };
 
   const renderIcon = () => {
     if (!icon) return null;
-    
+
     if (icon === 'google') {
       return (
-        <Image 
-          source={{ uri: 'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png' }} 
-          className="w-5 h-5 mr-3"
+        <Image
+          source={{
+            uri: 'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png',
+          }}
+          className="mr-3 h-5 w-5"
           resizeMode="contain"
         />
       );
     }
-    
+
     if (icon === 'github') {
       return (
-        <MaterialCommunityIcons 
-          name="github" 
-          size={20} 
-          color={isPrimary ? "white" : "#000"} 
+        <MaterialCommunityIcons
+          name="github"
+          size={20}
+          color={isPrimary ? 'white' : '#000'}
           className="dark:text-white"
-          style={{ marginRight: 10 }} 
+          style={{ marginRight: 10 }}
         />
       );
     }
 
     return (
-      <MaterialCommunityIcons 
-        name={icon as any} 
-        size={20} 
-        color={isPrimary ? "white" : "#2B468B"} 
-        style={{ marginRight: 10 }} 
+      <MaterialCommunityIcons
+        name={icon as any}
+        size={20}
+        color={isPrimary ? 'white' : '#2B468B'}
+        style={{ marginRight: 10 }}
       />
     );
   };
@@ -71,11 +74,10 @@ export const CustomButton = ({
     <TouchableOpacity
       activeOpacity={0.8}
       onPress={onPress}
-      className={`${themes[variant]} flex-row items-center justify-center rounded-[30px] ${className}`}
-    >
-      <View className="flex-row items-center justify-center w-full">
+      className={`${themes[variant]} flex-row items-center justify-center rounded-[25px] px-6 py-5 ${className}`}>
+      <View className="flex-row items-center justify-center">
         {renderIcon()}
-        <Text className={`${textColors[variant]} text-base text-center`}>{title}</Text>
+        <Text className={`${textColors[variant]} text-base uppercase`}>{title}</Text>
       </View>
     </TouchableOpacity>
   );
