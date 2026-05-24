@@ -58,6 +58,7 @@ export interface TimelineStepData {
 export type ApplicationStatus =
   | 'En revisión'
   | 'Entrevista'
+  | 'En Proceso'
   | 'Finalizado'
   | 'Recibida'
   | 'Rechazado'

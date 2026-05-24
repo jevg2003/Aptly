@@ -52,43 +52,9 @@ interface CandidateData {
   matchScore?: number;
 }
 
-const MOCK_CANDIDATES: CandidateData[] = [
-  {
-    applicationId: 'mock-app-1',
-    id: '1',
-    name: 'Pepito',
-    age: 28,
-    location: 'Cali, Colombia',
-    availability: 'Tiempo completo',
-    role: 'Programador',
-    tags: ['React Native', 'UI/UX', 'Inglés B2'],
-    imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
-  },
-  {
-    applicationId: 'mock-app-2',
-    id: '2',
-    name: 'Maria',
-    age: 24,
-    location: 'Bogotá, Colombia',
-    availability: 'Tiempo completo',
-    role: 'Vendedor',
-    tags: ['Ventas', 'Negociación', 'Excel'],
-    imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&q=80',
-  },
-  {
-    applicationId: 'mock-app-3',
-    id: '3',
-    name: 'Juan',
-    age: 32,
-    location: 'Medellín, Colombia',
-    availability: 'Por horas',
-    role: 'Aux. Tienda',
-    tags: ['Logística', 'Inventarios'],
-    imageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&q=80',
-  },
-];
 
 const CATEGORIES = ['Todos', 'Programador', 'Vendedor', 'Tienda'];
+
 
 export const BusinessHomeScreen = ({ route, navigation }: any) => {
   const session = React.useContext(SessionContext);
