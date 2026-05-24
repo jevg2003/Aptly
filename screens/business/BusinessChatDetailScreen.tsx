@@ -149,7 +149,13 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
 
   const handleAttachDocument = async () => {
     try {
-      const result = await DocumentPicker.getDocumentAsync({ type: 'application/pdf' });
+      const result = await DocumentPicker.getDocumentAsync({
+        type: [
+          'application/pdf',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/msword',
+        ],
+      });
       setAttachmentMenuVisible(false);
 
       if (!result.canceled) {
@@ -168,11 +174,22 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
       const filename = name || `${Date.now()}.${type === 'image' ? 'jpg' : 'pdf'}`;
       const path = `${conversation.id}/${filename}`;
 
+      const ext = filename.split('.').pop() || '';
+      let mimeType = 'application/octet-stream';
+      if (type === 'image') {
+        mimeType = 'image/jpeg';
+      } else {
+        const extLower = ext.toLowerCase();
+        if (extLower === 'pdf') mimeType = 'application/pdf';
+        else if (extLower === 'docx') mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+        else if (extLower === 'doc') mimeType = 'application/msword';
+      }
+
       const formData = new FormData();
       formData.append('file', {
         uri,
         name: filename,
-        type: type === 'image' ? 'image/jpeg' : 'application/pdf',
+        type: mimeType,
       } as any);
 
       const { error } = await supabase.storage.from('chat-attachments').upload(path, formData);
@@ -306,7 +323,11 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
                     <Text style={[styles.fileName, { color: isMe ? 'white' : 'white' }]}>
                       {item.metadata?.name || displayUrl.split('/').pop() || 'Archivo'}
                     </Text>
-                    <Text style={styles.fileSize}>PDF Document</Text>
+                    <Text style={styles.fileSize}>
+                      {(item.metadata?.name || displayUrl).toLowerCase().endsWith('.docx') || (item.metadata?.name || displayUrl).toLowerCase().endsWith('.doc')
+                        ? 'Documento Word'
+                        : 'Documento PDF'}
+                    </Text>
                   </View>
                 </TouchableOpacity>
               )}

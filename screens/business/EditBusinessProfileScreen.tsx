@@ -115,7 +115,11 @@ export const EditBusinessProfileScreen = ({ navigation }: any) => {
     if (!session?.user?.id) return;
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf'],
+        type: [
+          'application/pdf',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/msword'
+        ],
         copyToCacheDirectory: true,
       });
       if (result.canceled) return;
