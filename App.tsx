@@ -1,6 +1,6 @@
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import React, { useState, useEffect } from 'react';
-import { View, useColorScheme as useRNColorScheme } from 'react-native';
+import { View, Image, Text, ActivityIndicator, useColorScheme as useRNColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 
@@ -53,7 +53,32 @@ export default function App() {
   }, []);
 
   if (loadingSession) {
-    return <View style={{ flex: 1, backgroundColor: '#050505' }} />;
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: '#050505',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 20,
+        }}>
+        <Image
+          source={require('./assets/favicon.png')}
+          style={{ width: 80, height: 80, borderRadius: 22 }}
+          resizeMode="contain"
+        />
+        <Text
+          style={{
+            color: '#FFFFFF',
+            fontSize: 28,
+            fontWeight: '900',
+            letterSpacing: -0.5,
+          }}>
+          Aptly
+        </Text>
+        <ActivityIndicator color="#00A3FF" size="small" style={{ marginTop: 8 }} />
+      </View>
+    );
   }
 
   return (
