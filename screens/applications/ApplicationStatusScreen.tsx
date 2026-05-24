@@ -305,21 +305,19 @@ export const ApplicationStatusScreen = ({ route, navigation }: any) => {
     if (!session?.user?.id) return;
     try {
       // 1. Seleccionar archivo PDF local
-      const result = await DocumentPicker.getDocumentAsync({ type: 'application/pdf' });
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'application/msword',
+               'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+        copyToCacheDirectory: true,
+      });
 
       if (result.canceled) return;
 
       setIsUploadingPDF(true);
       const asset = result.assets[0];
 
-      // 2. Subir a Supabase Storage
+      // 2. Subir a Supabase Storage (lanza error si falla)
       const uploadedUrl = await uploadDocument(asset.uri, session.user.id, asset.name);
-
-      if (!uploadedUrl) {
-        Alert.alert('Error', 'No se pudo cargar el documento.');
-        setIsUploadingPDF(false);
-        return;
-      }
 
       setUploadedPDFUrl(uploadedUrl);
       triggerUpdateBanner('Currículum subido. Vinculando con reclutamiento...');
@@ -389,9 +387,9 @@ export const ApplicationStatusScreen = ({ route, navigation }: any) => {
 
       await fetchApplicationProgress();
       Alert.alert('¡Enviado!', 'Tu hoja de vida ha sido enviada con éxito al reclutador.');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error in handleUploadPDF:', err);
-      Alert.alert('Error', 'Ocurrió un error al procesar el currículum.');
+      Alert.alert('Error al subir documento', err?.message || 'Ocurrió un error inesperado. Intenta de nuevo.');
     } finally {
       setIsUploadingPDF(false);
     }

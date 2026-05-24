@@ -225,6 +225,7 @@ export const ProfileScreen = ({ navigation }: any) => {
         type: [
           'application/pdf',
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/msword',
         ],
         copyToCacheDirectory: true,
       });
@@ -234,9 +235,8 @@ export const ProfileScreen = ({ navigation }: any) => {
       setUploadingResume(true);
       const asset = result.assets[0];
 
+      // uploadDocument ahora lanza error si falla en lugar de retornar null
       const publicUrl = await uploadDocument(asset.uri, session.user.id, asset.name);
-
-      if (!publicUrl) throw new Error('No se pudo subir el archivo.');
 
       const { error } = await supabase
         .from('profiles')
@@ -249,7 +249,7 @@ export const ProfileScreen = ({ navigation }: any) => {
       setProfile({ ...profile, resume_url: publicUrl });
       Alert.alert('Éxito', 'Tu CV se ha subido correctamente.');
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Hubo un problema al subir tu CV.');
+      Alert.alert('Error al subir CV', err?.message || 'Hubo un problema al subir tu CV. Intenta de nuevo.');
     } finally {
       setUploadingResume(false);
     }
