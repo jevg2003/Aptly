@@ -29,6 +29,24 @@ import { ObsidianHeader } from '../../components/ObsidianHeader';
 import { ObsidianModal } from '../../components/ObsidianModal';
 import { handleAccountSoftDelete } from '../../lib/accountUtils';
 
+/** Safely parses a tags field that may be an array, JSON array string, or CSV string */
+const parseTagsField = (field: any): string[] => {
+  if (!field) return [];
+  if (Array.isArray(field)) return field.map(String).filter(Boolean);
+  if (typeof field === 'string') {
+    const trimmed = field.trim();
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean);
+      } catch {}
+    }
+    return trimmed.split(',').map((t) => t.trim()).filter(Boolean);
+  }
+  return [];
+};
+
+
 export const ProfileScreen = ({ navigation }: any) => {
   const session = React.useContext(SessionContext);
   const { setCurrentScreen, setIsBusiness } = useApp();
@@ -584,33 +602,36 @@ export const ProfileScreen = ({ navigation }: any) => {
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Habilidades Clave</Text>
               </View>
-              {profile?.candidate_tags ? (
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-                  {profile.candidate_tags.split(',').map((tag: string, index: number) => (
-                    <View
-                      key={index}
-                      style={{
-                        backgroundColor: 'rgba(0,163,255,0.08)',
-                        paddingHorizontal: 16,
-                        paddingVertical: 8,
-                        borderRadius: 20,
-                        borderWidth: 1,
-                        borderColor: 'rgba(0,163,255,0.25)',
-                      }}>
-                      <Text style={{ color: '#00A3FF', fontWeight: '600', fontSize: 13 }}>
-                        {tag.trim()}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <TouchableOpacity
-                  style={styles.emptyExperience}
-                  onPress={() => navigation.navigate('EditProfile', { profile })}>
-                  <Text style={styles.emptyText}>Aún no has añadido tus habilidades clave</Text>
-                  <Text style={styles.addText}>+ Configurar Habilidades</Text>
-                </TouchableOpacity>
-              )}
+              {(() => {
+                const tags = parseTagsField(profile?.candidate_tags);
+                return tags.length > 0 ? (
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                    {tags.map((tag, index) => (
+                      <View
+                        key={index}
+                        style={{
+                          backgroundColor: 'rgba(0,163,255,0.08)',
+                          paddingHorizontal: 16,
+                          paddingVertical: 8,
+                          borderRadius: 20,
+                          borderWidth: 1,
+                          borderColor: 'rgba(0,163,255,0.25)',
+                        }}>
+                        <Text style={{ color: '#00A3FF', fontWeight: '600', fontSize: 13 }}>
+                          {tag}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.emptyExperience}
+                    onPress={() => navigation.navigate('EditProfile', { profile })}>
+                    <Text style={styles.emptyText}>Aún no has añadido tus habilidades clave</Text>
+                    <Text style={styles.addText}>+ Configurar Habilidades</Text>
+                  </TouchableOpacity>
+                );
+              })()}
             </View>
 
             {/* Industry Interests Section */}
@@ -618,33 +639,36 @@ export const ProfileScreen = ({ navigation }: any) => {
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Sectores de Interés</Text>
               </View>
-              {profile?.industry_interests ? (
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-                  {profile.industry_interests.split(',').map((interest: string, index: number) => (
-                    <View
-                      key={index}
-                      style={{
-                        backgroundColor: 'rgba(255,255,255,0.03)',
-                        paddingHorizontal: 16,
-                        paddingVertical: 8,
-                        borderRadius: 20,
-                        borderWidth: 1,
-                        borderColor: 'rgba(255,255,255,0.08)',
-                      }}>
-                      <Text style={{ color: '#E2E8F0', fontWeight: '600', fontSize: 13 }}>
-                        {interest.trim()}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <TouchableOpacity
-                  style={styles.emptyExperience}
-                  onPress={() => navigation.navigate('EditProfile', { profile })}>
-                  <Text style={styles.emptyText}>Aún no has añadido tus sectores de interés</Text>
-                  <Text style={styles.addText}>+ Configurar Intereses</Text>
-                </TouchableOpacity>
-              )}
+              {(() => {
+                const interests = parseTagsField(profile?.industry_interests);
+                return interests.length > 0 ? (
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                    {interests.map((interest, index) => (
+                      <View
+                        key={index}
+                        style={{
+                          backgroundColor: 'rgba(255,255,255,0.03)',
+                          paddingHorizontal: 16,
+                          paddingVertical: 8,
+                          borderRadius: 20,
+                          borderWidth: 1,
+                          borderColor: 'rgba(255,255,255,0.08)',
+                        }}>
+                        <Text style={{ color: '#E2E8F0', fontWeight: '600', fontSize: 13 }}>
+                          {interest}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.emptyExperience}
+                    onPress={() => navigation.navigate('EditProfile', { profile })}>
+                    <Text style={styles.emptyText}>Aún no has añadido tus sectores de interés</Text>
+                    <Text style={styles.addText}>+ Configurar Intereses</Text>
+                  </TouchableOpacity>
+                );
+              })()}
             </View>
 
             {/* Experience Section */}

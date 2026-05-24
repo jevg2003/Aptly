@@ -46,7 +46,8 @@ export const InboxScreen = ({ navigation }: any) => {
           messages(id, content, sender_id, is_read, created_at)
         `
         )
-        .or(`candidate_id.eq.${session.user.id},company_id.eq.${session.user.id}`);
+        .or(`candidate_id.eq.${session.user.id},company_id.eq.${session.user.id}`)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
@@ -96,13 +97,16 @@ export const InboxScreen = ({ navigation }: any) => {
           unreadCount,
           isArchived: false,
           messages: [],
+          _rawDate: lastMsg ? new Date(lastMsg.created_at).getTime() : new Date(room.created_at).getTime(),
         };
       });
 
-      // Show latest chats first
+      // Sort: unread first, then by most recent message date
       mapped.sort((a, b) => {
-        // rough sort since we parsed to string in 'timestamp', better to sort before mapping but this is a mock replacement
-        return 0; // The actual robust sort would run on raw dates
+        const aUnread = a.unreadCount > 0 ? 1 : 0;
+        const bUnread = b.unreadCount > 0 ? 1 : 0;
+        if (aUnread !== bUnread) return bUnread - aUnread;
+        return (b as any)._rawDate - (a as any)._rawDate;
       });
 
       setConversations(mapped);
@@ -123,8 +127,7 @@ export const InboxScreen = ({ navigation }: any) => {
   const filteredConversations = useMemo(() => {
     let result = conversations;
     if (activeFilter === 'No leídos') result = result.filter((c) => c.unreadCount > 0);
-    else if (activeFilter === 'Archivados') result = result.filter((c) => c.isArchived);
-    else result = result.filter((c) => !c.isArchived);
+    else result = result; // 'Todos'
 
     if (searchQuery.trim()) {
       const lowerQuery = searchQuery.toLowerCase();
@@ -154,7 +157,7 @@ export const InboxScreen = ({ navigation }: any) => {
       <SearchBar value={searchQuery} onChangeText={setSearchQuery} />
 
       <ObsidianSwitcher
-        options={['Todos', 'No leídos', 'Archivados']}
+        options={['Todos', 'No leídos']}
         activeOption={activeFilter}
         onOptionChange={(opt) => setActiveFilter(opt as FilterParam)}
       />

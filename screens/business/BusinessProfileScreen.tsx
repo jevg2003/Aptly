@@ -383,9 +383,9 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
           {/* Recent Jobs */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Recent Postings</Text>
+              <Text style={styles.sectionTitle}>Publicaciones Recientes</Text>
               <TouchableOpacity>
-                <Text style={styles.seeAllText}>View All</Text>
+                <Text style={styles.seeAllText}>Ver todas</Text>
               </TouchableOpacity>
             </View>
 
@@ -423,7 +423,7 @@ export const BusinessProfileScreen = ({ navigation }: any) => {
               onPress={() => navigation.navigate('Vacantes', { screen: 'CreateVacante' })}
               style={styles.createCta}>
               <Ionicons name="add-circle-outline" size={20} color="#475569" />
-              <Text style={styles.createCtaText}>Publish New Opening</Text>
+              <Text style={styles.createCtaText}>Publicar nueva oferta</Text>
             </TouchableOpacity>
           </View>
 
@@ -699,7 +699,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   deleteText: {
-    color: '#1A1A1C',
+    color: '#64748b',
     fontSize: 10,
     fontWeight: '900',
     textTransform: 'uppercase',

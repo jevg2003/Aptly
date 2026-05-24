@@ -65,9 +65,10 @@ export const ApplicationsScreen = ({ navigation }: any) => {
         let statusString = 'Recibida';
         if (app.status === 'pending') statusString = 'Recibida';
         if (app.status === 'reviewed') statusString = 'En revisión';
-        if (app.status === 'interview') statusString = 'Entrevista';
+        if (app.status === 'interview') statusString = 'En Proceso';
         if (app.status === 'rejected') statusString = 'Rechazado';
         if (app.status === 'accepted') statusString = 'Aceptado';
+        if (app.status === 'closed') statusString = 'Finalizado';
 
         const baseTimeline = [
           {
@@ -139,7 +140,7 @@ export const ApplicationsScreen = ({ navigation }: any) => {
     if (activeFilter === 'Activas') {
       return applications.filter(
         (app) =>
-          app.status === 'En revisión' || app.status === 'Entrevista' || app.status === 'Recibida'
+          app.status === 'En revisión' || app.status === 'En Proceso' || app.status === 'Recibida'
       );
     }
     if (activeFilter === 'Finalizadas')
