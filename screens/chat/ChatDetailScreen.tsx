@@ -213,7 +213,13 @@ export const ChatDetailScreen = ({ route, navigation }: any) => {
 
   const handleAttachDocument = async () => {
     try {
-      const result = await DocumentPicker.getDocumentAsync({ type: 'application/pdf' });
+      const result = await DocumentPicker.getDocumentAsync({
+        type: [
+          'application/pdf',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/msword',
+        ],
+      });
       setAttachmentMenuVisible(false);
 
       if (!result.canceled && currentUserId) {
@@ -296,7 +302,7 @@ export const ChatDetailScreen = ({ route, navigation }: any) => {
               <Text
                 className={`shrink text-sm font-bold ${isMe ? 'text-white' : 'text-slate-200'}`}
                 numberOfLines={1}>
-                Ver Documento (PDF)
+                Ver Documento {item.mediaUrl?.toLowerCase().endsWith('.docx') || item.mediaUrl?.toLowerCase().endsWith('.doc') ? '(Word)' : '(PDF)'}
               </Text>
             </TouchableOpacity>
           )}
