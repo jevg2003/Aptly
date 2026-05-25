@@ -14,6 +14,7 @@ import { NotificationBanner } from '../components/common/NotificationBanner';
 import { ObsidianToast } from '../components/common/ObsidianToast';
 
 import { RestoreAccountScreen } from '../screens/auth/RestoreAccountScreen';
+import { useApp } from '../lib/AppContext';
 
 const Stack = createNativeStackNavigator();
 
@@ -24,7 +25,17 @@ export const RootNavigator = ({
   session: Session | null;
   isDeleted?: boolean;
 }) => {
+  const { isBusiness, setIsBusiness } = useApp();
   const role = session?.user?.user_metadata?.role || 'candidate';
+
+  React.useEffect(() => {
+    if (session?.user) {
+      const actualIsBusiness = role === 'company';
+      if (isBusiness !== actualIsBusiness) {
+        setIsBusiness(actualIsBusiness);
+      }
+    }
+  }, [session, role, isBusiness]);
 
   return (
     <SessionContext.Provider value={session}>
@@ -36,6 +47,7 @@ export const RootNavigator = ({
             <Stack.Navigator
               screenOptions={{
                 headerShown: false,
+                gestureEnabled: true,
                 animation: 'fade_from_bottom',
                 contentStyle: { backgroundColor: '#050505' }, // Force darkest background
               }}>

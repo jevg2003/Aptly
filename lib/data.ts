@@ -27,6 +27,8 @@ export interface MessageData {
   mediaUrl?: string;
   timestamp: string;
   type: MessageType;
+  replyToId?: string;
+  deletedAt?: string;
   mapData?: {
     title: string;
     address: string;

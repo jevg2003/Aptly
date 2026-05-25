@@ -147,11 +147,29 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
           requirements: job?.requirements || ''
         });
 
+        let calculatedAge = 26;
+        if (profile?.birth_date) {
+          try {
+            const birthDate = new Date(profile.birth_date);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+              age--;
+            }
+            if (!isNaN(age)) {
+              calculatedAge = age;
+            }
+          } catch (e) {
+            console.warn('Error calculating age:', e);
+          }
+        }
+
         return {
           applicationId: app.id,
           id: profile?.id || Math.random().toString(),
           name: profile?.full_name || 'Candidato',
-          age: 26,
+          age: calculatedAge,
           location: profile?.location || 'Colombia',
           availability: 'Tiempo Completo',
           role: profile?.professional_title || 'Aplicante General',
@@ -223,6 +241,28 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
           'Hubo un problema al actualizar el estado del candidato. Por favor intenta de nuevo.'
         );
         return; // No avanzar el índice si falló la DB
+      }
+
+      // Insertar notificación persistente para el candidato
+      try {
+        const companyName = session?.user?.user_metadata?.full_name || 'Una empresa';
+        const notificationTitle = isMatch ? '¡Es un Match! 🎉' : 'Actualización de Proceso 💼';
+        const notificationBody = isMatch
+          ? `La empresa ${companyName} te ha seleccionado para el puesto de ${job?.title || 'su vacante'}. ¡Felicidades!`
+          : `La empresa ${companyName} ha decidido no avanzar con tu perfil para la vacante de ${job?.title || 'su vacante'}.`;
+
+        const { error: notifError } = await supabase.from('notifications').insert([
+          {
+            user_id: currentCandidate.id,
+            title: notificationTitle,
+            body: notificationBody,
+            type: isMatch ? 'application_accepted' : 'application_rejected',
+            related_id: currentCandidate.applicationId,
+          },
+        ]);
+        if (notifError) console.error('Error inserting swipe notification:', notifError);
+      } catch (notifErr) {
+        console.error('Failed to create notification:', notifErr);
       }
 
       if (isMatch) {

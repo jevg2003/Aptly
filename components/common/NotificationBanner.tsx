@@ -1,11 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Text, View, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBusinessChat } from '../../lib/BusinessChatContext';
 
 const { width } = Dimensions.get('window');
 
 export const NotificationBanner = () => {
+  const insets = useSafeAreaInsets();
   const { notification, setNotification } = useBusinessChat();
   const slideAnim = useRef(new Animated.Value(-100)).current;
 
@@ -40,7 +42,7 @@ export const NotificationBanner = () => {
   if (!notification) return null;
 
   return (
-    <Animated.View style={[styles.container, { transform: [{ translateY: slideAnim }] }]}>
+    <Animated.View style={[styles.container, { top: insets.top + 10, transform: [{ translateY: slideAnim }] }]}>
       <TouchableOpacity style={styles.banner} onPress={hideBanner} activeOpacity={0.9}>
         <View style={styles.iconContainer}>
           <Ionicons name="chatbubble-ellipses" size={24} color="#FF005C" />
@@ -62,7 +64,6 @@ export const NotificationBanner = () => {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: 50,
     left: 0,
     right: 0,
     zIndex: 9999,

@@ -25,7 +25,7 @@ export const ChatListItem = ({ conversation, onPress }: ChatListItemProps) => {
       className="mx-4 my-1.5 flex-row items-center rounded-[24px] border border-white/5 bg-[#121214] p-4"
       activeOpacity={0.7}>
       <View className="h-14 w-14 items-center justify-center overflow-hidden rounded-full border border-white/5 bg-slate-800">
-        {participant.avatar ? (
+        {participant.avatar && participant.avatar.trim() !== '' ? (
           <Image source={{ uri: participant.avatar }} className="h-full w-full" />
         ) : (
           <Text className="text-lg font-bold text-slate-400">{initials}</Text>

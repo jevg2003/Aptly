@@ -42,6 +42,8 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
   const { conversation: initialConversation, conversationId, autoMessage } = route.params || {};
   const { conversations, sendMessage, markAsRead, deleteMessage } = useBusinessChat();
   const [messageText, setMessageText] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const quickEmojis = ['👍', '❤️', '😂', '😮', '🙏', '🔥', '💼', '👏', '✅', '🙌', '🚀', '💡'];
   const [replyingTo, setReplyingTo] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
   const [loadingError, setLoadingError] = useState(false);
@@ -371,7 +373,7 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
                 onPress={() => setResumeVisible(true)}
                 activeOpacity={0.7}>
                 <View style={styles.avatarContainer}>
-                  {conversation.participant.avatar ? (
+                  {conversation.participant.avatar && conversation.participant.avatar.trim() !== '' ? (
                     <Image
                       source={{ uri: conversation.participant.avatar }}
                       style={styles.headerAvatar}
@@ -400,10 +402,6 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
                 )}
               </View>
             )}
-
-            <TouchableOpacity style={styles.moreBtn}>
-              <Feather name="more-vertical" size={20} color="#64748b" />
-            </TouchableOpacity>
           </View>
 
           <KeyboardAvoidingView
@@ -458,6 +456,26 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
               </View>
             ) : (
               <View style={styles.footer}>
+                {showEmojiPicker && (
+                  <View style={styles.emojiContainer}>
+                    <FlatList
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      data={quickEmojis}
+                      keyExtractor={(item) => item}
+                      contentContainerStyle={styles.emojiScroll}
+                      renderItem={({ item }) => (
+                        <TouchableOpacity
+                          style={styles.emojiItem}
+                          onPress={() => {
+                            setMessageText((prev) => prev + item);
+                          }}>
+                          <Text style={styles.emojiText}>{item}</Text>
+                        </TouchableOpacity>
+                      )}
+                    />
+                  </View>
+                )}
                 <View style={styles.inputContainer}>
                   <TouchableOpacity
                     style={styles.attachmentBtn}
@@ -475,6 +493,12 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
                     onChangeText={setMessageText}
                     multiline
                   />
+
+                  <TouchableOpacity
+                    style={{ padding: 8, marginRight: 4 }}
+                    onPress={() => setShowEmojiPicker(!showEmojiPicker)}>
+                    <Ionicons name="happy-outline" size={22} color={showEmojiPicker ? '#FF005C' : '#64748b'} />
+                  </TouchableOpacity>
 
                   <TouchableOpacity
                     onPress={handleSend}
@@ -841,5 +865,29 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: 'rgba(255,255,255,0.08)',
     marginHorizontal: 12,
+  },
+  emojiContainer: {
+    paddingVertical: 10,
+    backgroundColor: '#0c0c0e',
+    borderBottomWidth: 1,
+    borderBottomColor: '#1e1e1e',
+    marginBottom: 8,
+  },
+  emojiScroll: {
+    paddingHorizontal: 8,
+    gap: 12,
+  },
+  emojiItem: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  emojiText: {
+    fontSize: 20,
   },
 });
