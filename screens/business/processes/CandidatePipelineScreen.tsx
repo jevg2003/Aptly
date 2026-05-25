@@ -449,6 +449,8 @@ export const CandidatePipelineScreen = ({ route, navigation }: any) => {
     } finally {
       setScheduling(false);
     }
+  };
+
   const handleAddCustomStage = async () => {
     if (!newStageName.trim()) {
       Alert.alert('Campo Vacío', 'Por favor, escribe el nombre de la etapa.');

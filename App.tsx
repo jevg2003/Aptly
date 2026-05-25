@@ -35,16 +35,34 @@ export default function App() {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      checkDeletionStatus(session);
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.warn('Stale session or invalid token detected, signing out to clear storage:', error.message);
+        supabase.auth.signOut().then(() => {
+          setSession(null);
+          setIsDeleted(false);
+          setLoadingSession(false);
+        });
+      } else {
+        setSession(session);
+        checkDeletionStatus(session);
+      }
+    }).catch((err) => {
+      console.error('Unhandled getSession error:', err);
+      setLoadingSession(false);
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      checkDeletionStatus(session);
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setSession(null);
+        setIsDeleted(false);
+        setLoadingSession(false);
+      } else {
+        setSession(session);
+        checkDeletionStatus(session);
+      }
     });
 
     return () => {
