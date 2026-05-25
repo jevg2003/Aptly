@@ -46,6 +46,12 @@ export const CandidatePipelineScreen = ({ route, navigation }: any) => {
   const [interviewLink, setInterviewLink] = React.useState('https://meet.google.com/abc-defg-hij');
   const [scheduling, setScheduling] = React.useState(false);
 
+  // Custom stage states
+  const [customStageModalVisible, setCustomStageModalVisible] = React.useState(false);
+  const [newStageName, setNewStageName] = React.useState('');
+  const [applyToAll, setApplyToAll] = React.useState(false);
+  const [addingStage, setAddingStage] = React.useState(false);
+
   const rawProfile = Array.isArray(application.profiles)
     ? application.profiles[0]
     : application.profiles;
@@ -176,6 +182,23 @@ export const CandidatePipelineScreen = ({ route, navigation }: any) => {
     const newStatus = stage.status === 'completed' ? 'pending' : 'completed';
     const completedAt = newStatus === 'completed' ? new Date().toISOString() : null;
 
+    // Optimistic UI updates
+    const oldStages = [...stages];
+    const oldActiveIndex = activeStageIndex;
+    
+    setStages(prev => prev.map((s, idx) => {
+      if (idx === index) {
+        return { ...s, status: newStatus, completed_at: completedAt };
+      }
+      return s;
+    }));
+
+    if (newStatus === 'completed') {
+      setActiveStageIndex(index + 1);
+    } else {
+      setActiveStageIndex(index);
+    }
+
     try {
       const { error } = await supabase.from('application_stages').upsert(
         {
@@ -210,6 +233,9 @@ export const CandidatePipelineScreen = ({ route, navigation }: any) => {
       showToast(`Etapa marcada como ${newStatus === 'completed' ? 'completada' : 'pendiente'}`);
     } catch (err) {
       console.error('Error toggling stage:', err);
+      // Revert on error
+      setStages(oldStages);
+      setActiveStageIndex(oldActiveIndex);
       showToast('No se pudo actualizar la etapa', 'error');
     }
   };
@@ -423,6 +449,66 @@ export const CandidatePipelineScreen = ({ route, navigation }: any) => {
     } finally {
       setScheduling(false);
     }
+  const handleAddCustomStage = async () => {
+    if (!newStageName.trim()) {
+      Alert.alert('Campo Vacío', 'Por favor, escribe el nombre de la etapa.');
+      return;
+    }
+
+    try {
+      setAddingStage(true);
+
+      // 1. Insert into current vacancy pipeline stages
+      const { data: insertedStage, error: insertError } = await supabase
+        .from('job_pipeline_stages')
+        .insert({
+          job_id: job.id,
+          name: newStageName.trim(),
+          order_index: stages.length,
+          action_type: 'generic',
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      // 2. If 'applyToAll' is true, update company_settings default_pipeline
+      if (applyToAll && session?.user?.id) {
+        const { data: settings } = await supabase
+          .from('company_settings')
+          .select('default_pipeline')
+          .eq('company_id', session.user.id)
+          .maybeSingle();
+
+        const currentPipeline = settings?.default_pipeline || [
+          { name: 'Revisión de Perfil', order: 0, action: 'profile_review' },
+          { name: 'Entrevista Inicial', order: 1, action: 'chat' },
+          { name: 'Selección Final', order: 2, action: 'offer' },
+        ];
+
+        const updatedPipeline = [
+          ...currentPipeline,
+          { name: newStageName.trim(), order: currentPipeline.length, action: 'generic' }
+        ];
+
+        await supabase
+          .from('company_settings')
+          .upsert({
+            company_id: session.user.id,
+            default_pipeline: updatedPipeline,
+          }, { onConflict: 'company_id' });
+      }
+
+      showToast('Nueva etapa añadida con éxito');
+      setNewStageName('');
+      setCustomStageModalVisible(false);
+      fetchData();
+    } catch (err) {
+      console.error('Error adding custom stage:', err);
+      showToast('Error al añadir la etapa', 'error');
+    } finally {
+      setAddingStage(false);
+    }
   };
 
   if (loading) {
@@ -617,6 +703,15 @@ export const CandidatePipelineScreen = ({ route, navigation }: any) => {
                 </View>
               );
             })}
+
+            {!isDeletedUser && (
+              <TouchableOpacity
+                onPress={() => setCustomStageModalVisible(true)}
+                style={styles.addStageCta}>
+                <Ionicons name="add-circle" size={18} color="#FF005C" style={{ marginRight: 6 }} />
+                <Text style={styles.addStageCtaText}>Añadir Etapa Personalizada</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Notas Internas */}
@@ -739,6 +834,55 @@ export const CandidatePipelineScreen = ({ route, navigation }: any) => {
               value={interviewLink}
               onChangeText={setInterviewLink}
             />
+          </View>
+        </ObsidianModal>
+
+        {/* MODAL PARA AÑADIR ETAPA PERSONALIZADA */}
+        <ObsidianModal
+          isVisible={customStageModalVisible}
+          onClose={() => setCustomStageModalVisible(false)}
+          title="Añadir Etapa"
+          message="Define una nueva etapa de evaluación para este proceso."
+          iconName="git-branch"
+          iconColor="#FF005C"
+          confirmText={addingStage ? 'Añadiendo...' : 'Añadir Etapa'}
+          cancelText="Cancelar"
+          onConfirm={handleAddCustomStage}
+          loading={addingStage}>
+          <View style={styles.modalForm}>
+            <Text style={styles.inputLabel}>Nombre de la Etapa</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="e.g. Examen de Idioma, Prueba Médica"
+              placeholderTextColor="#475569"
+              value={newStageName}
+              onChangeText={setNewStageName}
+            />
+
+            <Text style={styles.inputLabel}>Configuración de Aplicación</Text>
+            <View style={{ gap: 10, marginTop: 8 }}>
+              <TouchableOpacity
+                onPress={() => setApplyToAll(false)}
+                style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={[styles.radioCircle, { borderColor: !applyToAll ? '#FF005C' : '#475569' }]}>
+                  {!applyToAll && <View style={[styles.radioInner, { backgroundColor: '#FF005C' }]} />}
+                </View>
+                <Text style={{ color: 'white', fontSize: 13, fontWeight: '600' }}>
+                  Solo en este proceso de vacante
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setApplyToAll(true)}
+                style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={[styles.radioCircle, { borderColor: applyToAll ? '#FF005C' : '#475569' }]}>
+                  {applyToAll && <View style={[styles.radioInner, { backgroundColor: '#FF005C' }]} />}
+                </View>
+                <Text style={{ color: 'white', fontSize: 13, fontWeight: '600' }}>
+                  En todas las vacantes creadas (Predeterminado)
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </ObsidianModal>
       </SafeAreaView>
@@ -957,5 +1101,41 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 14,
     width: '100%',
+  },
+  radioCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#475569',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#FF005C',
+  },
+  addStageCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: 'rgba(255, 0, 92, 0.3)',
+    backgroundColor: 'rgba(255, 0, 92, 0.02)',
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  addStageCtaText: {
+    color: '#FF005C',
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
 });

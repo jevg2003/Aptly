@@ -36,8 +36,49 @@ export const RegisterScreen = ({ navigation, route }: any) => {
   const localRole: 'candidate' | 'company' = initialRole;
 
   const [email, setEmail] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [emailChecking, setEmailChecking] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  useEffect(() => {
+    if (!email) {
+      setEmailError('');
+      setEmailChecking(false);
+      return;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setEmailError('Correo electrónico no válido');
+      return;
+    } else {
+      setEmailError('');
+    }
+
+    setEmailChecking(true);
+    const handler = setTimeout(async () => {
+      try {
+        const { data, error } = await supabase.rpc('check_email_exists', { lookup_email: email });
+        if (error) {
+          console.error('Error checking email exists:', error);
+          setEmailChecking(false);
+          return;
+        }
+        if (data === true) {
+          setEmailError('Este perfil ya existe');
+        } else {
+          setEmailError('');
+        }
+      } catch (err) {
+        console.error('Unexpected error checking email:', err);
+      } finally {
+        setEmailChecking(false);
+      }
+    }, 600);
+
+    return () => clearTimeout(handler);
+  }, [email]);
 
   // Company Specific States
   const [companyName, setCompanyName] = useState('');
@@ -747,7 +788,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
     if (localRole === 'company') {
       switch (companyStep) {
         case 1:
-          return !!email && email.includes('@');
+          return !!email && email.includes('@') && !emailError && !emailChecking;
         case 2:
           return !!password && password.length >= 6 && password === confirmPassword;
         case 3:
@@ -760,14 +801,14 @@ export const RegisterScreen = ({ navigation, route }: any) => {
           const finalSector = isOtherSector ? customSector : selectedSectors[0];
           return !!finalSector;
         case 9:
-          return !!companyPhone && companyPhone.trim().length >= 6;
+          return true;
         default:
           return true;
       }
     } else {
       switch (candidateStep) {
         case 1:
-          return !!email && email.includes('@');
+          return !!email && email.includes('@') && !emailError && !emailChecking;
         case 2:
           return !!password && password.length >= 6 && password === confirmPassword;
         case 3:
@@ -923,6 +964,8 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                       candidateStep={candidateStep}
                       email={email}
                       setEmail={setEmail}
+                      emailError={emailError}
+                      emailChecking={emailChecking}
                       password={password}
                       setPassword={setPassword}
                       confirmPassword={confirmPassword}
@@ -987,6 +1030,8 @@ export const RegisterScreen = ({ navigation, route }: any) => {
                       companyStep={companyStep}
                       email={email}
                       setEmail={setEmail}
+                      emailError={emailError}
+                      emailChecking={emailChecking}
                       password={password}
                       setPassword={setPassword}
                       confirmPassword={confirmPassword}
