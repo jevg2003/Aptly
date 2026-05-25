@@ -556,7 +556,7 @@ export const ChatDetailScreen = ({ route, navigation }: any) => {
             onPress={handleHeaderPress}
             activeOpacity={0.7}>
             <View style={styles.avatarContainer}>
-              {participant.avatar ? (
+              {participant.avatar && participant.avatar.trim() !== '' ? (
                 <Image source={{ uri: participant.avatar }} style={styles.headerAvatar} />
               ) : (
                 <View style={[styles.headerAvatar, { alignItems: 'center', justifyContent: 'center' }]}>

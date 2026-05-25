@@ -80,7 +80,7 @@ export const MatchesScreen = () => {
       activeOpacity={0.7}
       onPress={() => openCompanyDetail(item)}>
       <View className="relative">
-        <Image source={{ uri: item.imageUrl }} className="h-16 w-16 rounded-2xl" />
+        <Image source={{ uri: item.imageUrl && item.imageUrl.trim() !== '' ? item.imageUrl : 'https://images.unsplash.com/photo-1573806626613-20519f72787c?w=100' }} className="h-16 w-16 rounded-2xl" />
         {item.unread && (
           <View className="absolute -right-1 -top-1 h-4 w-4 rounded-full border-2 border-white bg-blue-500 dark:border-slate-900" />
         )}
@@ -148,7 +148,7 @@ export const MatchesScreen = () => {
               <>
                 <View className="relative h-60 w-full">
                   <Image
-                    source={{ uri: selectedMatch.imageUrl }}
+                    source={{ uri: selectedMatch.imageUrl && selectedMatch.imageUrl.trim() !== '' ? selectedMatch.imageUrl : 'https://images.unsplash.com/photo-1573806626613-20519f72787c?w=600&q=80' }}
                     className="h-full w-full"
                     resizeMode="cover"
                   />
@@ -160,7 +160,7 @@ export const MatchesScreen = () => {
                   </TouchableOpacity>
                   <View className="absolute -bottom-10 left-8 rounded-3xl bg-white p-1 shadow-xl dark:bg-slate-900">
                     <Image
-                      source={{ uri: selectedMatch.imageUrl }}
+                      source={{ uri: selectedMatch.imageUrl && selectedMatch.imageUrl.trim() !== '' ? selectedMatch.imageUrl : 'https://images.unsplash.com/photo-1573806626613-20519f72787c?w=200&q=80' }}
                       className="h-20 w-20 rounded-2xl"
                     />
                   </View>

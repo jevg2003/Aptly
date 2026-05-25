@@ -373,7 +373,7 @@ export const BusinessChatDetailScreen = ({ route, navigation }: any) => {
                 onPress={() => setResumeVisible(true)}
                 activeOpacity={0.7}>
                 <View style={styles.avatarContainer}>
-                  {conversation.participant.avatar ? (
+                  {conversation.participant.avatar && conversation.participant.avatar.trim() !== '' ? (
                     <Image
                       source={{ uri: conversation.participant.avatar }}
                       style={styles.headerAvatar}
