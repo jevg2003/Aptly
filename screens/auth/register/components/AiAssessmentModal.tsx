@@ -508,7 +508,7 @@ export const AiAssessmentModal = ({
       <View style={styles.aiModalContainer}>
         <BlurView style={StyleSheet.absoluteFillObject} intensity={40} tint="dark" />
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center' }}>
           <View style={styles.aiModalContent}>
             {/* Header */}

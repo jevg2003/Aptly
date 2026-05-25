@@ -121,7 +121,7 @@ export const LoginScreen = ({ navigation }: any) => {
     }
 
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -134,8 +134,9 @@ export const LoginScreen = ({ navigation }: any) => {
         message: 'Credenciales incorrectas o problema de red. Por favor intenta de nuevo.',
       });
     } else {
-      // Sync global state only upon success
-      setIsBusiness(localRole === 'company');
+      // Sync global state based on actual user role
+      const userRole = data?.user?.user_metadata?.role || 'candidate';
+      setIsBusiness(userRole === 'company');
     }
   };
 

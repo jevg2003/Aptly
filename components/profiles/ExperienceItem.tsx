@@ -25,7 +25,7 @@ export const ExperienceItem = ({ experience }: ExperienceItemProps) => {
   return (
     <View style={styles.card}>
       <View style={styles.logoContainer}>
-        {logoUrl ? (
+        {logoUrl && logoUrl.trim() !== '' ? (
           <Image source={{ uri: logoUrl }} style={styles.logo} resizeMode="contain" />
         ) : (
           <MaterialCommunityIcons name="office-building" size={24} color="#475569" />

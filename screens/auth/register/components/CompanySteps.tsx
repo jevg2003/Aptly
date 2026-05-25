@@ -11,6 +11,8 @@ interface CompanyStepsProps {
   companyStep: number;
   email: string;
   setEmail: (val: string) => void;
+  emailError?: string;
+  emailChecking?: boolean;
   password: React.ComponentProps<typeof CustomInput>['value']; // String
   setPassword: (val: string) => void;
   confirmPassword: React.ComponentProps<typeof CustomInput>['value']; // String
@@ -77,6 +79,8 @@ export const CompanySteps = ({
   companyStep,
   email,
   setEmail,
+  emailError,
+  emailChecking,
   password,
   setPassword,
   confirmPassword,
@@ -161,13 +165,25 @@ export const CompanySteps = ({
             <View style={styles.dividerLine} />
           </View>
 
-          <CustomInput
-            placeholder="Correo institucional"
-            value={email}
-            onChangeText={setEmail}
-            iconName="email-outline"
-            role="company"
-          />
+          <View>
+            <CustomInput
+              placeholder="Correo institucional"
+              value={email}
+              onChangeText={setEmail}
+              iconName="email-outline"
+              role="company"
+            />
+            {emailChecking && (
+              <Text style={{ color: '#00a3ff', fontSize: 12, marginTop: 4, marginLeft: 5 }}>
+                Verificando correo...
+              </Text>
+            )}
+            {emailError ? (
+              <Text style={{ color: '#ef4444', fontSize: 12, marginTop: 4, marginLeft: 5 }}>
+                {emailError}
+              </Text>
+            ) : null}
+          </View>
         </View>
       )}
 
@@ -626,8 +642,7 @@ export const CompanySteps = ({
         <View style={[styles.stepContainer, { justifyContent: 'flex-start' }]}>
           <Text style={styles.questionTitle}>Información de Contacto</Text>
           <Text style={styles.questionSubtitle}>
-            El teléfono de contacto es obligatorio para que los candidatos puedan comunicarse con tu
-            empresa.
+            Ingresa el sitio web principal de tu empresa si dispones de uno.
           </Text>
 
           <View style={{ gap: 16 }}>
@@ -638,50 +653,6 @@ export const CompanySteps = ({
                 value={companyWebsite}
                 onChangeText={setCompanyWebsite}
                 iconName="earth"
-                role="company"
-              />
-            </View>
-
-            <View>
-              <Text style={styles.sectorsLabel}>Teléfono de Contacto (Obligatorio)</Text>
-              <CustomInput
-                placeholder="+57 300 000 0000"
-                value={companyPhone}
-                onChangeText={setCompanyPhone}
-                iconName="phone-outline"
-                role="company"
-              />
-            </View>
-
-            <View style={{ gap: 8 }}>
-              <Text style={styles.sectorsLabel}>Ubicación Principal (Opcional)</Text>
-              <SearchableSelect
-                placeholder="Selecciona el País de la empresa"
-                value={selectedCompanyCountry}
-                onSelect={(country) => {
-                  setSelectedCompanyCountry(country);
-                  setSelectedCompanyCity('');
-                  setCompanyLocation('');
-                }}
-                options={COUNTRIES.map((c) => ({ name: c.name, flag: c.flag }))}
-                iconName="earth"
-                role="company"
-              />
-
-              <SearchableSelect
-                placeholder="Selecciona la Ciudad de la empresa"
-                value={selectedCompanyCity}
-                onSelect={(city) => {
-                  setSelectedCompanyCity(city);
-                  setCompanyLocation(`${city}, ${selectedCompanyCountry}`);
-                }}
-                options={
-                  selectedCompanyCountry
-                    ? COUNTRIES.find((c) => c.name === selectedCompanyCountry)?.cities || []
-                    : []
-                }
-                iconName="city"
-                disabled={!selectedCompanyCountry}
                 role="company"
               />
             </View>

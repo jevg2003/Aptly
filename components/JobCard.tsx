@@ -57,9 +57,9 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onPress, onInfoPress }) =
           <View style={styles.logoCircle}>
             <Ionicons name="cube" size={24} color="#00A3FF" />
           </View>
-          <View>
-            <Text style={styles.companyName}>{job.company}</Text>
-            <Text style={styles.companyDesc}>
+          <View style={{ flex: 1, flexShrink: 1, marginRight: 10 }}>
+            <Text style={styles.companyName} numberOfLines={1}>{job.company}</Text>
+            <Text style={styles.companyDesc} numberOfLines={1}>
               {job.companyIndustry ? `${job.companyIndustry} • ` : ''}
               {job.companyDescription || 'Empresa destacada'}
             </Text>
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   imageContainer: {
-    height: '55%',
+    height: '47%',
     width: '100%',
     position: 'relative',
   },
@@ -159,6 +159,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 20,
     left: 20,
+    right: 20,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -172,6 +173,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.15)',
+    flexShrink: 0,
   },
   companyName: {
     color: '#FFFFFF',
@@ -204,8 +206,8 @@ const styles = StyleSheet.create({
   },
   contentArea: {
     flex: 1,
-    padding: 24,
-    paddingBottom: 70, // Safe zone for floating buttons
+    padding: 20,
+    paddingBottom: 58, // Safe zone for floating buttons
     backgroundColor: '#121214',
   },
   titleRow: {
@@ -248,7 +250,7 @@ const styles = StyleSheet.create({
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 10,
   },
   locationText: {
     color: '#64748b',
@@ -260,7 +262,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginBottom: 20,
+    marginBottom: 12,
   },
   tag: {
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
@@ -312,7 +314,7 @@ const styles = StyleSheet.create({
     marginTop: 'auto',
   },
   salaryValue: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '900',
     color: '#00A3FF',
   },

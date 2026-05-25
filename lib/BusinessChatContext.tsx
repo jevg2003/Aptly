@@ -323,6 +323,26 @@ export const BusinessChatProvider = ({ children }: { children: ReactNode }) => {
         ]);
 
         if (error) throw error;
+
+        // Insertar notificación persistente para el receptor (candidato)
+        try {
+          const conversation = conversations.find(c => c.id === convId);
+          const candidateId = conversation?.participant?.id;
+          if (candidateId) {
+            const senderName = session?.user?.user_metadata?.full_name || 'Empresa';
+            await supabase.from('notifications').insert([
+              {
+                user_id: candidateId,
+                title: `Nuevo mensaje de ${senderName} 💬`,
+                body: text.length > 60 ? `${text.substring(0, 60)}...` : text,
+                type: 'new_message',
+                related_id: convId,
+              },
+            ]);
+          }
+        } catch (notifErr) {
+          console.error('Failed to insert message notification for candidate:', notifErr);
+        }
       } catch (err) {
         console.error('Error sending message:', err);
         setConversations((prev) =>

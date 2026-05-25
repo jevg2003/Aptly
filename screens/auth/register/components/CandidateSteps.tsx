@@ -12,6 +12,8 @@ interface CandidateStepsProps {
   candidateStep: number;
   email: string;
   setEmail: (val: string) => void;
+  emailError?: string;
+  emailChecking?: boolean;
   password: React.ComponentProps<typeof CustomInput>['value']; // String
   setPassword: (val: string) => void;
   confirmPassword: React.ComponentProps<typeof CustomInput>['value']; // String
@@ -91,6 +93,8 @@ export const CandidateSteps = ({
   candidateStep,
   email,
   setEmail,
+  emailError,
+  emailChecking,
   password,
   setPassword,
   confirmPassword,
@@ -183,13 +187,25 @@ export const CandidateSteps = ({
             <View style={styles.dividerLine} />
           </View>
 
-          <CustomInput
-            placeholder="Correo electrónico"
-            value={email}
-            onChangeText={setEmail}
-            iconName="email-outline"
-            role="candidate"
-          />
+          <View>
+            <CustomInput
+              placeholder="Correo electrónico"
+              value={email}
+              onChangeText={setEmail}
+              iconName="email-outline"
+              role="candidate"
+            />
+            {emailChecking && (
+              <Text style={{ color: '#00a3ff', fontSize: 12, marginTop: 4, marginLeft: 5 }}>
+                Verificando correo...
+              </Text>
+            )}
+            {emailError ? (
+              <Text style={{ color: '#ef4444', fontSize: 12, marginTop: 4, marginLeft: 5 }}>
+                {emailError}
+              </Text>
+            ) : null}
+          </View>
         </View>
       )}
 
@@ -636,7 +652,8 @@ export const CandidateSteps = ({
           <ScrollView
             style={{ flex: 1, maxHeight: 320 }}
             showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled">
+            keyboardShouldPersistTaps="handled"
+            nestedScrollEnabled={true}>
             {Object.entries(candidateTagsByCategory).map(([category, tags]) => {
               if (category === 'Recomendadas por IA' && tags.length === 0) return null;
 
