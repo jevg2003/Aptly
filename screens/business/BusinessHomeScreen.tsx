@@ -147,11 +147,29 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
           requirements: job?.requirements || ''
         });
 
+        let calculatedAge = 26;
+        if (profile?.birth_date) {
+          try {
+            const birthDate = new Date(profile.birth_date);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+              age--;
+            }
+            if (!isNaN(age)) {
+              calculatedAge = age;
+            }
+          } catch (e) {
+            console.warn('Error calculating age:', e);
+          }
+        }
+
         return {
           applicationId: app.id,
           id: profile?.id || Math.random().toString(),
           name: profile?.full_name || 'Candidato',
-          age: 26,
+          age: calculatedAge,
           location: profile?.location || 'Colombia',
           availability: 'Tiempo Completo',
           role: profile?.professional_title || 'Aplicante General',
