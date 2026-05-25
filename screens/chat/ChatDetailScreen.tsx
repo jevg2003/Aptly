@@ -194,6 +194,22 @@ export const ChatDetailScreen = ({ route, navigation }: any) => {
         reply_to_id: replyId,
       });
 
+      // Insertar notificación persistente para el receptor (empresa)
+      try {
+        const senderName = session?.user?.user_metadata?.full_name || 'Candidato';
+        await supabase.from('notifications').insert([
+          {
+            user_id: oppositeUserId,
+            title: `Nuevo mensaje de ${senderName} 💬`,
+            body: textToSend.length > 60 ? `${textToSend.substring(0, 60)}...` : textToSend,
+            type: 'new_message',
+            related_id: roomId,
+          },
+        ]);
+      } catch (notifErr) {
+        console.error('Failed to insert message notification for company:', notifErr);
+      }
+
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);

@@ -121,7 +121,12 @@ export const ApplicationsScreen = ({ navigation }: any) => {
         } as unknown as Application;
       });
 
-      setApplications(mapped);
+      // If candidate, hide pending ('pending' -> 'Recibida') applications until the company accepts them
+      const filtered = role === 'candidate'
+        ? mapped.filter((app) => app.status !== 'Recibida')
+        : mapped;
+
+      setApplications(filtered);
     } catch (err) {
       console.error('Error fetching applications:', err);
     } finally {

@@ -243,6 +243,28 @@ export const BusinessHomeScreen = ({ route, navigation }: any) => {
         return; // No avanzar el índice si falló la DB
       }
 
+      // Insertar notificación persistente para el candidato
+      try {
+        const companyName = session?.user?.user_metadata?.full_name || 'Una empresa';
+        const notificationTitle = isMatch ? '¡Es un Match! 🎉' : 'Actualización de Proceso 💼';
+        const notificationBody = isMatch
+          ? `La empresa ${companyName} te ha seleccionado para el puesto de ${job?.title || 'su vacante'}. ¡Felicidades!`
+          : `La empresa ${companyName} ha decidido no avanzar con tu perfil para la vacante de ${job?.title || 'su vacante'}.`;
+
+        const { error: notifError } = await supabase.from('notifications').insert([
+          {
+            user_id: currentCandidate.id,
+            title: notificationTitle,
+            body: notificationBody,
+            type: isMatch ? 'application_accepted' : 'application_rejected',
+            related_id: currentCandidate.applicationId,
+          },
+        ]);
+        if (notifError) console.error('Error inserting swipe notification:', notifError);
+      } catch (notifErr) {
+        console.error('Failed to create notification:', notifErr);
+      }
+
       if (isMatch) {
         // Asegurar que exista sala de chat
         const { data: existingRoom } = await supabase

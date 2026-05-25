@@ -162,7 +162,27 @@ export const HomeScreen = ({ navigation }: any) => {
   const fetchJobs = useCallback(async (currentCandidateProfile = candidateProfile) => {
     try {
       setLoadingJobs(true);
-      // Fetch active jobs and include company info by joining the profiles table
+      
+      // 1. Fetch applications the candidate already submitted (to exclude them from swiping deck)
+      let appliedJobIds = new Set<string>();
+      if (session?.user?.id) {
+        const { data: userApps, error: appsError } = await supabase
+          .from('applications')
+          .select('job_id')
+          .eq('candidate_id', session.user.id);
+        
+        if (appsError) {
+          console.error('Error fetching user applications:', appsError);
+        }
+        
+        if (!appsError && userApps) {
+          userApps.forEach(app => {
+            if (app.job_id) appliedJobIds.add(app.job_id);
+          });
+        }
+      }
+
+      // 2. Fetch active jobs and include company info by joining the profiles table
       const { data, error } = await supabase
         .from('jobs')
         .select(
@@ -172,7 +192,10 @@ export const HomeScreen = ({ navigation }: any) => {
 
       if (error) throw error;
 
-      const mappedJobs: JobData[] = (data || []).map((job) => {
+      // Filter out jobs already applied to / swiped on
+      const filteredJobs = (data || []).filter(job => !appliedJobIds.has(job.id));
+
+      const mappedJobs: JobData[] = filteredJobs.map((job) => {
         let comTags: string[] = [];
         try {
           if (job.profiles?.company_tags) {
@@ -344,11 +367,15 @@ export const HomeScreen = ({ navigation }: any) => {
       addMatch(currentJob);
       // Guardar la postulación real en Supabase
       try {
-        await supabase.from('applications').insert({
+        const { error } = await supabase.from('applications').insert({
           candidate_id: session?.user?.id,
           job_id: currentJob.id,
           status: 'pending',
+          is_rejected: false,
         });
+        if (error) {
+          console.error('Error guardando aplicacion en Supabase:', error);
+        }
       } catch (err) {
         console.error('Error guardando aplicacion:', err);
       }
@@ -362,6 +389,21 @@ export const HomeScreen = ({ navigation }: any) => {
         type: 'success',
       });
     } else if (type === 'reject') {
+      // Guardar descarte en Supabase para que no vuelva a aparecer en el deck de swiping
+      try {
+        const { error } = await supabase.from('applications').insert({
+          candidate_id: session?.user?.id,
+          job_id: currentJob.id,
+          status: 'rejected',
+          is_rejected: true,
+        });
+        if (error) {
+          console.error('Error guardando descarte en Supabase:', error);
+        }
+      } catch (err) {
+        console.error('Error guardando descarte de aplicacion:', err);
+      }
+
       setModalConfig({
         visible: true,
         title: 'Preferencia Guardada',

@@ -314,6 +314,22 @@ export const CandidatePipelineScreen = ({ route, navigation }: any) => {
 
       if (error) throw error;
 
+      // Insertar notificación de descarte para el candidato
+      try {
+        const companyName = session?.user?.user_metadata?.full_name || 'Una empresa';
+        await supabase.from('notifications').insert([
+          {
+            user_id: profile.id,
+            title: 'Proceso de Selección 💼',
+            body: `La empresa ${companyName} ha finalizado tu proceso para la vacante de ${job.title}.`,
+            type: 'application_rejected',
+            related_id: currentApp.id,
+          },
+        ]);
+      } catch (notifErr) {
+        console.error('Failed to insert rejection notification:', notifErr);
+      }
+
       const rejectionMsg = `Hola ${profile.full_name}, la empresa ha decidido cerrar tu proceso para ${job.title}. ¡Mucho éxito en tus próximas postulaciones!`;
       const roomId = await getOrCreateRoomId();
 
